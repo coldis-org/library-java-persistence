@@ -1,10 +1,10 @@
 package org.coldis.library.persistence.model;
 
-import java.beans.Transient;
 import java.time.LocalDateTime;
 
 import javax.persistence.Column;
 import javax.persistence.MappedSuperclass;
+import javax.persistence.Transient;
 
 import org.coldis.library.dto.DtoAttribute;
 import org.coldis.library.helper.DateTimeHelper;
@@ -55,6 +55,7 @@ public abstract class AbstractExpirableEntity extends AbstractTimestampedEntity 
 	 * @return If the entity should be considered expired when no expiration date is
 	 *         assigned.
 	 */
+	@Transient
 	protected Boolean getExpiredByDefault() {
 		return true;
 	}
