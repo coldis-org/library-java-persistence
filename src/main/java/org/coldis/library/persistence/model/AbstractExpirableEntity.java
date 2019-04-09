@@ -1,6 +1,7 @@
 package org.coldis.library.persistence.model;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 
 import javax.persistence.Column;
 import javax.persistence.MappedSuperclass;
@@ -30,6 +31,27 @@ public abstract class AbstractExpirableEntity extends AbstractTimestampedEntity 
 	private LocalDateTime expiredAt;
 
 	/**
+	 * Gets the new expiration value using a base date and a time value.
+	 *
+	 * @param  expirationBaseDate Expiration base date.
+	 * @param  plusUnit           Unit of time to add to the expiration base date.
+	 * @param  plusValue          Value of time to add to the expiration base date.
+	 *
+	 * @return                    The new expiration value using a base date and a
+	 *                            time value.
+	 */
+	public static LocalDateTime getExpirationDate(final LocalDateTime expirationBaseDate, final ChronoUnit plusUnit,
+			final Long plusValue) {
+		return expirationBaseDate.plus(plusValue, plusUnit);
+	}
+
+	/**
+	 * Updates the expiration date.
+	 */
+	protected void updateExpiredAt() {
+	}
+
+	/**
 	 * @see org.coldis.library.model.ExpirableObject#getExpiredAt()
 	 */
 	@Override
@@ -37,6 +59,9 @@ public abstract class AbstractExpirableEntity extends AbstractTimestampedEntity 
 	@Column(columnDefinition = "TIMESTAMP WITH TIME ZONE")
 	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public LocalDateTime getExpiredAt() {
+		// Makes sue the expiration date is updated.
+		this.updateExpiredAt();
+		// Returns the expiration date.
 		return this.expiredAt;
 	}
 
