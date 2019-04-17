@@ -1,8 +1,9 @@
-package org.coldis.library.test.persistence.history.history.model;
+package org.coldis.library.test.persistence.history.historical.model;
 
 import java.util.Objects;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -13,11 +14,9 @@ import javax.persistence.Table;
 import org.coldis.library.persistence.history.EntityHistory;
 import org.coldis.library.persistence.model.AbstractTimestampedEntity;
 import org.coldis.library.test.persistence.history.TestHistoricalEntity;
-import org.hibernate.annotations.Type;
 
 /**
- * JPA entity history for
- * {@link org.coldis.library.test.persistence.history.TestHistoricalEntity}.
+ * JPA entity history for {@link org.coldis.library.test.persistence.history.TestHistoricalEntity}.
  */
 @Entity
 @Table(indexes = { @Index(columnList = "updatedAt") })
@@ -27,7 +26,7 @@ implements EntityHistory<TestHistoricalEntity> {
 	/**
 	 * Serial.
 	 */
-	private static final long serialVersionUID = -1003507974L;
+	private static final long serialVersionUID = 1894611944L;
 
 	/**
 	 * Object identifier.
@@ -62,8 +61,8 @@ implements EntityHistory<TestHistoricalEntity> {
 	 * @see org.coldis.library.persistence.history.EntityHistory#getState()
 	 */
 	@Override
-	@Type(type = "JSONB")
 	@Column(columnDefinition = "JSONB")
+	@Convert(converter = java.lang.Class.class)
 	public TestHistoricalEntity getState() {
 		return this.state;
 	}
@@ -71,7 +70,8 @@ implements EntityHistory<TestHistoricalEntity> {
 	/**
 	 * Sets the entity state.
 	 *
-	 * @param state New entity state.
+	 * @param state
+	 *            New entity state.
 	 */
 	protected void setState(final TestHistoricalEntity state) {
 		this.state = state;

@@ -1,9 +1,9 @@
-package org.coldis.library.test.persistence.history.history.dao;
+package org.coldis.library.test.persistence.history.historical.dao;
 
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
-import org.coldis.library.test.persistence.history.history.model.TestHistoricalEntityHistory;
+import org.coldis.library.test.persistence.history.historical.model.TestHistoricalEntityHistory;
 
 /**
  * JPA entity history repository for {@link org.coldis.library.test.persistence.history.TestHistoricalEntity}.

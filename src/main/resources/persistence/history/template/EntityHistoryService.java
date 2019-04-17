@@ -5,7 +5,6 @@ import org.coldis.library.model.ModelView.Persistent;
 import org.coldis.library.model.SimpleMessage;
 import org.coldis.library.persistence.history.EntityHistoryService;
 import org.coldis.library.serialization.json.JsonHelper;
-import org.coldis.library.test.persistence.history.history.service.TestEntityHistoryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -89,7 +88,7 @@ public class ${historicalEntity.getServiceTypeName()} implements EntityHistorySe
 		// Sends the update to be processed asynchronously.
 		LOGGER.debug("Sending '${historicalEntity.getEntityQualifiedTypeName()}' update to history queue '" + 
 				${historicalEntity.getServiceTypeName()}.HISTORICAL_ENTITY_QUEUE + "'.");
-		this.jmsTemplate.convertAndSend(TestEntityHistoryService.HISTORICAL_ENTITY_QUEUE,
+		this.jmsTemplate.convertAndSend(${historicalEntity.getServiceTypeName()}.HISTORICAL_ENTITY_QUEUE,
 				JsonHelper.serialize(this.objectMapper, state, Persistent.class, false));
 		LOGGER.debug("'${historicalEntity.getEntityQualifiedTypeName()}' update sent to history queue '" + 
 				${historicalEntity.getServiceTypeName()}.HISTORICAL_ENTITY_QUEUE + "'.");
