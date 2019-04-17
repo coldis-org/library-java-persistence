@@ -27,12 +27,12 @@ import org.slf4j.LoggerFactory;
  */
 @SupportedSourceVersion(value = SourceVersion.RELEASE_10)
 @SupportedAnnotationTypes(value = { "org.coldis.library.persistence.history.HistoricalEntity" })
-public class EntityHistoryClassGenerator extends AbstractProcessor {
+public class EntityHistoryGenerator extends AbstractProcessor {
 
 	/**
 	 * Logger.
 	 */
-	private static final Logger LOGGER = LoggerFactory.getLogger(EntityHistoryClassGenerator.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(EntityHistoryGenerator.class);
 
 	/**
 	 * Gets a template.
@@ -156,28 +156,28 @@ public class EntityHistoryClassGenerator extends AbstractProcessor {
 	@Override
 	@SuppressWarnings("unchecked")
 	public boolean process(final Set<? extends TypeElement> annotations, final RoundEnvironment roundEnv) {
-		EntityHistoryClassGenerator.LOGGER.debug("Initializing EntityHistoryClassGenerator...");
+		EntityHistoryGenerator.LOGGER.debug("Initializing EntityHistoryGenerator...");
 		// For each historical entity.
 		for (final TypeElement entityType : (Set<TypeElement>) roundEnv
 				.getElementsAnnotatedWith(HistoricalEntity.class)) {
-			EntityHistoryClassGenerator.LOGGER
+			EntityHistoryGenerator.LOGGER
 			.debug("Generating entity history classes for '" + entityType.getSimpleName() + "'...");
 			// Tries to generate the entity history classes.
 			try {
 				this.generateClasses(this.getEntityHistoryMetadata(entityType));
-				EntityHistoryClassGenerator.LOGGER
+				EntityHistoryGenerator.LOGGER
 				.debug("Historical entity '" + entityType.getSimpleName() + "' processed successfully.");
 			}
 			// If the historical entity could not be processed correctly.
 			catch (final IOException exception) {
 				// Logs the error.
-				EntityHistoryClassGenerator.LOGGER.debug(
+				EntityHistoryGenerator.LOGGER.debug(
 						"Historical entity '" + entityType.getSimpleName() + "' not processed successfully.",
 						exception);
 			}
 		}
 		// Returns that the annotations have been processed.
-		EntityHistoryClassGenerator.LOGGER.debug("Finishing EntityHistoryGenerator...");
+		EntityHistoryGenerator.LOGGER.debug("Finishing EntityHistoryGenerator...");
 		return true;
 	}
 
