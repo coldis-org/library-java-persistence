@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 @Entity
 @JsonTypeName(value = TestHistoricalEntity.TYPE_NAME)
 @EntityListeners(EntityHistoryListener.class)
-@HistoricalEntity(basePackageName = "org.coldis.library.test.persistence.history.history")
+@HistoricalEntity(basePackageName = "org.coldis.library.test.persistence.history.historical")
 public class TestHistoricalEntity implements TypedObject, IdentifiedObject {
 
 	/**

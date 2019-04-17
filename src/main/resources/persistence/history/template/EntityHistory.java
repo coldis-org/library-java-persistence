@@ -12,7 +12,6 @@ import javax.persistence.Index;
 import javax.persistence.Table;
 
 import org.coldis.library.persistence.model.AbstractTimestampedEntity;
-import org.coldis.library.test.persistence.history.history.model.TestHistoricalEntityHistory;
 import org.coldis.library.persistence.history.EntityHistory;
 
 import ${historicalEntity.getOriginalEntityQualifiedTypeName()};
@@ -36,7 +35,7 @@ public class ${historicalEntity.getEntityTypeName()} extends AbstractTimestamped
 	private Long id;
 
 	/**
-	 * @see org.coldis.library.model.IdentifiedObject#getId()
+	 * @see org.coldis.library.model.IdentifiedObject${h}getId()
 	 */
 	@Id
 	@Override
@@ -60,7 +59,7 @@ public class ${historicalEntity.getEntityTypeName()} extends AbstractTimestamped
 	private ${historicalEntity.getOriginalEntityTypeName()} state;
 
 	/**
-	 * @see org.coldis.library.persistence.history.EntityHistory#getState()
+	 * @see org.coldis.library.persistence.history.EntityHistory${h}getState()
 	 */
 	@Column(columnDefinition = "${historicalEntity.getStateColumnDefinition()}")
 	@Convert(converter = ${historicalEntity.getStateAttributeConverter()}.class)
@@ -95,7 +94,7 @@ public class ${historicalEntity.getEntityTypeName()} extends AbstractTimestamped
 	}
 	
 	/**
-	 * @see java.lang.Object#hashCode()
+	 * @see java.lang.Object${h}hashCode()
 	 */
 	@Override
 	public int hashCode() {
@@ -103,7 +102,7 @@ public class ${historicalEntity.getEntityTypeName()} extends AbstractTimestamped
 	}
 
 	/**
-	 * @see java.lang.Object#equals(java.lang.Object)
+	 * @see java.lang.Object${h}equals(java.lang.Object)
 	 */
 	@Override
 	public boolean equals(final Object obj) {
