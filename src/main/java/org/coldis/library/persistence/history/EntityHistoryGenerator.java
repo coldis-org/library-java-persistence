@@ -1,5 +1,7 @@
 package org.coldis.library.persistence.history;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Set;
@@ -14,6 +16,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeMirror;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
@@ -35,46 +38,18 @@ public class EntityHistoryGenerator extends AbstractProcessor {
 	private static final Logger LOGGER = LoggerFactory.getLogger(EntityHistoryGenerator.class);
 
 	/**
-	 * Gets a template.
-	 *
-	 * @param  velocityEngine  Velocity engine.
-	 * @param  resourcesFolder The resources folder to be used.
-	 * @param  templatePath    The template path.
-	 * @return                 The velocity template.
-	 */
-	private Template getTemplate(final VelocityEngine velocityEngine, final String resourcesFolder,
-			final String templatePath) {
-		// Configures the classpath resource loader.
-		velocityEngine.setProperty(RuntimeConstants.RESOURCE_LOADER, "classpath");
-		velocityEngine.setProperty("classpath.resource.loader.class", ClasspathResourceLoader.class.getName());
-		// Velocity template.
-		Template velocityTemplate = null;
-		// Tries to get the template for the given path.
-		try {
-			velocityTemplate = velocityEngine.getTemplate(resourcesFolder + templatePath);
-		}
-		// If the template cannot be retrieved
-		catch (final Exception exception) {
-			// Ignores it.
-		}
-		// If the template has not been found yet.
-		if (velocityTemplate == null) {
-			// Tries to get the template from the class path.
-			velocityTemplate = velocityEngine.getTemplate(templatePath);
-		}
-		// Returns the found template.
-		return velocityTemplate;
-	}
-
-	/**
 	 * TODO Javadoc
 	 *
 	 * @param  historicalEntityMetadata
 	 * @throws IOException              Javadoc
 	 */
 	private void generateClasses(final HistoricalEntityMetadata historicalEntityMetadata) throws IOException {
-		// Gets the velocity engine and initializes it.
+		// Gets the velocity engine.
 		final VelocityEngine velocityEngine = new VelocityEngine();
+		// Configures the resource loader to also look at the classpath.
+		velocityEngine.setProperty(RuntimeConstants.RESOURCE_LOADER, "classpath");
+		velocityEngine.setProperty("classpath.resource.loader.class", ClasspathResourceLoader.class.getName());
+		// Initializes the velocity engine.
 		velocityEngine.init();
 		// Creates a new velocity context and sets its variables.
 		final VelocityContext velocityContext = new VelocityContext();
@@ -82,19 +57,28 @@ public class EntityHistoryGenerator extends AbstractProcessor {
 		velocityContext.put("h", "#");
 		velocityContext.put("historicalEntity", historicalEntityMetadata);
 		// Gets the templates for the entity history classes.
-		final Template entityTemplate = this.getTemplate(velocityEngine, historicalEntityMetadata.getResourcesPath(),
-				historicalEntityMetadata.getEntityTemplatePath());
-		final Template repoTemplate = this.getTemplate(velocityEngine, historicalEntityMetadata.getResourcesPath(),
-				historicalEntityMetadata.getDaoTemplatePath());
-		final Template srvTemplate = this.getTemplate(velocityEngine, historicalEntityMetadata.getResourcesPath(),
-				historicalEntityMetadata.getServiceTemplatePath());
+		final Template entityTemplate = velocityEngine.getTemplate(historicalEntityMetadata.getEntityTemplatePath());
+		final Template repoTemplate = velocityEngine.getTemplate(historicalEntityMetadata.getDaoTemplatePath());
+		final Template srvTemplate = velocityEngine.getTemplate(historicalEntityMetadata.getServiceTemplatePath());
 		// Gets the writer for the generated classes.
-		final Writer entityWriter = this.processingEnv.getFiler()
-				.createSourceFile(historicalEntityMetadata.getEntityQualifiedTypeName()).openWriter();
-		final Writer daoWriter = this.processingEnv.getFiler()
-				.createSourceFile(historicalEntityMetadata.getDaoQualifiedTypeName()).openWriter();
-		final Writer serviceWriter = this.processingEnv.getFiler()
-				.createSourceFile(historicalEntityMetadata.getServiceQualifiedTypeName()).openWriter();
+		final File entityFile = new File(
+				historicalEntityMetadata.getTargetPath() + File.separator
+				+ historicalEntityMetadata.getEntityPackageName(),
+				historicalEntityMetadata.getEntityTypeName() + ".java");
+		final File daoFile = new File(
+				historicalEntityMetadata.getTargetPath() + File.separator
+				+ historicalEntityMetadata.getDaoPackageName(),
+				historicalEntityMetadata.getDaoTypeName() + ".java");
+		final File serviceFile = new File(
+				historicalEntityMetadata.getTargetPath() + File.separator
+				+ historicalEntityMetadata.getServicePackageName(),
+				historicalEntityMetadata.getServiceTypeName() + ".java");
+		FileUtils.forceMkdir(entityFile.getParentFile());
+		FileUtils.forceMkdir(daoFile.getParentFile());
+		FileUtils.forceMkdir(serviceFile.getParentFile());
+		final Writer entityWriter = new FileWriter(entityFile);
+		final Writer daoWriter = new FileWriter(daoFile);
+		final Writer serviceWriter = new FileWriter(serviceFile);
 		// Generates the classes.
 		entityTemplate.merge(velocityContext, entityWriter);
 		repoTemplate.merge(velocityContext, daoWriter);
@@ -139,7 +123,7 @@ public class EntityHistoryGenerator extends AbstractProcessor {
 		final HistoricalEntity historicalEntity = entityType.getAnnotation(HistoricalEntity.class); // Tries to get the
 		// Creates the default metadata.
 		final HistoricalEntityMetadata historicalEntityMetadata = new HistoricalEntityMetadata(
-				historicalEntity.resourcesPath(), historicalEntity.entityTemplatePath(),
+				historicalEntity.targetPath(), historicalEntity.entityTemplatePath(),
 				historicalEntity.daoTemplatePath(), historicalEntity.serviceTemplatePath(),
 				historicalEntity.basePackageName(),
 				((PackageElement) entityType.getEnclosingElement()).getQualifiedName().toString(),

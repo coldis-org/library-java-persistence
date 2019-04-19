@@ -36,22 +36,22 @@ public class HistoricalEntityMetadata {
 	public static final String SERVICE_TYPE_SUFFIX = HistoricalEntityMetadata.ENTITY_TYPE_SUFFIX + "Service";
 
 	/**
-	 * Resources path.
+	 * Target path.
 	 */
-	private String resourcesPath;
+	private String targetPath;
 
 	/**
-	 * Entity history template relative path (from resources).
+	 * Entity history template path.
 	 */
 	private String entityTemplatePath;
 
 	/**
-	 * Entity history DAO template relative path (from resources).
+	 * Entity history DAO template path.
 	 */
 	private String daoTemplatePath;
 
 	/**
-	 * Entity history service template relative path (from resources).
+	 * Entity history service template path.
 	 */
 	private String serviceTemplatePath;
 
@@ -83,7 +83,7 @@ public class HistoricalEntityMetadata {
 	/**
 	 * TODO Javadoc
 	 *
-	 * @param resourcesPath
+	 * @param targetPath
 	 * @param entityTemplatePath
 	 * @param daoTemplatePath
 	 * @param serviceTemplatePath
@@ -93,12 +93,12 @@ public class HistoricalEntityMetadata {
 	 * @param stateAttributeConverter
 	 * @param stateColumnDefinition     Javadoc
 	 */
-	public HistoricalEntityMetadata(final String resourcesPath, final String entityTemplatePath,
+	public HistoricalEntityMetadata(final String targetPath, final String entityTemplatePath,
 			final String daoTemplatePath, final String serviceTemplatePath, final String basePackageName,
 			final String originalEntityPackageName, final String originalEntityTypeName,
 			final String stateAttributeConverter, final String stateColumnDefinition) {
 		super();
-		this.resourcesPath = resourcesPath;
+		this.targetPath = targetPath;
 		this.entityTemplatePath = entityTemplatePath;
 		this.daoTemplatePath = daoTemplatePath;
 		this.serviceTemplatePath = serviceTemplatePath;
@@ -110,21 +110,21 @@ public class HistoricalEntityMetadata {
 	}
 
 	/**
-	 * Gets the resourcesPath.
+	 * Gets the targetPath.
 	 *
-	 * @return The resourcesPath.
+	 * @return The targetPath.
 	 */
-	public String getResourcesPath() {
-		return this.resourcesPath;
+	public String getTargetPath() {
+		return this.targetPath;
 	}
 
 	/**
-	 * Sets the resourcesPath.
+	 * Sets the targetPath.
 	 *
-	 * @param resourcesPath New resourcesPath.
+	 * @param targetPath New targetPath.
 	 */
-	public void setResourcesPath(final String resourcesPath) {
-		this.resourcesPath = resourcesPath;
+	public void setTargetPath(final String targetPath) {
+		this.targetPath = targetPath;
 	}
 
 	/**
