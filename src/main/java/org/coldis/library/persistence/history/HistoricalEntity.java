@@ -16,9 +16,14 @@ import java.lang.annotation.Target;
 public @interface HistoricalEntity {
 
 	/**
-	 * Target path. Default is "src/main/java".
+	 * Producer classes target path. Default is "src/main/java".
 	 */
-	public String targetPath() default "src/main/java";
+	public String producerTargetPath() default "src/main/java";
+
+	/**
+	 * Consumer classes target path. Default is "src/main/java".
+	 */
+	public String consumerTargetPath() default "src/main/java";
 
 	/**
 	 * Entity history template relative path (from resources).
@@ -26,24 +31,24 @@ public @interface HistoricalEntity {
 	public String entityTemplatePath() default "persistence/history/template/EntityHistory.java";
 
 	/**
-	 * Entity history DAO template relative path (from resources).
+	 * Entity history repository template relative path (from resources).
 	 */
-	public String daoTemplatePath() default "persistence/history/template/EntityHistoryRepository.java";
+	public String repositoryTemplatePath() default "persistence/history/template/EntityHistoryRepository.java";
 
 	/**
-	 * Entity history service template relative path (from resources).
+	 * Entity history producer service template relative path (from resources).
 	 */
-	public String serviceTemplatePath() default "persistence/history/template/EntityHistoryService.java";
+	public String producerServiceTemplatePath() default "persistence/history/template/EntityHistoryProducerService.java";
+
+	/**
+	 * Entity history consumer service template relative path (from resources).
+	 */
+	public String consumerServiceTemplatePath() default "persistence/history/template/EntityHistoryConsumerService.java";
 
 	/**
 	 * Name of the base package for entity history classes.
 	 */
 	public String basePackageName();
-
-	/**
-	 * Entity state attribute converter.
-	 */
-	public Class<?/* extends AttributeConverter<?, ?> */> stateAttributeConverter() default Class.class;// FIXME
 
 	/**
 	 * Entity state column definition.

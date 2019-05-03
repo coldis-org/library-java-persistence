@@ -1,9 +1,9 @@
 package org.coldis.library.test.persistence.history.historical.model;
 
+import java.util.Map;
 import java.util.Objects;
 
 import javax.persistence.Column;
-import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -11,9 +11,8 @@ import javax.persistence.Id;
 import javax.persistence.Index;
 import javax.persistence.Table;
 
-import org.coldis.library.persistence.history.EntityHistory;
 import org.coldis.library.persistence.model.AbstractTimestampedEntity;
-import org.coldis.library.test.persistence.history.TestHistoricalEntity;
+import org.coldis.library.persistence.history.EntityHistory;
 
 /**
  * JPA entity history for {@link org.coldis.library.test.persistence.history.TestHistoricalEntity}.
@@ -21,13 +20,13 @@ import org.coldis.library.test.persistence.history.TestHistoricalEntity;
 @Entity
 @Table(indexes = { @Index(columnList = "updatedAt") })
 public class TestHistoricalEntityHistory extends AbstractTimestampedEntity
-implements EntityHistory<TestHistoricalEntity> {
+		implements EntityHistory<Map<String, Object>> {
 
 	/**
 	 * Serial.
 	 */
 	private static final long serialVersionUID = 1894611944L;
-
+	
 	/**
 	 * Object identifier.
 	 */
@@ -40,12 +39,12 @@ implements EntityHistory<TestHistoricalEntity> {
 	@Override
 	@GeneratedValue(strategy = GenerationType.AUTO)
 	public Long getId() {
-		return this.id;
+		return id;
 	}
 
 	/**
 	 * Sets the identifier.
-	 *
+	 * 
 	 * @param id New identifier.
 	 */
 	public void setId(final Long id) {
@@ -55,16 +54,14 @@ implements EntityHistory<TestHistoricalEntity> {
 	/**
 	 * Entity state.
 	 */
-	private TestHistoricalEntity state;
+	private Map<String, Object> state;
 
 	/**
 	 * @see org.coldis.library.persistence.history.EntityHistory#getState()
 	 */
-	@Override
 	@Column(columnDefinition = "JSONB")
-	@Convert(converter = java.lang.Class.class)
-	public TestHistoricalEntity getState() {
-		return this.state;
+	public Map<String, Object> getState() {
+		return state;
 	}
 
 	/**
@@ -73,7 +70,7 @@ implements EntityHistory<TestHistoricalEntity> {
 	 * @param state
 	 *            New entity state.
 	 */
-	protected void setState(final TestHistoricalEntity state) {
+	protected void setState(final Map<String, Object> state) {
 		this.state = state;
 	}
 
@@ -88,11 +85,11 @@ implements EntityHistory<TestHistoricalEntity> {
 	 *
 	 * @param state New entity state.
 	 */
-	public TestHistoricalEntityHistory(final TestHistoricalEntity state) {
+	public TestHistoricalEntityHistory(final Map<String, Object> state) {
 		super();
 		this.state = state;
 	}
-
+	
 	/**
 	 * @see java.lang.Object#hashCode()
 	 */

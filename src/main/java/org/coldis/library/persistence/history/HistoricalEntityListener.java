@@ -17,12 +17,12 @@ import org.springframework.stereotype.Component;
  * JPA entity history listener.
  */
 @Component
-public class EntityHistoryListener implements ApplicationContextAware {
+public class HistoricalEntityListener implements ApplicationContextAware {
 
 	/**
 	 * Logger.
 	 */
-	private static final Logger LOGGER = LoggerFactory.getLogger(EntityHistoryListener.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(HistoricalEntityListener.class);
 
 	/**
 	 * Application context.
@@ -34,13 +34,13 @@ public class EntityHistoryListener implements ApplicationContextAware {
 	 */
 	@Override
 	public void setApplicationContext(final ApplicationContext applicationContext) throws BeansException {
-		EntityHistoryListener.appContext = applicationContext;
+		HistoricalEntityListener.appContext = applicationContext;
 	}
 
 	/**
 	 * Gets the entity history service.
 	 *
-	 * @param                           <EntityType> Entity type.
+	 * @param  <EntityType>             Entity type.
 	 * @param  entity                   The entity.
 	 * @param  historicalEntityMetadata The entity historical metadata.
 	 * @return                          The entity history service.
@@ -48,20 +48,21 @@ public class EntityHistoryListener implements ApplicationContextAware {
 	 *                                      found.
 	 */
 	@SuppressWarnings("unchecked")
-	private <EntityType> EntityHistoryService<EntityType> getEntityHistoryService(final Object entity,
+	private <EntityType> EntityHistoryProducerService<EntityType> getEntityHistoryService(final Object entity,
 			final HistoricalEntity historicalEntityMetadata) throws IntegrationException {
 		// The default service name pattern is used.
-		String serviceName = (entity.getClass().getSimpleName() + HistoricalEntityMetadata.SERVICE_TYPE_SUFFIX);
+		String serviceName = (entity.getClass().getSimpleName()
+				+ HistoricalEntityMetadata.PRODUCER_SERVICE_TYPE_SUFFIX);
 		// The first letter of the service bean name should be lower case.
 		serviceName = serviceName.substring(0, 1).toLowerCase() + serviceName.substring(1);
 		// Tries to get the entity history service.
 		try {
-			return EntityHistoryListener.appContext.getBean(serviceName, EntityHistoryService.class);
+			return HistoricalEntityListener.appContext.getBean(serviceName, EntityHistoryProducerService.class);
 		}
 		// If the entity history service cannot be found.
 		catch (final NoSuchBeanDefinitionException exception) {
 			// Throws an entity history service not found exception.
-			EntityHistoryListener.LOGGER.error("The entity history service bean could not be found.", exception);
+			HistoricalEntityListener.LOGGER.error("The entity history service bean could not be found.", exception);
 			throw new IntegrationException(new SimpleMessage("entity.history.service.notfound"), exception);
 		}
 
