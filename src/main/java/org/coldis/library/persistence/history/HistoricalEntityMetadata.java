@@ -1,5 +1,7 @@
 package org.coldis.library.persistence.history;
 
+import java.io.File;
+
 /**
  * JPA historical entity metadata.
  */
@@ -11,9 +13,9 @@ public class HistoricalEntityMetadata {
 	public static final String ENTITY_PACKAGE_SUFFIX = ".model";
 
 	/**
-	 * Entity history DAO package suffix.
+	 * Entity history repository package suffix.
 	 */
-	public static final String DAO_PACKAGE_SUFFIX = ".dao";
+	public static final String REPOSITORY_PACKAGE_SUFFIX = ".repository";
 
 	/**
 	 * Entity history service package suffix.
@@ -26,19 +28,31 @@ public class HistoricalEntityMetadata {
 	public static final String ENTITY_TYPE_SUFFIX = "History";
 
 	/**
-	 * Entity history DAO name suffix.
+	 * Entity history repository name suffix.
 	 */
-	public static final String DAO_TYPE_SUFFIX = HistoricalEntityMetadata.ENTITY_TYPE_SUFFIX + "Repository";
+	public static final String REPOSITORY_TYPE_SUFFIX = HistoricalEntityMetadata.ENTITY_TYPE_SUFFIX + "Repository";
 
 	/**
-	 * Entity history service name suffix.
+	 * Entity history producer service name suffix.
 	 */
-	public static final String SERVICE_TYPE_SUFFIX = HistoricalEntityMetadata.ENTITY_TYPE_SUFFIX + "Service";
+	public static final String PRODUCER_SERVICE_TYPE_SUFFIX = HistoricalEntityMetadata.ENTITY_TYPE_SUFFIX
+			+ "ProducerService";
 
 	/**
-	 * Target path.
+	 * Entity history consumer service name suffix.
 	 */
-	private String targetPath;
+	public static final String CONSUMER_SERVICE_TYPE_SUFFIX = HistoricalEntityMetadata.ENTITY_TYPE_SUFFIX
+			+ "ConsumerService";
+
+	/**
+	 * Producer target path.
+	 */
+	private String producerTargetPath;
+
+	/**
+	 * Consumer target path.
+	 */
+	private String consumerTargetPath;
 
 	/**
 	 * Entity history template path.
@@ -46,14 +60,19 @@ public class HistoricalEntityMetadata {
 	private String entityTemplatePath;
 
 	/**
-	 * Entity history DAO template path.
+	 * Entity history repository template path.
 	 */
-	private String daoTemplatePath;
+	private String repositoryTemplatePath;
 
 	/**
-	 * Entity history service template path.
+	 * Entity history producer service template path.
 	 */
-	private String serviceTemplatePath;
+	private String producerServiceTemplatePath;
+
+	/**
+	 * Entity history consumer service template path.
+	 */
+	private String consumerServiceTemplatePath;
 
 	/**
 	 * Name of the package for entity history classes.
@@ -71,60 +90,77 @@ public class HistoricalEntityMetadata {
 	private String originalEntityTypeName;
 
 	/**
-	 * Entity state attribute converter.
-	 */
-	private String stateAttributeConverter;
-
-	/**
 	 * Entity state column definition.
 	 */
 	private String stateColumnDefinition;
 
 	/**
-	 * TODO Javadoc
+	 * Default constructor.
 	 *
-	 * @param targetPath
+	 * @param producerTargetPath
+	 * @param consumerTargetPath
 	 * @param entityTemplatePath
-	 * @param daoTemplatePath
-	 * @param serviceTemplatePath
+	 * @param repositoryTemplatePath
+	 * @param producerServiceTemplatePath
+	 * @param consumerServiceTemplatePath
 	 * @param basePackageName
 	 * @param originalEntityPackageName
 	 * @param originalEntityTypeName
-	 * @param stateAttributeConverter
-	 * @param stateColumnDefinition     Javadoc
+	 * @param stateColumnDefinition
+	 *
 	 */
-	public HistoricalEntityMetadata(final String targetPath, final String entityTemplatePath,
-			final String daoTemplatePath, final String serviceTemplatePath, final String basePackageName,
-			final String originalEntityPackageName, final String originalEntityTypeName,
-			final String stateAttributeConverter, final String stateColumnDefinition) {
+	public HistoricalEntityMetadata(final String producerTargetPath, final String consumerTargetPath,
+			final String entityTemplatePath, final String repositoryTemplatePath,
+			final String producerServiceTemplatePath, final String consumerServiceTemplatePath,
+			final String basePackageName, final String originalEntityPackageName, final String originalEntityTypeName,
+			final String stateColumnDefinition) {
 		super();
-		this.targetPath = targetPath;
+		this.producerTargetPath = producerTargetPath;
+		this.consumerTargetPath = consumerTargetPath;
 		this.entityTemplatePath = entityTemplatePath;
-		this.daoTemplatePath = daoTemplatePath;
-		this.serviceTemplatePath = serviceTemplatePath;
+		this.repositoryTemplatePath = repositoryTemplatePath;
+		this.producerServiceTemplatePath = producerServiceTemplatePath;
+		this.consumerServiceTemplatePath = consumerServiceTemplatePath;
 		this.basePackageName = basePackageName;
 		this.originalEntityPackageName = originalEntityPackageName;
 		this.originalEntityTypeName = originalEntityTypeName;
-		this.stateAttributeConverter = stateAttributeConverter;
 		this.stateColumnDefinition = stateColumnDefinition;
 	}
 
 	/**
-	 * Gets the targetPath.
+	 * Gets the producerTargetPath.
 	 *
-	 * @return The targetPath.
+	 * @return The producerTargetPath.
 	 */
-	public String getTargetPath() {
-		return this.targetPath;
+	public String getProducerTargetPath() {
+		return this.producerTargetPath;
 	}
 
 	/**
-	 * Sets the targetPath.
+	 * Sets the producerTargetPath.
 	 *
-	 * @param targetPath New targetPath.
+	 * @param producerTargetPath New producerTargetPath.
 	 */
-	public void setTargetPath(final String targetPath) {
-		this.targetPath = targetPath;
+	public void setProducerTargetPath(final String producerTargetPath) {
+		this.producerTargetPath = producerTargetPath;
+	}
+
+	/**
+	 * Gets the consumerTargetPath.
+	 *
+	 * @return The consumerTargetPath.
+	 */
+	public String getConsumerTargetPath() {
+		return this.consumerTargetPath;
+	}
+
+	/**
+	 * Sets the consumerTargetPath.
+	 *
+	 * @param consumerTargetPath New consumerTargetPath.
+	 */
+	public void setConsumerTargetPath(final String consumerTargetPath) {
+		this.consumerTargetPath = consumerTargetPath;
 	}
 
 	/**
@@ -146,39 +182,57 @@ public class HistoricalEntityMetadata {
 	}
 
 	/**
-	 * Gets the daoTemplatePath.
+	 * Gets the repositoryTemplatePath.
 	 *
-	 * @return The daoTemplatePath.
+	 * @return The repositoryTemplatePath.
 	 */
-	public String getDaoTemplatePath() {
-		return this.daoTemplatePath;
+	public String getRepositoryTemplatePath() {
+		return this.repositoryTemplatePath;
 	}
 
 	/**
-	 * Sets the daoTemplatePath.
+	 * Sets the repositoryTemplatePath.
 	 *
-	 * @param daoTemplatePath New daoTemplatePath.
+	 * @param repositoryTemplatePath New repositoryTemplatePath.
 	 */
-	public void setDaoTemplatePath(final String daoTemplatePath) {
-		this.daoTemplatePath = daoTemplatePath;
+	public void setRepositoryTemplatePath(final String repositoryTemplatePath) {
+		this.repositoryTemplatePath = repositoryTemplatePath;
 	}
 
 	/**
-	 * Gets the serviceTemplatePath.
+	 * Gets the producerServiceTemplatePath.
 	 *
-	 * @return The serviceTemplatePath.
+	 * @return The producerServiceTemplatePath.
 	 */
-	public String getServiceTemplatePath() {
-		return this.serviceTemplatePath;
+	public String getProducerServiceTemplatePath() {
+		return this.producerServiceTemplatePath;
 	}
 
 	/**
-	 * Sets the serviceTemplatePath.
+	 * Sets the producerServiceTemplatePath.
 	 *
-	 * @param serviceTemplatePath New serviceTemplatePath.
+	 * @param producerServiceTemplatePath New producerServiceTemplatePath.
 	 */
-	public void setServiceTemplatePath(final String serviceTemplatePath) {
-		this.serviceTemplatePath = serviceTemplatePath;
+	public void setProducerServiceTemplatePath(final String producerServiceTemplatePath) {
+		this.producerServiceTemplatePath = producerServiceTemplatePath;
+	}
+
+	/**
+	 * Gets the consumerServiceTemplatePath.
+	 *
+	 * @return The consumerServiceTemplatePath.
+	 */
+	public String getConsumerServiceTemplatePath() {
+		return this.consumerServiceTemplatePath;
+	}
+
+	/**
+	 * Sets the consumerServiceTemplatePath.
+	 *
+	 * @param consumerServiceTemplatePath New consumerServiceTemplatePath.
+	 */
+	public void setConsumerServiceTemplatePath(final String consumerServiceTemplatePath) {
+		this.consumerServiceTemplatePath = consumerServiceTemplatePath;
 	}
 
 	/**
@@ -227,12 +281,30 @@ public class HistoricalEntityMetadata {
 	}
 
 	/**
-	 * Gets the DAO package name.
+	 * Gets the entity file package name.
 	 *
-	 * @return The DAO package name.
+	 * @return The entity file package name.
 	 */
-	public String getDaoPackageName() {
-		return this.getBasePackageName() + HistoricalEntityMetadata.DAO_PACKAGE_SUFFIX;
+	public String getEntityFilePackageName() {
+		return this.getEntityPackageName().replace(".", File.separator);
+	}
+
+	/**
+	 * Gets the repository package name.
+	 *
+	 * @return The repository package name.
+	 */
+	public String getRepositoryPackageName() {
+		return this.getBasePackageName() + HistoricalEntityMetadata.REPOSITORY_PACKAGE_SUFFIX;
+	}
+
+	/**
+	 * Gets the repository file package name.
+	 *
+	 * @return The repository file package name.
+	 */
+	public String getRepositoryFilePackageName() {
+		return this.getRepositoryPackageName().replace(".", File.separator);
 	}
 
 	/**
@@ -242,6 +314,15 @@ public class HistoricalEntityMetadata {
 	 */
 	public String getServicePackageName() {
 		return this.getBasePackageName() + HistoricalEntityMetadata.SERVICE_PACKAGE_SUFFIX;
+	}
+
+	/**
+	 * Gets the service file package name.
+	 *
+	 * @return The service file package name.
+	 */
+	public String getServiceFilePackageName() {
+		return this.getServicePackageName().replace(".", File.separator);
 	}
 
 	/**
@@ -272,21 +353,30 @@ public class HistoricalEntityMetadata {
 	}
 
 	/**
-	 * Gets the DAO type name.
+	 * Gets the repository type name.
 	 *
-	 * @return The DAO type name.
+	 * @return The repository type name.
 	 */
-	public String getDaoTypeName() {
-		return this.getOriginalEntityTypeName() + HistoricalEntityMetadata.DAO_TYPE_SUFFIX;
+	public String getRepositoryTypeName() {
+		return this.getOriginalEntityTypeName() + HistoricalEntityMetadata.REPOSITORY_TYPE_SUFFIX;
 	}
 
 	/**
-	 * Gets the service type name.
+	 * Gets the producer service type name.
 	 *
-	 * @return The service type name.
+	 * @return The producer service type name.
 	 */
-	public String getServiceTypeName() {
-		return this.getOriginalEntityTypeName() + HistoricalEntityMetadata.SERVICE_TYPE_SUFFIX;
+	public String getProducerServiceTypeName() {
+		return this.getOriginalEntityTypeName() + HistoricalEntityMetadata.PRODUCER_SERVICE_TYPE_SUFFIX;
+	}
+
+	/**
+	 * Gets the consumer service type name.
+	 *
+	 * @return The consumer service type name.
+	 */
+	public String getConsumerServiceTypeName() {
+		return this.getOriginalEntityTypeName() + HistoricalEntityMetadata.CONSUMER_SERVICE_TYPE_SUFFIX;
 	}
 
 	/**
@@ -308,39 +398,30 @@ public class HistoricalEntityMetadata {
 	}
 
 	/**
-	 * Gets the DAO type qualified name.
+	 * Gets the repository type qualified name.
 	 *
-	 * @return The DAO type qualified name.
+	 * @return The repository type qualified name.
 	 */
-	public String getDaoQualifiedTypeName() {
-		return this.getDaoPackageName() + "." + this.getDaoTypeName();
+	public String getRepositoryQualifiedTypeName() {
+		return this.getRepositoryPackageName() + "." + this.getRepositoryTypeName();
 	}
 
 	/**
-	 * Gets the service type qualified name.
+	 * Gets the producer service type qualified name.
 	 *
-	 * @return The service type qualified name.
+	 * @return The producer service type qualified name.
 	 */
-	public String getServiceQualifiedTypeName() {
-		return this.getServicePackageName() + "." + this.getServiceTypeName();
+	public String getProducerServiceQualifiedTypeName() {
+		return this.getServicePackageName() + "." + this.getProducerServiceTypeName();
 	}
 
 	/**
-	 * Gets the stateAttributeConverter.
+	 * Gets the consumer service type qualified name.
 	 *
-	 * @return The stateAttributeConverter.
+	 * @return The consumer service type qualified name.
 	 */
-	public String getStateAttributeConverter() {
-		return this.stateAttributeConverter;
-	}
-
-	/**
-	 * Sets the stateAttributeConverter.
-	 *
-	 * @param stateAttributeConverter New stateAttributeConverter.
-	 */
-	public void setStateAttributeConverter(final String stateAttributeConverter) {
-		this.stateAttributeConverter = stateAttributeConverter;
+	public String getConsumerServiceQualifiedTypeName() {
+		return this.getServicePackageName() + "." + this.getConsumerServiceTypeName();
 	}
 
 	/**

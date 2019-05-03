@@ -8,7 +8,7 @@ import javax.persistence.Id;
 
 import org.coldis.library.model.IdentifiedObject;
 import org.coldis.library.model.TypedObject;
-import org.coldis.library.persistence.history.EntityHistoryListener;
+import org.coldis.library.persistence.history.HistoricalEntityListener;
 import org.coldis.library.persistence.history.HistoricalEntity;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -18,8 +18,9 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
  */
 @Entity
 @JsonTypeName(value = TestHistoricalEntity.TYPE_NAME)
-@EntityListeners(EntityHistoryListener.class)
-@HistoricalEntity(basePackageName = "org.coldis.library.test.persistence.history.historical")
+@EntityListeners(HistoricalEntityListener.class)
+@HistoricalEntity(basePackageName = "org.coldis.library.test.persistence.history.historical",
+producerTargetPath = "src/test/java", consumerTargetPath = "src/test/java")
 public class TestHistoricalEntity implements TypedObject, IdentifiedObject {
 
 	/**

@@ -1,4 +1,4 @@
-package org.coldis.library.test.persistence.history.historical.dao;
+package org.coldis.library.test.persistence.history.historical.repository;
 
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;

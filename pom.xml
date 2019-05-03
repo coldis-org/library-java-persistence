@@ -18,7 +18,7 @@
 	<name>Persistence utilities</name>
 
 	<properties>
-		<project.config.source.test.compile.annotationProcessors>org.coldis.library.persistence.history.EntityHistoryGenerator</project.config.source.test.compile.annotationProcessors>
+		<project.config.source.test.compile.annotationProcessors>org.coldis.library.persistence.history.HistoricalEntityGenerator</project.config.source.test.compile.annotationProcessors>
 	</properties>
 
 	<scm>
