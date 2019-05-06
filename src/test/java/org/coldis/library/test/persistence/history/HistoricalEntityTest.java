@@ -1,18 +1,29 @@
 package org.coldis.library.test.persistence.history;
 
 import org.apache.commons.collections4.IterableUtils;
+import org.coldis.library.serialization.json.JsonHelper;
 import org.coldis.library.test.TestHelper;
 import org.coldis.library.test.persistence.history.historical.repository.TestHistoricalEntityHistoryRepository;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Entity history test.
  */
 @SpringBootTest(webEnvironment = WebEnvironment.DEFINED_PORT)
 public class HistoricalEntityTest {
+
+	/**
+	 * Object mapper.
+	 */
+	@Autowired
+	private ObjectMapper objectMapper;
 
 	/**
 	 * Test entity service.
@@ -37,23 +48,38 @@ public class HistoricalEntityTest {
 		final TestHistoricalEntity testHistoricalEntity1 = this.testHistoricalEntityService
 				.save(new TestHistoricalEntity("1"));
 		// Makes sure the new entity state is also replicated as historical data.
-		TestHelper.waitUntilValid(() -> this.testHistoricalEntityHistoryRepository.findAll(), entityHistoryList -> {
-			return IterableUtils.toList(entityHistoryList).stream()
-					.anyMatch(entity -> entity.getState().equals(testHistoricalEntity1));
-		}, TestHelper.REGULAR_WAIT, TestHelper.SHORT_WAIT);
+		Assertions.assertTrue(TestHelper.waitUntilValid(() -> this.testHistoricalEntityHistoryRepository.findAll(),
+				(entityHistoryList) -> IterableUtils.toList(entityHistoryList).stream().anyMatch((entity) -> {
+					// Converts the state into an entity.
+					final TestHistoricalEntity testHistoricalEntity = JsonHelper.convert(this.objectMapper,
+							entity.getState(), new TypeReference<TestHistoricalEntity>() {
+					}, false);
+					// Compares the two entities.
+					return testHistoricalEntity.equals(testHistoricalEntity1);
+				}), TestHelper.LONG_WAIT, TestHelper.SHORT_WAIT));
 		// Updates the test entity.
 		testHistoricalEntity1.setTest("2");
 		final TestHistoricalEntity testHistoricalEntity2 = this.testHistoricalEntityService.save(testHistoricalEntity1);
 		// Makes sure the new entity state (and the old one) is also replicated as
 		// historical data.
-		TestHelper.waitUntilValid(() -> this.testHistoricalEntityHistoryRepository.findAll(), entityHistoryList -> {
-			return IterableUtils.toList(entityHistoryList).stream()
-					.anyMatch(entity -> entity.getState().equals(testHistoricalEntity1));
-		}, TestHelper.REGULAR_WAIT, TestHelper.SHORT_WAIT);
-		TestHelper.waitUntilValid(() -> this.testHistoricalEntityHistoryRepository.findAll(), entityHistoryList -> {
-			return IterableUtils.toList(entityHistoryList).stream()
-					.anyMatch(entity -> entity.getState().equals(testHistoricalEntity2));
-		}, TestHelper.REGULAR_WAIT, TestHelper.SHORT_WAIT);
+		Assertions.assertTrue(TestHelper.waitUntilValid(() -> this.testHistoricalEntityHistoryRepository.findAll(),
+				(entityHistoryList) -> IterableUtils.toList(entityHistoryList).stream().anyMatch((entity) -> {
+					// Converts the state into an entity.
+					final TestHistoricalEntity testHistoricalEntity = JsonHelper.convert(this.objectMapper,
+							entity.getState(), new TypeReference<TestHistoricalEntity>() {
+					}, false);
+					// Compares the two entities.
+					return testHistoricalEntity.equals(testHistoricalEntity1);
+				}), TestHelper.LONG_WAIT, TestHelper.SHORT_WAIT));
+		Assertions.assertTrue(TestHelper.waitUntilValid(() -> this.testHistoricalEntityHistoryRepository.findAll(),
+				(entityHistoryList) -> IterableUtils.toList(entityHistoryList).stream().anyMatch((entity) -> {
+					// Converts the state into an entity.
+					final TestHistoricalEntity testHistoricalEntity = JsonHelper.convert(this.objectMapper,
+							entity.getState(), new TypeReference<TestHistoricalEntity>() {
+					}, false);
+					// Compares the two entities.
+					return testHistoricalEntity.equals(testHistoricalEntity2);
+				}), TestHelper.LONG_WAIT, TestHelper.SHORT_WAIT));
 	}
 
 }

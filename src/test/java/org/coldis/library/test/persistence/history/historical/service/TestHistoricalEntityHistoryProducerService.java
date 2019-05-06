@@ -1,5 +1,7 @@
 package  org.coldis.library.test.persistence.history.historical.service;
 
+import java.util.Map;
+
 import org.coldis.library.model.ModelView.Persistent;
 import org.coldis.library.persistence.history.EntityHistoryProducerService;
 import org.coldis.library.serialization.json.JsonHelper;
@@ -9,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Controller;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.coldis.library.test.persistence.history.TestHistoricalEntity;
@@ -48,11 +51,12 @@ public class TestHistoricalEntityHistoryProducerService implements EntityHistory
 	@Override
 	public void handleUpdate(final TestHistoricalEntity state) {
 		// Sends the update to be processed asynchronously.
-		LOGGER.debug("Sending 'org.coldis.library.test.persistence.history.historical.model.TestHistoricalEntityHistory' update to history queue '" + 
+		TestHistoricalEntityHistoryProducerService.LOGGER.debug("Sending 'org.coldis.library.test.persistence.history.historical.model.TestHistoricalEntityHistory' update to history queue '" + 
 				TestHistoricalEntityHistoryProducerService.HISTORICAL_ENTITY_QUEUE + "'.");
 		this.jmsTemplate.convertAndSend(TestHistoricalEntityHistoryProducerService.HISTORICAL_ENTITY_QUEUE,
-				JsonHelper.serialize(this.objectMapper, state, Persistent.class, false));
-		LOGGER.debug("'org.coldis.library.test.persistence.history.historical.model.TestHistoricalEntityHistory' update sent to history queue '" + 
+				JsonHelper.convert(this.objectMapper, state, new TypeReference<Map<String, ?>>() {
+				}, false));
+		TestHistoricalEntityHistoryProducerService.LOGGER.debug("'org.coldis.library.test.persistence.history.historical.model.TestHistoricalEntityHistory' update sent to history queue '" + 
 				TestHistoricalEntityHistoryProducerService.HISTORICAL_ENTITY_QUEUE + "'.");
 	}
 

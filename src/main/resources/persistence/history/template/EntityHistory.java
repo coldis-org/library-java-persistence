@@ -22,7 +22,7 @@ import org.coldis.library.persistence.history.EntityHistory;
 @Entity
 @Table(indexes = { @Index(columnList = "updatedAt") })
 public class ${historicalEntity.getEntityTypeName()} extends AbstractTimestampedEntity
-		implements EntityHistory<Map<String, Object>> {
+		implements EntityHistory<Map<String, ?>> {
 
 	/**
 	 * Serial.
@@ -56,27 +56,8 @@ public class ${historicalEntity.getEntityTypeName()} extends AbstractTimestamped
 	/**
 	 * Entity state.
 	 */
-	private Map<String, Object> state;
-
-	/**
-	 * @see org.coldis.library.persistence.history.EntityHistory${h}getState()
-	 */
-	@Convert(converter = MapJsonConverter.class)
-	@Column(columnDefinition = "${historicalEntity.getStateColumnDefinition()}")
-	public Map<String, Object> getState() {
-		return state;
-	}
-
-	/**
-	 * Sets the entity state.
-	 *
-	 * @param state
-	 *            New entity state.
-	 */
-	protected void setState(final Map<String, Object> state) {
-		this.state = state;
-	}
-
+	private Map<String, ?> state;
+	
 	/**
 	 * No arguments constructor.
 	 */
@@ -88,11 +69,30 @@ public class ${historicalEntity.getEntityTypeName()} extends AbstractTimestamped
 	 *
 	 * @param state New entity state.
 	 */
-	public ${historicalEntity.getEntityTypeName()}(final Map<String, Object> state) {
+	public ${historicalEntity.getEntityTypeName()}(final Map<String, ?> state) {
 		super();
 		this.state = state;
 	}
-	
+
+	/**
+	 * @see org.coldis.library.persistence.history.EntityHistory${h}getState()
+	 */
+	@Convert(converter = MapJsonConverter.class)
+	@Column(columnDefinition = "${historicalEntity.getStateColumnDefinition()}")
+	public Map<String, ?> getState() {
+		return state;
+	}
+
+	/**
+	 * Sets the entity state.
+	 *
+	 * @param state
+	 *            New entity state.
+	 */
+	protected void setState(final Map<String, ?> state) {
+		this.state = state;
+	}
+
 	/**
 	 * @see java.lang.Object${h}hashCode()
 	 */

@@ -25,7 +25,7 @@ public class TestHistoricalEntityService {
 	 * @return        The saved entity.
 	 */
 	@Transactional
-	TestHistoricalEntity save(final TestHistoricalEntity entity) {
+	public TestHistoricalEntity save(final TestHistoricalEntity entity) {
 		return this.testHistoricalEntityRepository.save(entity);
 	}
 

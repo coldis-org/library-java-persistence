@@ -1,5 +1,7 @@
 package  ${historicalEntity.getServicePackageName()};
 
+import java.util.Map;
+
 import org.coldis.library.model.ModelView.Persistent;
 import org.coldis.library.persistence.history.EntityHistoryProducerService;
 import org.coldis.library.serialization.json.JsonHelper;
@@ -9,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Controller;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import ${historicalEntity.getOriginalEntityQualifiedTypeName()};
@@ -48,11 +51,12 @@ public class ${historicalEntity.getProducerServiceTypeName()} implements EntityH
 	@Override
 	public void handleUpdate(final ${historicalEntity.getOriginalEntityTypeName()} state) {
 		// Sends the update to be processed asynchronously.
-		LOGGER.debug("Sending '${historicalEntity.getEntityQualifiedTypeName()}' update to history queue '" + 
+		${historicalEntity.getProducerServiceTypeName()}.LOGGER.debug("Sending '${historicalEntity.getEntityQualifiedTypeName()}' update to history queue '" + 
 				${historicalEntity.getProducerServiceTypeName()}.HISTORICAL_ENTITY_QUEUE + "'.");
 		this.jmsTemplate.convertAndSend(${historicalEntity.getProducerServiceTypeName()}.HISTORICAL_ENTITY_QUEUE,
-				JsonHelper.serialize(this.objectMapper, state, Persistent.class, false));
-		LOGGER.debug("'${historicalEntity.getEntityQualifiedTypeName()}' update sent to history queue '" + 
+				JsonHelper.convert(this.objectMapper, state, new TypeReference<Map<String, ?>>() {
+				}, false));
+		${historicalEntity.getProducerServiceTypeName()}.LOGGER.debug("'${historicalEntity.getEntityQualifiedTypeName()}' update sent to history queue '" + 
 				${historicalEntity.getProducerServiceTypeName()}.HISTORICAL_ENTITY_QUEUE + "'.");
 	}
 
