@@ -4,7 +4,6 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.SequenceGenerator;
 
 import org.coldis.library.model.IdentifiedObject;
 import org.coldis.library.persistence.model.AbstractExpirableEntity;
@@ -32,8 +31,7 @@ public class TestEntity extends AbstractExpirableEntity implements IdentifiedObj
 	 */
 	@Id
 	@Override
-	@SequenceGenerator(name = "test_entity_id")
-	@GeneratedValue(strategy = GenerationType.AUTO, generator = "test_entity_id")
+	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "TestEntitySequence")
 	public Long getId() {
 		return this.id;
 	}

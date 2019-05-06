@@ -12,13 +12,13 @@ import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
  * Entity history test.
  */
 @SpringBootTest(webEnvironment = WebEnvironment.DEFINED_PORT)
-public class EntityHistoryTest {
+public class HistoricalEntityTest {
 
 	/**
-	 * Test entity repository.
+	 * Test entity service.
 	 */
 	@Autowired
-	private TestHistoricalEntityRepository testHistoricalEntityRepository;
+	private TestHistoricalEntityService testHistoricalEntityService;
 
 	/**
 	 * Test entity history repository.
@@ -34,7 +34,7 @@ public class EntityHistoryTest {
 	@Test
 	public void test00EntityHistory() throws Exception {
 		// Creates a new test entity.
-		final TestHistoricalEntity testHistoricalEntity1 = this.testHistoricalEntityRepository
+		final TestHistoricalEntity testHistoricalEntity1 = this.testHistoricalEntityService
 				.save(new TestHistoricalEntity("1"));
 		// Makes sure the new entity state is also replicated as historical data.
 		TestHelper.waitUntilValid(() -> this.testHistoricalEntityHistoryRepository.findAll(), entityHistoryList -> {
@@ -43,8 +43,7 @@ public class EntityHistoryTest {
 		}, TestHelper.REGULAR_WAIT, TestHelper.SHORT_WAIT);
 		// Updates the test entity.
 		testHistoricalEntity1.setTest("2");
-		final TestHistoricalEntity testHistoricalEntity2 = this.testHistoricalEntityRepository
-				.save(testHistoricalEntity1);
+		final TestHistoricalEntity testHistoricalEntity2 = this.testHistoricalEntityService.save(testHistoricalEntity1);
 		// Makes sure the new entity state (and the old one) is also replicated as
 		// historical data.
 		TestHelper.waitUntilValid(() -> this.testHistoricalEntityHistoryRepository.findAll(), entityHistoryList -> {

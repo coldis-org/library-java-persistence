@@ -6,12 +6,12 @@
 
 	<parent>
 		<groupId>org.coldis</groupId>
-		<artifactId>common-config</artifactId>
+		<artifactId>configuration</artifactId>
 		<version>0.0.1-SNAPSHOT</version>
 	</parent>
 
 	<groupId>org.coldis.library</groupId>
-	<artifactId>utils-persistence</artifactId>
+	<artifactId>persistence</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
@@ -22,9 +22,9 @@
 	</properties>
 
 	<scm>
-		<url>https://github.com/coldis-org/utils-persistence</url>
-		<connection>scm:git:https://github.com/coldis-org/utils-persistence.git</connection>
-		<developerConnection>scm:git:git@github.com:coldis-org/utils-persistence.git</developerConnection>
+		<url>https://github.com/coldis-org/library-java-persistence</url>
+		<connection>scm:git:https://github.com/coldis-org/library-java-persistence.git</connection>
+		<developerConnection>scm:git:git@github.com:coldis-org/library-java-persistence.git</developerConnection>
 		<tag>HEAD</tag>
 	</scm>
 
@@ -32,20 +32,29 @@
 
 		<dependency>
 			<groupId>org.coldis.library</groupId>
-			<artifactId>utils-core</artifactId>
+			<artifactId>core</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>org.coldis.library</groupId>
-			<artifactId>utils-dto</artifactId>
+			<artifactId>dto</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>org.coldis.library</groupId>
-			<artifactId>utils-serialization</artifactId>
+			<artifactId>serialization</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
 
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-autoconfigure</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-aspects</artifactId>
+			<optional>true</optional>
+		</dependency>
 		<dependency>
 			<groupId>org.springframework.data</groupId>
 			<artifactId>spring-data-jpa</artifactId>
@@ -83,6 +92,12 @@
 		</dependency>
 
 		<dependency>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
 			<groupId>javax.persistence</groupId>
 			<artifactId>javax.persistence-api</artifactId>
 		</dependency>
@@ -98,19 +113,19 @@
 		</dependency>
 
 		<dependency>
-			<groupId>com.h2database</groupId>
-			<artifactId>h2</artifactId>
-			<scope>test</scope>
-		</dependency>
-
-		<dependency>
 			<groupId>org.apache.velocity</groupId>
 			<artifactId>velocity</artifactId>
 		</dependency>
 
 		<dependency>
 			<groupId>org.coldis.library</groupId>
-			<artifactId>utils-test</artifactId>
+			<artifactId>test</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.coldis.library</groupId>
+			<artifactId>spring-boot</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 			<scope>test</scope>
 		</dependency>

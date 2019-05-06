@@ -12,13 +12,13 @@ import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
  * Persistence model test.
  */
 @SpringBootTest(webEnvironment = WebEnvironment.DEFINED_PORT)
-public class PersistenceModelTest {
+public class PersistenceTest {
 
 	/**
-	 * Test entity repository.
+	 * Test entity service.
 	 */
 	@Autowired
-	private TestEntityRepository testEntityRepository;
+	private TestEntityService testEntityService;
 
 	/**
 	 * Tests timestamp and expiration.
@@ -33,7 +33,7 @@ public class PersistenceModelTest {
 		Assertions.assertNull(testEntity.getUpdatedAt());
 		Assertions.assertNull(testEntity.getExpiredAt());
 		// Saves the entity.
-		testEntity = this.testEntityRepository.save(testEntity);
+		testEntity = this.testEntityService.save(testEntity);
 		// Gets the last update date/time.
 		final LocalDateTime updatedAt1 = testEntity.getUpdatedAt();
 		// Makes sure the id, creation and last update have been set.
@@ -43,7 +43,7 @@ public class PersistenceModelTest {
 		// Sets an expired expiration date.
 		testEntity.setExpiredAt(testEntity.getCreatedAt());
 		// Saves the entity.
-		testEntity = this.testEntityRepository.save(testEntity);
+		testEntity = this.testEntityService.save(testEntity);
 		// Gets the last update date/time.
 		final LocalDateTime updatedAt2 = testEntity.getUpdatedAt();
 		// Makes sure the expiration has been set and entity is expired.
@@ -52,7 +52,7 @@ public class PersistenceModelTest {
 		// Sets a non-expired expiration date.
 		testEntity.setExpiredAt(testEntity.getCreatedAt().plusDays(2));
 		// Saves the entity.
-		testEntity = this.testEntityRepository.save(testEntity);
+		testEntity = this.testEntityService.save(testEntity);
 		// Gets the last update date/time.
 		final LocalDateTime updatedAt3 = testEntity.getUpdatedAt();
 		// Makes sure the expiration has been set and entity is not expired.

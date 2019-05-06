@@ -3,7 +3,6 @@ package  ${historicalEntity.getServicePackageName()};
 import java.util.Map;
 
 import org.coldis.library.exception.IntegrationException;
-import org.coldis.library.model.ModelView.Persistent;
 import org.coldis.library.model.SimpleMessage;
 import org.coldis.library.persistence.history.EntityHistoryProducerService;
 import org.coldis.library.serialization.json.JsonHelper;
@@ -11,10 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.annotation.JmsListener;
-import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Controller;
-import org.springframework.transaction.annotation.Isolation;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -35,9 +31,9 @@ public class ${historicalEntity.getConsumerServiceTypeName()} {
 	private static final Logger LOGGER = LoggerFactory.getLogger(${historicalEntity.getConsumerServiceTypeName()}.class);
 	
 	/**
-	 * Entity update queue.
+	 * Historical entity queue.
 	 */
-	private static final String HISTORICAL_ENTITY_QUEUE = "${histSrvQueueName}";
+	private static final String HISTORICAL_ENTITY_QUEUE = "${historicalEntity.getQueueName()}";
 
 	/**
 	 * Entity history repository.
@@ -56,9 +52,9 @@ public class ${historicalEntity.getConsumerServiceTypeName()} {
 	 * Actually handles the entity state update and saves in the historical data.
 	 * @param state	Current entity state.
 	 */
+	@Transactional
 	@JmsListener(destination = ${historicalEntity.getConsumerServiceTypeName()}.HISTORICAL_ENTITY_QUEUE)
-	@Transactional(propagation = Propagation.REQUIRED, transactionManager = "historicalTransactionManager")
-	public void handleUpdate(final String state) throws IntegrationException {
+	public void handleUpdate(final String state) {
 		LOGGER.debug("Processing '${historicalEntity.getEntityQualifiedTypeName()}' history update."); 
 		// Tries to process the entity history update.
 		try {

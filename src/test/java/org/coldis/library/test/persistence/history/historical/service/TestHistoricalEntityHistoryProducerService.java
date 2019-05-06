@@ -1,8 +1,6 @@
 package  org.coldis.library.test.persistence.history.historical.service;
 
-import org.coldis.library.exception.IntegrationException;
 import org.coldis.library.model.ModelView.Persistent;
-import org.coldis.library.model.SimpleMessage;
 import org.coldis.library.persistence.history.EntityHistoryProducerService;
 import org.coldis.library.serialization.json.JsonHelper;
 import org.slf4j.Logger;
@@ -28,9 +26,9 @@ public class TestHistoricalEntityHistoryProducerService implements EntityHistory
 	private static final Logger LOGGER = LoggerFactory.getLogger(TestHistoricalEntityHistoryProducerService.class);
 
 	/**
-	 * Entity update queue.
+	 * Historical entity queue.
 	 */
-	private static final String HISTORICAL_ENTITY_QUEUE = "${histSrvQueueName}";
+	private static final String HISTORICAL_ENTITY_QUEUE = "queue.TestHistoricalEntityHistoryQueue";
 
 	/**
 	 * JMS template for processing original entity updates.

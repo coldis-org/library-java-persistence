@@ -1,4 +1,4 @@
-package org.coldis.library.persistence.config;
+package org.coldis.library.persistence.properties;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
