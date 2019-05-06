@@ -8,7 +8,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 /**
- * Tracks history data for JPA entities.
+ * Tracks historical data for JPA entities.
  */
 @Documented
 @Target(TYPE)

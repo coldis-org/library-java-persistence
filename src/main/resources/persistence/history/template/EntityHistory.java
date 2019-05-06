@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -12,6 +13,7 @@ import javax.persistence.Index;
 import javax.persistence.Table;
 
 import org.coldis.library.persistence.model.AbstractTimestampedEntity;
+import org.coldis.library.persistence.converter.MapJsonConverter;
 import org.coldis.library.persistence.history.EntityHistory;
 
 /**
@@ -37,7 +39,7 @@ public class ${historicalEntity.getEntityTypeName()} extends AbstractTimestamped
 	 */
 	@Id
 	@Override
-	@GeneratedValue(strategy = GenerationType.AUTO)
+	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "${historicalEntity.getSequenceName()}")
 	public Long getId() {
 		return id;
 	}
@@ -59,6 +61,7 @@ public class ${historicalEntity.getEntityTypeName()} extends AbstractTimestamped
 	/**
 	 * @see org.coldis.library.persistence.history.EntityHistory${h}getState()
 	 */
+	@Convert(converter = MapJsonConverter.class)
 	@Column(columnDefinition = "${historicalEntity.getStateColumnDefinition()}")
 	public Map<String, Object> getState() {
 		return state;

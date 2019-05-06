@@ -26,9 +26,9 @@ public class ${historicalEntity.getProducerServiceTypeName()} implements EntityH
 	private static final Logger LOGGER = LoggerFactory.getLogger(${historicalEntity.getProducerServiceTypeName()}.class);
 
 	/**
-	 * Entity update queue.
+	 * Historical entity queue.
 	 */
-	private static final String HISTORICAL_ENTITY_QUEUE = "${histSrvQueueName}";
+	private static final String HISTORICAL_ENTITY_QUEUE = "${historicalEntity.getQueueName()}";
 
 	/**
 	 * JMS template for processing original entity updates.

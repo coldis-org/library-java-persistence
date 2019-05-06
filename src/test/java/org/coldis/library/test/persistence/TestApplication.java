@@ -1,5 +1,6 @@
 package org.coldis.library.test.persistence;
 
+import org.coldis.spring.configuration.DefaultAutoConfiguration;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.client.RestTemplateBuilder;
@@ -9,7 +10,7 @@ import org.springframework.web.client.RestTemplate;
 /**
  * Test application.
  */
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = { DefaultAutoConfiguration.BASE_PACKAGE })
 public class TestApplication {
 
 	/**

@@ -442,4 +442,22 @@ public class HistoricalEntityMetadata {
 		this.stateColumnDefinition = stateColumnDefinition;
 	}
 
+	/**
+	 * Gets the sequence name.
+	 *
+	 * @return The sequence name.
+	 */
+	public String getSequenceName() {
+		return this.getEntityTypeName() + "Sequence";
+	}
+
+	/**
+	 * Gets the queue name.
+	 *
+	 * @return The queue name.
+	 */
+	public String getQueueName() {
+		return "queue." + this.getEntityTypeName() + "Queue";
+	}
+
 }
