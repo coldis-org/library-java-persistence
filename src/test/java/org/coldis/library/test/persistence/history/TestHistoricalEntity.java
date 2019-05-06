@@ -1,5 +1,7 @@
 package org.coldis.library.test.persistence.history;
 
+import java.util.Objects;
+
 import javax.persistence.Entity;
 import javax.persistence.EntityListeners;
 import javax.persistence.GeneratedValue;
@@ -18,8 +20,8 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
  * Test entity.
  */
 @Entity
-@JsonTypeName(value = TestHistoricalEntity.TYPE_NAME)
 @EntityListeners(HistoricalEntityListener.class)
+@JsonTypeName(value = TestHistoricalEntity.TYPE_NAME)
 @HistoricalEntity(basePackageName = "org.coldis.library.test.persistence.history.historical",
 producerTargetPath = "src/test/java", consumerTargetPath = "src/test/java")
 public class TestHistoricalEntity implements TypedObject, IdentifiedObject {
@@ -104,6 +106,32 @@ public class TestHistoricalEntity implements TypedObject, IdentifiedObject {
 	@Transient
 	public String getTypeName() {
 		return TestHistoricalEntity.TYPE_NAME;
+	}
+
+	/**
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		return Objects.hash(this.id, this.test);
+	}
+
+	/**
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(final Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (!(obj instanceof TestHistoricalEntity)) {
+			return false;
+		}
+		final TestHistoricalEntity other = (TestHistoricalEntity) obj;
+		return Objects.equals(this.id, other.id) && Objects.equals(this.test, other.test);
 	}
 
 }

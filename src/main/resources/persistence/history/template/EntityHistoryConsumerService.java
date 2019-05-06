@@ -13,9 +13,6 @@ import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import ${historicalEntity.getEntityQualifiedTypeName()};
 import ${historicalEntity.getRepositoryQualifiedTypeName()};
 
@@ -42,27 +39,18 @@ public class ${historicalEntity.getConsumerServiceTypeName()} {
 	private ${historicalEntity.getRepositoryTypeName()} repository;
 
 	/**
-	 * Object mapper.
-	 */
-	@Autowired
-	private ObjectMapper objectMapper;
-	
-	
-	/**
 	 * Actually handles the entity state update and saves in the historical data.
 	 * @param state	Current entity state.
 	 */
 	@Transactional
 	@JmsListener(destination = ${historicalEntity.getConsumerServiceTypeName()}.HISTORICAL_ENTITY_QUEUE)
-	public void handleUpdate(final String state) {
-		LOGGER.debug("Processing '${historicalEntity.getEntityQualifiedTypeName()}' history update."); 
+	public void handleUpdate(final Map<String, ?> state) {
+		${historicalEntity.getConsumerServiceTypeName()}.LOGGER.debug("Processing '${historicalEntity.getEntityQualifiedTypeName()}' history update."); 
 		// Tries to process the entity history update.
 		try {
 			// Saves the new entity history state.
-			this.repository.save(
-					new ${historicalEntity.getEntityTypeName()}(JsonHelper.deserialize(objectMapper,
-							state, new TypeReference<Map<String, Object>>(){}, false)));
-			LOGGER.debug("'${historicalEntity.getEntityQualifiedTypeName()}' history update processed."); 
+			this.repository.save(new ${historicalEntity.getEntityTypeName()}(state));
+			${historicalEntity.getConsumerServiceTypeName()}.LOGGER.debug("'${historicalEntity.getEntityQualifiedTypeName()}' history update processed."); 
 		}
 		// If the entity state cannot be saved as historical data.
 		catch (final Exception exception) {
