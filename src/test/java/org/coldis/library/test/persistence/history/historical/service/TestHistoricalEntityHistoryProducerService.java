@@ -4,7 +4,7 @@ import java.util.Map;
 
 import org.coldis.library.model.ModelView.Persistent;
 import org.coldis.library.persistence.history.EntityHistoryProducerService;
-import org.coldis.library.serialization.json.JsonHelper;
+import org.coldis.library.serialization.ObjectMapperHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,7 +54,7 @@ public class TestHistoricalEntityHistoryProducerService implements EntityHistory
 		TestHistoricalEntityHistoryProducerService.LOGGER.debug("Sending 'org.coldis.library.test.persistence.history.historical.model.TestHistoricalEntityHistory' update to history queue '" + 
 				TestHistoricalEntityHistoryProducerService.HISTORICAL_ENTITY_QUEUE + "'.");
 		this.jmsTemplate.convertAndSend(TestHistoricalEntityHistoryProducerService.HISTORICAL_ENTITY_QUEUE,
-				JsonHelper.convert(this.objectMapper, state, new TypeReference<Map<String, ?>>() {
+				ObjectMapperHelper.convert(this.objectMapper, state, new TypeReference<Map<String, ?>>() {
 				}, false));
 		TestHistoricalEntityHistoryProducerService.LOGGER.debug("'org.coldis.library.test.persistence.history.historical.model.TestHistoricalEntityHistory' update sent to history queue '" + 
 				TestHistoricalEntityHistoryProducerService.HISTORICAL_ENTITY_QUEUE + "'.");

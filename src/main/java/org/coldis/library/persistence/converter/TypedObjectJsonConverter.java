@@ -8,7 +8,7 @@ import org.apache.commons.lang3.ClassUtils;
 import org.coldis.library.exception.IntegrationException;
 import org.coldis.library.model.SimpleMessage;
 import org.coldis.library.model.TypedObject;
-import org.coldis.library.serialization.json.JsonHelper;
+import org.coldis.library.serialization.ObjectMapperHelper;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -30,10 +30,10 @@ public class TypedObjectJsonConverter extends AbstractJsonConverter<TypedObject>
 	protected TypedObject convertToEntityAttribute(final ObjectMapper jsonMapper, final String jsonObject,
 			final String objectTypeAttribute) {
 		// Converts the JSON into a map.
-		final Map<?, ?> mapObject = JsonHelper.deserialize(jsonMapper, jsonObject, Map.class, false);
+		final Map<?, ?> mapObject = ObjectMapperHelper.deserialize(jsonMapper, jsonObject, Map.class, false);
 		// Returns the object (by converting the map into the object type).
 		try {
-			return (TypedObject) JsonHelper.convert(jsonMapper, mapObject,
+			return (TypedObject) ObjectMapperHelper.convert(jsonMapper, mapObject,
 					ClassUtils.getClass((String) mapObject.get(objectTypeAttribute)), false);
 		}
 		// // If the object type cannot be found.

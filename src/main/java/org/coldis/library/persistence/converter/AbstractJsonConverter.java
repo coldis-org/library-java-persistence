@@ -3,7 +3,7 @@ package org.coldis.library.persistence.converter;
 import javax.persistence.AttributeConverter;
 
 import org.coldis.library.model.ModelView;
-import org.coldis.library.serialization.json.JsonHelper;
+import org.coldis.library.serialization.ObjectMapperHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,7 +32,7 @@ public abstract class AbstractJsonConverter<ObjectType> implements AttributeConv
 	@Override
 	public String convertToDatabaseColumn(final ObjectType originalObject) {
 		// Returns the JSON object.
-		return JsonHelper.serialize(this.objectMapper, originalObject, AbstractJsonConverter.SERIALIZATION_VIEW, false);
+		return ObjectMapperHelper.serialize(this.objectMapper, originalObject, AbstractJsonConverter.SERIALIZATION_VIEW, false);
 	}
 
 	/**

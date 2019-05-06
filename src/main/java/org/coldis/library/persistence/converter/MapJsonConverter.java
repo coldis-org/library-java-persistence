@@ -4,7 +4,7 @@ import java.util.Map;
 
 import javax.persistence.Converter;
 
-import org.coldis.library.serialization.json.JsonHelper;
+import org.coldis.library.serialization.ObjectMapperHelper;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -21,7 +21,7 @@ public class MapJsonConverter extends AbstractJsonConverter<Map<?, ?>> {
 	 */
 	@Override
 	protected Map<String, Object> convertToEntityAttribute(final ObjectMapper jsonMapper, final String jsonObject) {
-		return JsonHelper.deserialize(jsonMapper, jsonObject, new TypeReference<Map<String, Object>>() {
+		return ObjectMapperHelper.deserialize(jsonMapper, jsonObject, new TypeReference<Map<String, Object>>() {
 		}, false);
 	}
 
