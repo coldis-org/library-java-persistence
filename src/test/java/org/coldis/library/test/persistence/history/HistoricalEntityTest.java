@@ -1,7 +1,7 @@
 package org.coldis.library.test.persistence.history;
 
 import org.apache.commons.collections4.IterableUtils;
-import org.coldis.library.serialization.json.JsonHelper;
+import org.coldis.library.serialization.ObjectMapperHelper;
 import org.coldis.library.test.TestHelper;
 import org.coldis.library.test.persistence.history.historical.repository.TestHistoricalEntityHistoryRepository;
 import org.junit.jupiter.api.Assertions;
@@ -51,7 +51,7 @@ public class HistoricalEntityTest {
 		Assertions.assertTrue(TestHelper.waitUntilValid(() -> this.testHistoricalEntityHistoryRepository.findAll(),
 				(entityHistoryList) -> IterableUtils.toList(entityHistoryList).stream().anyMatch((entity) -> {
 					// Converts the state into an entity.
-					final TestHistoricalEntity testHistoricalEntity = JsonHelper.convert(this.objectMapper,
+					final TestHistoricalEntity testHistoricalEntity = ObjectMapperHelper.convert(this.objectMapper,
 							entity.getState(), new TypeReference<TestHistoricalEntity>() {
 					}, false);
 					// Compares the two entities.
@@ -65,7 +65,7 @@ public class HistoricalEntityTest {
 		Assertions.assertTrue(TestHelper.waitUntilValid(() -> this.testHistoricalEntityHistoryRepository.findAll(),
 				(entityHistoryList) -> IterableUtils.toList(entityHistoryList).stream().anyMatch((entity) -> {
 					// Converts the state into an entity.
-					final TestHistoricalEntity testHistoricalEntity = JsonHelper.convert(this.objectMapper,
+					final TestHistoricalEntity testHistoricalEntity = ObjectMapperHelper.convert(this.objectMapper,
 							entity.getState(), new TypeReference<TestHistoricalEntity>() {
 					}, false);
 					// Compares the two entities.
@@ -74,7 +74,7 @@ public class HistoricalEntityTest {
 		Assertions.assertTrue(TestHelper.waitUntilValid(() -> this.testHistoricalEntityHistoryRepository.findAll(),
 				(entityHistoryList) -> IterableUtils.toList(entityHistoryList).stream().anyMatch((entity) -> {
 					// Converts the state into an entity.
-					final TestHistoricalEntity testHistoricalEntity = JsonHelper.convert(this.objectMapper,
+					final TestHistoricalEntity testHistoricalEntity = ObjectMapperHelper.convert(this.objectMapper,
 							entity.getState(), new TypeReference<TestHistoricalEntity>() {
 					}, false);
 					// Compares the two entities.
