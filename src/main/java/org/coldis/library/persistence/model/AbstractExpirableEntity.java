@@ -42,13 +42,16 @@ public abstract class AbstractExpirableEntity extends AbstractTimestampedEntity 
 	 */
 	public static LocalDateTime getExpirationDate(final LocalDateTime expirationBaseDate, final ChronoUnit plusUnit,
 			final Long plusValue) {
-		return expirationBaseDate.plus(plusValue, plusUnit);
+		return expirationBaseDate == null ? null : expirationBaseDate.plus(plusValue, plusUnit);
 	}
 
 	/**
 	 * Updates the expiration date.
+	 *
+	 * @return The updated expiration date.
 	 */
-	protected void updateExpiredAt() {
+	protected LocalDateTime updateExpiredAt() {
+		return this.expiredAt;
 	}
 
 	/**
@@ -59,8 +62,8 @@ public abstract class AbstractExpirableEntity extends AbstractTimestampedEntity 
 	@Column(columnDefinition = "TIMESTAMP WITH TIME ZONE")
 	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public LocalDateTime getExpiredAt() {
-		// Makes sue the expiration date is updated.
-		this.updateExpiredAt();
+		// Makes sure the expiration date is updated.
+		this.expiredAt = this.updateExpiredAt();
 		// Returns the expiration date.
 		return this.expiredAt;
 	}
