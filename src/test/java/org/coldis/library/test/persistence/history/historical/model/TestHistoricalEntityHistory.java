@@ -22,7 +22,7 @@ import org.coldis.library.persistence.history.EntityHistory;
 @Entity
 @Table(indexes = { @Index(columnList = "updatedAt") })
 public class TestHistoricalEntityHistory extends AbstractTimestampedEntity
-		implements EntityHistory<Map<String, ?>> {
+		implements EntityHistory<Map<String, Object>> {
 
 	/**
 	 * Serial.
@@ -56,7 +56,7 @@ public class TestHistoricalEntityHistory extends AbstractTimestampedEntity
 	/**
 	 * Entity state.
 	 */
-	private Map<String, ?> state;
+	private Map<String, Object> state;
 	
 	/**
 	 * No arguments constructor.
@@ -69,7 +69,7 @@ public class TestHistoricalEntityHistory extends AbstractTimestampedEntity
 	 *
 	 * @param state New entity state.
 	 */
-	public TestHistoricalEntityHistory(final Map<String, ?> state) {
+	public TestHistoricalEntityHistory(final Map<String, Object> state) {
 		super();
 		this.state = state;
 	}
@@ -79,7 +79,7 @@ public class TestHistoricalEntityHistory extends AbstractTimestampedEntity
 	 */
 	@Convert(converter = MapJsonConverter.class)
 	@Column(columnDefinition = "JSONB")
-	public Map<String, ?> getState() {
+	public Map<String, Object> getState() {
 		return state;
 	}
 
@@ -89,7 +89,7 @@ public class TestHistoricalEntityHistory extends AbstractTimestampedEntity
 	 * @param state
 	 *            New entity state.
 	 */
-	protected void setState(final Map<String, ?> state) {
+	protected void setState(final Map<String, Object> state) {
 		this.state = state;
 	}
 
