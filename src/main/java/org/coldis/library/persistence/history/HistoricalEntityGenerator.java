@@ -52,8 +52,8 @@ public class HistoricalEntityGenerator extends AbstractProcessor {
 		// Creates a new velocity context and sets its variables.
 		final VelocityContext velocityContext = new VelocityContext();
 		// Sets the context values.
-		velocityContext.put("h", "#");
 		velocityContext.put("historicalEntity", historicalEntityMetadata);
+		velocityContext.put("h", "#");
 		// Gets the templates for the entity history classes.
 		final Template entityTemplate = velocityEngine.getTemplate(historicalEntityMetadata.getEntityTemplatePath());
 		final Template repositoryTemplate = velocityEngine
