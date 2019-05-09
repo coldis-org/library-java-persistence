@@ -13,7 +13,7 @@ import com.fasterxml.jackson.annotation.JsonView;
  * Cached entity.
  */
 @MappedSuperclass
-public abstract class AbstractCachedEntity extends AbstractExpirableEntity implements TypedObject {
+public abstract class AbstractCachedEntity extends AbstractTimestampedExpirableEntity implements TypedObject {
 
 	/**
 	 * Serial.
