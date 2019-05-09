@@ -7,8 +7,8 @@ import javax.persistence.EntityListeners;
 import javax.persistence.MappedSuperclass;
 
 import org.coldis.library.dto.DtoAttribute;
+import org.coldis.library.model.AbstractTimestampedObject;
 import org.coldis.library.model.ModelView;
-import org.coldis.library.model.TimestampedObject;
 
 import com.fasterxml.jackson.annotation.JsonView;
 
@@ -17,22 +17,12 @@ import com.fasterxml.jackson.annotation.JsonView;
  */
 @MappedSuperclass
 @EntityListeners(value = EntityTimestampListener.class)
-public abstract class AbstractTimestampedEntity implements TimestampedObject {
+public abstract class AbstractTimestampedEntity extends AbstractTimestampedObject {
 
 	/**
 	 * Serial
 	 */
 	private static final long serialVersionUID = -4206189779959504800L;
-
-	/**
-	 * Object creation date/time.
-	 */
-	private LocalDateTime createdAt;
-
-	/**
-	 * Object last update date/time.
-	 */
-	private LocalDateTime updatedAt;
 
 	/**
 	 * @see org.coldis.library.model.TimestampedObject#getCreatedAt()
@@ -42,15 +32,7 @@ public abstract class AbstractTimestampedEntity implements TimestampedObject {
 	@Column(columnDefinition = "TIMESTAMP WITH TIME ZONE", nullable = false)
 	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public LocalDateTime getCreatedAt() {
-		return this.createdAt;
-	}
-
-	/**
-	 * @see org.coldis.library.model.TimestampedObject#setCreatedAt(java.time.LocalDateTime)
-	 */
-	@Override
-	public void setCreatedAt(final LocalDateTime createdAt) {
-		this.createdAt = createdAt;
+		return super.getCreatedAt();
 	}
 
 	/**
@@ -61,15 +43,7 @@ public abstract class AbstractTimestampedEntity implements TimestampedObject {
 	@Column(columnDefinition = "TIMESTAMP WITH TIME ZONE", nullable = false)
 	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public LocalDateTime getUpdatedAt() {
-		return this.updatedAt;
-	}
-
-	/**
-	 * @see org.coldis.library.model.TimestampedObject#setUpdatedAt(java.time.LocalDateTime)
-	 */
-	@Override
-	public void setUpdatedAt(final LocalDateTime updatedAt) {
-		this.updatedAt = updatedAt;
+		return super.getUpdatedAt();
 	}
 
 }

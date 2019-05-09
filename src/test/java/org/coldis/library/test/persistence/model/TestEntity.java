@@ -6,13 +6,13 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 
 import org.coldis.library.model.IdentifiedObject;
-import org.coldis.library.persistence.model.AbstractExpirableEntity;
+import org.coldis.library.persistence.model.AbstractTimestampedExpirableEntity;
 
 /**
  * Test entity.
  */
 @Entity
-public class TestEntity extends AbstractExpirableEntity implements IdentifiedObject {
+public class TestEntity extends AbstractTimestampedExpirableEntity implements IdentifiedObject {
 
 	/**
 	 * Serial.
