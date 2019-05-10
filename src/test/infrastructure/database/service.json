@@ -37,7 +37,8 @@
 		"USER_NAME": "persistence",
 		"USER_PASSWORD": "persistence",
 		"DATABASE_NAME": "persistence",
-		"ENABLE_JSON_STR_CAST": true,
+		"ENABLE_JSON_CAST": true,
+		"ENABLE_UNACCENT": true,
 		"REPLICATOR_USER_NAME": "replicator",
 		"REPLICATOR_USER_PASSWORD": "persistence"
 	},
