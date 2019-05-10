@@ -74,7 +74,7 @@ public abstract class AbstractTimestampedExpirableEntity extends AbstractTimesta
 	 * @see org.coldis.library.model.AbstractExpirableObject#getExpired()
 	 */
 	@Override
-	@DtoAttribute(readOnly = true)
+	@DtoAttribute(readOnly = true, usedInComparison = false)
 	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public Boolean getExpired() {
 		return super.getExpired();
