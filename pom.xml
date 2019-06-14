@@ -7,7 +7,7 @@
 	<parent>
 		<groupId>org.coldis</groupId>
 		<artifactId>configuration</artifactId>
-		<version>0.0.1-SNAPSHOT</version>
+		<version>0.0.5</version>
 	</parent>
 
 	<groupId>org.coldis.library</groupId>
@@ -18,7 +18,7 @@
 	<name>Persistence utilities</name>
 
 	<properties>
-		<project.config.source.test.compile.annotationProcessors>org.coldis.library.persistence.history.HistoricalEntityGenerator</project.config.source.test.compile.annotationProcessors>
+		<project.config.source.test.compile.annotationProcessors>org.coldis.library.dto.DtoGenerator,org.coldis.library.service.client.generator.ServiceClientGenerator,org.coldis.library.persistence.history.HistoricalEntityGenerator</project.config.source.test.compile.annotationProcessors>
 	</properties>
 
 	<scm>
@@ -33,17 +33,23 @@
 		<dependency>
 			<groupId>org.coldis.library</groupId>
 			<artifactId>core</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
+			<version>0.0.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.coldis.library</groupId>
 			<artifactId>dto</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
+			<version>0.0.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.coldis.library</groupId>
 			<artifactId>serialization</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
+			<version>0.0.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.coldis.library</groupId>
+			<artifactId>test</artifactId>
+			<version>0.0.1</version>
+			<scope>test</scope>
 		</dependency>
 
 		<dependency>
@@ -115,19 +121,6 @@
 		<dependency>
 			<groupId>org.apache.velocity</groupId>
 			<artifactId>velocity</artifactId>
-		</dependency>
-
-		<dependency>
-			<groupId>org.coldis.library</groupId>
-			<artifactId>test</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.coldis.library</groupId>
-			<artifactId>spring-boot</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
-			<scope>test</scope>
 		</dependency>
 
 	</dependencies>

@@ -1,13 +1,14 @@
 package org.coldis.library.test.persistence;
 
-import org.coldis.spring.configuration.DefaultAutoConfiguration;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 /**
  * Test application.
  */
-@SpringBootApplication(scanBasePackages = { DefaultAutoConfiguration.BASE_PACKAGE })
+@EnableTransactionManagement
+@SpringBootApplication(scanBasePackages = { "org.coldis" })
 public class TestApplication {
 
 	/**

@@ -10,11 +10,13 @@ import javax.persistence.Id;
 import javax.persistence.Transient;
 
 import org.coldis.library.model.IdentifiedObject;
+import org.coldis.library.model.ModelView;
 import org.coldis.library.model.TypedObject;
 import org.coldis.library.persistence.history.HistoricalEntity;
 import org.coldis.library.persistence.history.HistoricalEntityListener;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import com.fasterxml.jackson.annotation.JsonView;
 
 /**
  * Test entity.
@@ -67,6 +69,7 @@ public class TestHistoricalEntity implements TypedObject, IdentifiedObject {
 	 */
 	@Id
 	@Override
+	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "TestHistoricalEntitySequence")
 	public Long getId() {
 		return this.id;
@@ -86,6 +89,7 @@ public class TestHistoricalEntity implements TypedObject, IdentifiedObject {
 	 *
 	 * @return The test.
 	 */
+	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public String getTest() {
 		return this.test;
 	}
@@ -104,6 +108,7 @@ public class TestHistoricalEntity implements TypedObject, IdentifiedObject {
 	 */
 	@Override
 	@Transient
+	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public String getTypeName() {
 		return TestHistoricalEntity.TYPE_NAME;
 	}
