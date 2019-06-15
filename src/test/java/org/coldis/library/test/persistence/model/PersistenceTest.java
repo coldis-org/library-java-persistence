@@ -11,7 +11,7 @@ import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 /**
  * Persistence model test.
  */
-@SpringBootTest(webEnvironment = WebEnvironment.DEFINED_PORT)
+@SpringBootTest(webEnvironment = WebEnvironment.DEFINED_PORT, properties = "test.properties")
 public class PersistenceTest {
 
 	/**
