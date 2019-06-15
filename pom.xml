@@ -10,7 +10,7 @@
 
 	<groupId>org.coldis.library</groupId>
 	<artifactId>persistence</artifactId>
-	<version>0.0.3-SNAPSHOT</version>
+	<version>0.0.3</version>
 	<packaging>jar</packaging>
 
 	<name>Persistence utilities</name>
@@ -25,7 +25,7 @@
 		<url>https://github.com/coldis-org/library-java-persistence</url>
 		<connection>scm:git:https://github.com/coldis-org/library-java-persistence.git</connection>
 		<developerConnection>scm:git:git@github.com:coldis-org/library-java-persistence.git</developerConnection>
-		<tag>HEAD</tag>
+		<tag>persistence-0.0.3</tag>
 	</scm>
 
 	<dependencies>
