@@ -1,19 +1,33 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
 		<groupId>org.coldis</groupId>
 		<artifactId>configuration</artifactId>
-		<version>0.0.7</version>
+		<version>0.0.1</version>
 	</parent>
 
 	<groupId>org.coldis.library</groupId>
 	<artifactId>persistence</artifactId>
-	<version>0.0.4-SNAPSHOT</version>
+	<version>0.0.1-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<name>Persistence utilities</name>
+	<description>Core Java persistence utilities.</description>
+	<url>http://coldis.org/project/library/java-persistence</url>
+	<licenses>
+		<license>
+			<name>GPL</name>
+		</license>
+	</licenses>
+	<developers>
+		<developer>
+			<email>me@rvcoutinho.com</email>
+		</developer>
+	</developers>
 
 	<properties>
 		<project.config.source.test.compile.annotationProcessors>org.coldis.library.dto.DtoGenerator,org.coldis.library.service.client.generator.ServiceClientGenerator,org.coldis.library.persistence.history.HistoricalEntityGenerator</project.config.source.test.compile.annotationProcessors>
@@ -33,22 +47,22 @@
 		<dependency>
 			<groupId>org.coldis.library</groupId>
 			<artifactId>core</artifactId>
-			<version>0.0.4</version>
+			<version>0.0.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.coldis.library</groupId>
 			<artifactId>dto</artifactId>
-			<version>0.0.4</version>
+			<version>0.0.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.coldis.library</groupId>
 			<artifactId>serialization</artifactId>
-			<version>0.0.4</version>
+			<version>0.0.2</version>
 		</dependency>
 		<dependency>
 			<groupId>org.coldis.library</groupId>
 			<artifactId>test</artifactId>
-			<version>0.0.4</version>
+			<version>0.0.1</version>
 			<scope>test</scope>
 		</dependency>
 

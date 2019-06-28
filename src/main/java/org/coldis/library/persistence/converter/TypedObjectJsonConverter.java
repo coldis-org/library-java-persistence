@@ -29,17 +29,16 @@ public class TypedObjectJsonConverter extends AbstractJsonConverter<TypedObject>
 	 */
 	protected TypedObject convertToEntityAttribute(final ObjectMapper jsonMapper, final String jsonObject,
 			final String objectTypeAttribute) {
-		// Converts the JSON into a map.
-		final Map<?, ?> mapObject = ObjectMapperHelper.deserialize(jsonMapper, jsonObject, Map.class, false);
 		// Returns the object (by converting the map into the object type).
 		try {
+			final Map<?, ?> mapObject = ObjectMapperHelper.deserialize(jsonMapper, jsonObject, Map.class, false);
 			return (TypedObject) ObjectMapperHelper.convert(jsonMapper, mapObject,
 					ClassUtils.getClass((String) mapObject.get(objectTypeAttribute)), false);
 		}
 		// // If the object type cannot be found.
 		catch (final ClassNotFoundException exception) {
 			// Throws a type not found exception.
-			throw new IntegrationException(new SimpleMessage("converter.type.notfound"));
+			throw new IntegrationException(new SimpleMessage("converter.type.notfound"), exception);
 		}
 	}
 
