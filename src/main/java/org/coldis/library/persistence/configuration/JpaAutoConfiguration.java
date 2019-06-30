@@ -1,14 +1,16 @@
 package org.coldis.library.persistence.configuration;
 
-import org.springframework.context.annotation.Configuration;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 /**
  * JPA auto configuration.
  */
-@Configuration
+@EntityScan(basePackages = { PersistenceAutoConfiguration.PERSISTENCE_PACKAGE,
+"${org.coldis.configuration.persistence.jpa.base-package}" })
 @EnableJpaRepositories(enableDefaultTransactions = false,
-basePackages = { "org.coldis.library.persistence", "${org.coldis.configuration.persistence.jpa.base-package}" })
+basePackages = { PersistenceAutoConfiguration.PERSISTENCE_PACKAGE,
+				"${org.coldis.configuration.persistence.jpa.base-package}" })
 public class JpaAutoConfiguration {
 
 }
