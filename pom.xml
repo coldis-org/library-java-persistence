@@ -45,22 +45,22 @@
 		<dependency>
 			<groupId>org.coldis.library</groupId>
 			<artifactId>core</artifactId>
-			<version>0.0.1</version>
+			<version>0.0.3</version>
 		</dependency>
 		<dependency>
 			<groupId>org.coldis.library</groupId>
 			<artifactId>dto</artifactId>
-			<version>0.0.1</version>
-		</dependency>
-		<dependency>
-			<groupId>org.coldis.library</groupId>
-			<artifactId>serialization</artifactId>
 			<version>0.0.2</version>
 		</dependency>
 		<dependency>
 			<groupId>org.coldis.library</groupId>
+			<artifactId>serialization</artifactId>
+			<version>0.0.3</version>
+		</dependency>
+		<dependency>
+			<groupId>org.coldis.library</groupId>
 			<artifactId>test</artifactId>
-			<version>0.0.1</version>
+			<version>0.0.2</version>
 			<scope>test</scope>
 		</dependency>
 
