@@ -3,6 +3,7 @@ package org.coldis.library.persistence.history;
 import javax.persistence.PostPersist;
 import javax.persistence.PostUpdate;
 
+import org.apache.commons.lang3.StringUtils;
 import org.coldis.library.exception.IntegrationException;
 import org.coldis.library.model.SimpleMessage;
 import org.slf4j.Logger;
@@ -50,11 +51,14 @@ public class HistoricalEntityListener implements ApplicationContextAware {
 	@SuppressWarnings("unchecked")
 	private <EntityType> EntityHistoryProducerService<EntityType> getEntityHistoryService(final Object entity,
 			final HistoricalEntity historicalEntityMetadata) throws IntegrationException {
-		// The default service name pattern is used.
-		String serviceName = (entity.getClass().getSimpleName()
-				+ HistoricalEntityMetadata.PRODUCER_SERVICE_TYPE_SUFFIX);
-		// The first letter of the service bean name should be lower case.
-		serviceName = serviceName.substring(0, 1).toLowerCase() + serviceName.substring(1);
+		// Service name is retrieved from the annotation.
+		String serviceName = historicalEntityMetadata.producerServiceBeanName();
+		// If the service name is not defined in the annotation.
+		if (StringUtils.isEmpty(serviceName)) {
+			// The service name pattern is used.
+			serviceName = (entity.getClass().getSimpleName() + HistoricalEntityMetadata.PRODUCER_SERVICE_TYPE_SUFFIX);
+			serviceName = serviceName.substring(0, 1).toLowerCase() + serviceName.substring(1);
+		}
 		// Tries to get the entity history service.
 		try {
 			return HistoricalEntityListener.appContext.getBean(serviceName, EntityHistoryProducerService.class);

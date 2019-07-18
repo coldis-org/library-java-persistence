@@ -75,6 +75,21 @@ public class HistoricalEntityMetadata {
 	private String consumerServiceTemplatePath;
 
 	/**
+	 * Entity history repository bean name.
+	 */
+	private String repositoryBeanName;
+
+	/**
+	 * Entity history producer service bean name.
+	 */
+	private String producerServiceBeanName;
+
+	/**
+	 * Entity history consumer service bean name.
+	 */
+	private String consumerServiceBeanName;
+
+	/**
 	 * Name of the package for entity history classes.
 	 */
 	private String basePackageName;
@@ -103,6 +118,9 @@ public class HistoricalEntityMetadata {
 	 * @param repositoryTemplatePath
 	 * @param producerServiceTemplatePath
 	 * @param consumerServiceTemplatePath
+	 * @param repositoryBeanName
+	 * @param producerServiceBeanName
+	 * @param consumerServiceBeanName
 	 * @param basePackageName
 	 * @param originalEntityPackageName
 	 * @param originalEntityTypeName
@@ -112,6 +130,7 @@ public class HistoricalEntityMetadata {
 	public HistoricalEntityMetadata(final String producerTargetPath, final String consumerTargetPath,
 			final String entityTemplatePath, final String repositoryTemplatePath,
 			final String producerServiceTemplatePath, final String consumerServiceTemplatePath,
+			final String repositoryBeanName, final String producerServiceBeanName, final String consumerServiceBeanName,
 			final String basePackageName, final String originalEntityPackageName, final String originalEntityTypeName,
 			final String stateColumnDefinition) {
 		super();
@@ -121,6 +140,9 @@ public class HistoricalEntityMetadata {
 		this.repositoryTemplatePath = repositoryTemplatePath;
 		this.producerServiceTemplatePath = producerServiceTemplatePath;
 		this.consumerServiceTemplatePath = consumerServiceTemplatePath;
+		this.repositoryBeanName = repositoryBeanName;
+		this.producerServiceBeanName = producerServiceBeanName;
+		this.consumerServiceBeanName = consumerServiceBeanName;
 		this.basePackageName = basePackageName;
 		this.originalEntityPackageName = originalEntityPackageName;
 		this.originalEntityTypeName = originalEntityTypeName;
@@ -233,6 +255,60 @@ public class HistoricalEntityMetadata {
 	 */
 	public void setConsumerServiceTemplatePath(final String consumerServiceTemplatePath) {
 		this.consumerServiceTemplatePath = consumerServiceTemplatePath;
+	}
+
+	/**
+	 * Gets the repositoryBeanName.
+	 *
+	 * @return The repositoryBeanName.
+	 */
+	public String getRepositoryBeanName() {
+		return this.repositoryBeanName;
+	}
+
+	/**
+	 * Sets the repositoryBeanName.
+	 *
+	 * @param repositoryBeanName New repositoryBeanName.
+	 */
+	public void setRepositoryBeanName(final String repositoryBeanName) {
+		this.repositoryBeanName = repositoryBeanName;
+	}
+
+	/**
+	 * Gets the producerServiceBeanName.
+	 *
+	 * @return The producerServiceBeanName.
+	 */
+	public String getProducerServiceBeanName() {
+		return this.producerServiceBeanName;
+	}
+
+	/**
+	 * Sets the producerServiceBeanName.
+	 *
+	 * @param producerServiceBeanName New producerServiceBeanName.
+	 */
+	public void setProducerServiceBeanName(final String producerServiceBeanName) {
+		this.producerServiceBeanName = producerServiceBeanName;
+	}
+
+	/**
+	 * Gets the consumerServiceBeanName.
+	 *
+	 * @return The consumerServiceBeanName.
+	 */
+	public String getConsumerServiceBeanName() {
+		return this.consumerServiceBeanName;
+	}
+
+	/**
+	 * Sets the consumerServiceBeanName.
+	 *
+	 * @param consumerServiceBeanName New consumerServiceBeanName.
+	 */
+	public void setConsumerServiceBeanName(final String consumerServiceBeanName) {
+		this.consumerServiceBeanName = consumerServiceBeanName;
 	}
 
 	/**

@@ -46,6 +46,21 @@ public @interface HistoricalEntity {
 	public String consumerServiceTemplatePath() default "persistence/history/template/EntityHistoryConsumerService.java";
 
 	/**
+	 * Entity history repository bean name.
+	 */
+	public String repositoryBeanName() default "";
+
+	/**
+	 * Entity history producer service bean name.
+	 */
+	public String producerServiceBeanName() default "";
+
+	/**
+	 * Entity history consumer service bean name.
+	 */
+	public String consumerServiceBeanName() default "";
+
+	/**
 	 * Name of the base package for entity history classes.
 	 */
 	public String basePackageName();

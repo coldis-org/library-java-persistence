@@ -8,7 +8,7 @@ import ${historicalEntity.getEntityQualifiedTypeName()};
 /**
  * JPA entity history repository for {@link ${historicalEntity.getOriginalEntityQualifiedTypeName()}}.
  */
-@Repository
+@Repository(value = "${historicalEntity.getRepositoryBeanName()}")
 public interface ${historicalEntity.getRepositoryTypeName()} extends CrudRepository<${historicalEntity.getEntityTypeName()}, Long> {
 
 }

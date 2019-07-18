@@ -17,7 +17,7 @@ import ${historicalEntity.getOriginalEntityQualifiedTypeName()};
  * JPA entity history service for
  * {@link ${historicalEntity.getOriginalEntityQualifiedTypeName()}}.
  */
-@Controller
+@Controller(value = "${historicalEntity.getProducerServiceBeanName()}")
 public class ${historicalEntity.getProducerServiceTypeName()} implements EntityHistoryProducerService<${historicalEntity.getOriginalEntityTypeName()}>{
 
 	/**

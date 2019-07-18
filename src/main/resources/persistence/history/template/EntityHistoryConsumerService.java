@@ -21,7 +21,7 @@ import ${historicalEntity.getRepositoryQualifiedTypeName()};
 /**
  * JPA entity history consumer service for {@link ${historicalEntity.getOriginalEntityQualifiedTypeName()}}.
  */
-@Controller
+@Controller(value = "${historicalEntity.getConsumerServiceBeanName()}")
 public class ${historicalEntity.getConsumerServiceTypeName()} {
 
 	/**

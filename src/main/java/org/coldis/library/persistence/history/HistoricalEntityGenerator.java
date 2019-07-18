@@ -107,13 +107,14 @@ public class HistoricalEntityGenerator extends AbstractProcessor {
 	 */
 	private HistoricalEntityMetadata getEntityHistoryMetadata(final TypeElement entityType) {
 		// Gets the historical entity metadata.
-		final HistoricalEntity historicalEntity = entityType.getAnnotation(HistoricalEntity.class); // Tries to get the
+		final HistoricalEntity historicalEntity = entityType.getAnnotation(HistoricalEntity.class);
 		// Creates the default metadata.
 		final HistoricalEntityMetadata historicalEntityMetadata = new HistoricalEntityMetadata(
 				historicalEntity.producerTargetPath(), historicalEntity.consumerTargetPath(),
 				historicalEntity.entityTemplatePath(), historicalEntity.repositoryTemplatePath(),
 				historicalEntity.producerServiceTemplatePath(), historicalEntity.consumerServiceTemplatePath(),
-				historicalEntity.basePackageName(),
+				historicalEntity.repositoryBeanName(), historicalEntity.producerServiceBeanName(),
+				historicalEntity.consumerServiceBeanName(), historicalEntity.basePackageName(),
 				((PackageElement) entityType.getEnclosingElement()).getQualifiedName().toString(),
 				entityType.getSimpleName().toString(), historicalEntity.stateColumnDefinition());
 		// Returns the historical entity metadata.
