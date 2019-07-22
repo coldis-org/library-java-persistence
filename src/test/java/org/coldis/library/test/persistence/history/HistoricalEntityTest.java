@@ -3,6 +3,7 @@ package org.coldis.library.test.persistence.history;
 import org.apache.commons.collections4.IterableUtils;
 import org.coldis.library.serialization.ObjectMapperHelper;
 import org.coldis.library.test.TestHelper;
+import org.coldis.library.test.persistence.TestApplication;
 import org.coldis.library.test.persistence.history.historical.repository.TestHistoricalEntityHistoryRepository;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -16,7 +17,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 /**
  * Entity history test.
  */
-@SpringBootTest(webEnvironment = WebEnvironment.DEFINED_PORT)
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, classes = TestApplication.class)
 public class HistoricalEntityTest {
 
 	/**

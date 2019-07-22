@@ -91,7 +91,7 @@ public class KeyValue<ValueType extends TypedObject> extends AbstractTimestamped
 	@DtoAttribute(ignore = true)
 	@Column(columnDefinition = "JSONB")
 	@Convert(converter = TypedObjectJsonConverter.class)
-	@JsonView({ ModelView.Internal.class })
+	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	protected Serializable getInternalValue() {
 		return this.internalValue;
 	}
@@ -101,7 +101,7 @@ public class KeyValue<ValueType extends TypedObject> extends AbstractTimestamped
 	 *
 	 * @param value New value.
 	 */
-	protected void setInternalValue(final Serializable value) {
+	protected void setInternalValue(final ValueType value) {
 		this.internalValue = value;
 	}
 
@@ -112,7 +112,6 @@ public class KeyValue<ValueType extends TypedObject> extends AbstractTimestamped
 	 */
 	@Transient
 	@SuppressWarnings("unchecked")
-	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	protected ValueType getValue() {
 		return ((ValueType) this.getInternalValue());
 	}

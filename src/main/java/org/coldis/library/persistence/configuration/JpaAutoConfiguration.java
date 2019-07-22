@@ -10,7 +10,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 "${org.coldis.configuration.persistence.jpa.base-package}" })
 @EnableJpaRepositories(enableDefaultTransactions = false,
 basePackages = { PersistenceAutoConfiguration.PERSISTENCE_PACKAGE,
-				"${org.coldis.configuration.persistence.jpa.base-package}" })
+"${org.coldis.configuration.persistence.jpa.base-package}" })
 public class JpaAutoConfiguration {
 
 }
