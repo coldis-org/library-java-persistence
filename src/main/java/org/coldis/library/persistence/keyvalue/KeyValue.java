@@ -112,7 +112,7 @@ public class KeyValue<ValueType extends TypedObject> extends AbstractTimestamped
 	 */
 	@Transient
 	@SuppressWarnings("unchecked")
-	protected ValueType getValue() {
+	public ValueType getValue() {
 		return ((ValueType) this.getInternalValue());
 	}
 
