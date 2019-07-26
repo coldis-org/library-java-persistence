@@ -1,5 +1,7 @@
 package org.coldis.library.test.persistence.model;
 
+import java.util.List;
+
 import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.Entity;
@@ -10,6 +12,7 @@ import javax.persistence.Id;
 import org.coldis.library.model.IdentifiedObject;
 import org.coldis.library.model.ModelView;
 import org.coldis.library.persistence.converter.TypedObjectJsonConverter;
+import org.coldis.library.persistence.converter.TypedObjectListJsonConverter;
 import org.coldis.library.persistence.model.AbstractTimestampedExpirableEntity;
 
 import com.fasterxml.jackson.annotation.JsonView;
@@ -39,6 +42,11 @@ public class TestEntity extends AbstractTimestampedExpirableEntity implements Id
 	 * Test attribute.
 	 */
 	private TestObject attribute2;
+
+	/**
+	 * Test attribute.
+	 */
+	private List<TestObject> attribute3;
 
 	/**
 	 * Gets the id.
@@ -101,6 +109,27 @@ public class TestEntity extends AbstractTimestampedExpirableEntity implements Id
 	 */
 	public void setAttribute2(final TestObject attribute2) {
 		this.attribute2 = attribute2;
+	}
+
+	/**
+	 * Gets the attribute3.
+	 *
+	 * @return The attribute3.
+	 */
+	@Column(columnDefinition = "JSON")
+	@Convert(converter = TypedObjectListJsonConverter.class)
+	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
+	public List<TestObject> getAttribute3() {
+		return this.attribute3;
+	}
+
+	/**
+	 * Sets the attribute3.
+	 *
+	 * @param attribute3 New attribute3.
+	 */
+	public void setAttribute3(final List<TestObject> attribute3) {
+		this.attribute3 = attribute3;
 	}
 
 }

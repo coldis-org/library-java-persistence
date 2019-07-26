@@ -1,6 +1,7 @@
 package org.coldis.library.test.persistence.model;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 
 import org.coldis.library.test.persistence.TestApplication;
 import org.junit.jupiter.api.Assertions;
@@ -87,16 +88,38 @@ public class PersistenceTest {
 		// Saves the entity.
 		testEntity = this.testEntityService.save(testEntity);
 		testEntity = this.testEntityRepository.findById(testEntity.getId()).orElse(null);
-		// Makes sure the id, creation and last update have been set.
-		Assertions.assertNotNull(testEntity.getId());
-		Assertions.assertNotNull(testEntity.getCreatedAt());
-		Assertions.assertNotNull(testEntity.getUpdatedAt());
 		// Asserts that the data has been persisted.
 		Assertions.assertNull(testEntity.getAttribute1().getAttribute1());
 		Assertions.assertEquals("2", testEntity.getAttribute1().getAttribute2());
 		Assertions.assertNull(testEntity.getAttribute1().getAttribute3().getAttribute1());
 		Assertions.assertEquals("2", testEntity.getAttribute1().getAttribute3().getAttribute2());
 		Assertions.assertNull(testEntity.getAttribute2());
+	}
+
+	/**
+	 * Tests typed object list converter.
+	 */
+	@Test
+	public void testTypedObjectListConverter() {
+		// Creates a new test entity.
+		TestEntity testEntity = new TestEntity();
+		testEntity.setAttribute3(new ArrayList<>());
+		TestObject testObject = new TestObject();
+		testObject.setAttribute1("11");
+		testObject.setAttribute2("12");
+		testEntity.getAttribute3().add(testObject);
+		testObject = new TestObject();
+		testObject.setAttribute1("21");
+		testObject.setAttribute2("22");
+		testEntity.getAttribute3().add(testObject);
+		// Saves the entity.
+		testEntity = this.testEntityService.save(testEntity);
+		testEntity = this.testEntityRepository.findById(testEntity.getId()).orElse(null);
+		// Asserts that the data has been persisted.
+		Assertions.assertNull(testEntity.getAttribute3().get(0).getAttribute1());
+		Assertions.assertEquals("12", testEntity.getAttribute3().get(0).getAttribute2());
+		Assertions.assertNull(testEntity.getAttribute3().get(1).getAttribute1());
+		Assertions.assertEquals("22", testEntity.getAttribute3().get(1).getAttribute2());
 	}
 
 }

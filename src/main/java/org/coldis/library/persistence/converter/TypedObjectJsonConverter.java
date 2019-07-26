@@ -23,19 +23,10 @@ public class TypedObjectJsonConverter extends AbstractJsonConverter<TypedObject>
 	 * @return                        Converted JSON object.
 	 * @throws ClassNotFoundException If the object type cannot be found.
 	 */
-	protected TypedObject convertToEntityAttribute(final ObjectMapper jsonMapper, final String jsonObject,
-			final String objectTypeAttribute) {
-		return ObjectMapperHelper.deserialize(jsonMapper, jsonObject, new TypeReference<TypedObject>() {
-		}, false);
-	}
-
-	/**
-	 * @see org.coldis.library.persistence.converter.AbstractJsonConverter#convertToEntityAttribute(com.fasterxml.jackson.databind.ObjectMapper,
-	 *      java.lang.String)
-	 */
 	@Override
 	protected TypedObject convertToEntityAttribute(final ObjectMapper jsonMapper, final String jsonObject) {
-		return this.convertToEntityAttribute(jsonMapper, jsonObject, "typeName");
+		return ObjectMapperHelper.deserialize(jsonMapper, jsonObject, new TypeReference<TypedObject>() {
+		}, false);
 	}
 
 }
