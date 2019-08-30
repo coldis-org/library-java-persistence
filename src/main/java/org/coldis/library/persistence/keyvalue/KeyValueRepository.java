@@ -28,6 +28,6 @@ public interface KeyValueRepository<ValueType extends TypedObject> extends CrudR
 	 */
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	@Query("SELECT keyValue FROM KeyValue keyValue WHERE keyValue.key = :key")
-	KeyValue<ValueType> findOneForUpdate(@Param("key") String key);
+	KeyValue<ValueType> findByIdForUpdate(@Param("key") String key);
 
 }
