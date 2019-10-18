@@ -66,7 +66,9 @@ public class HistoricalEntityListener implements ApplicationContextAware {
 		// If the entity history service cannot be found.
 		catch (final NoSuchBeanDefinitionException exception) {
 			// Throws an entity history service not found exception.
-			HistoricalEntityListener.LOGGER.error("The entity history service bean could not be found.", exception);
+			HistoricalEntityListener.LOGGER
+			.error("The entity history service bean could not be found: " + exception.getLocalizedMessage());
+			HistoricalEntityListener.LOGGER.debug("The entity history service bean could not be found.", exception);
 			throw new IntegrationException(new SimpleMessage("entity.history.service.notfound"), exception);
 		}
 

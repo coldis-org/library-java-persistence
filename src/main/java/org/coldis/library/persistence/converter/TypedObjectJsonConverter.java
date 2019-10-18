@@ -19,7 +19,6 @@ public class TypedObjectJsonConverter extends AbstractJsonConverter<TypedObject>
 	 *
 	 * @param  jsonMapper             Object mapper to be used.
 	 * @param  jsonObject             JSON object.
-	 * @param  objectTypeAttribute    TODO
 	 * @return                        Converted JSON object.
 	 * @throws ClassNotFoundException If the object type cannot be found.
 	 */
