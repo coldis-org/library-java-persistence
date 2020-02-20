@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory;
 /**
  * JPA entity history generator.
  */
-@SupportedSourceVersion(value = SourceVersion.RELEASE_11)
+@SupportedSourceVersion(value = SourceVersion.RELEASE_13)
 @SupportedAnnotationTypes(value = { "org.coldis.library.persistence.history.HistoricalEntity" })
 public class HistoricalEntityGenerator extends AbstractProcessor {
 
