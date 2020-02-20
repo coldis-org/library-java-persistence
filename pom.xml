@@ -10,7 +10,7 @@
 
 	<groupId>org.coldis.library</groupId>
 	<artifactId>persistence</artifactId>
-	<version>0.0.20-SNAPSHOT</version>
+	<version>0.0.20</version>
 	<packaging>jar</packaging>
 
 	<name>Persistence utilities</name>
@@ -29,13 +29,14 @@
 
 	<properties>
 		<project.config.source.test.compile.annotationProcessors>org.coldis.library.dto.DtoGenerator,org.coldis.library.service.client.generator.ServiceClientGenerator,org.coldis.library.persistence.history.HistoricalEntityGenerator</project.config.source.test.compile.annotationProcessors>
+		<java.version>12</java.version>
 	</properties>
 
 	<scm>
 		<url>https://github.com/coldis-org/library-java-persistence</url>
 		<connection>scm:git:https://github.com/coldis-org/library-java-persistence.git</connection>
 		<developerConnection>scm:git:git@github.com:coldis-org/library-java-persistence.git</developerConnection>
-		<tag>HEAD</tag>
+		<tag>persistence-0.0.20</tag>
 	</scm>
 
 	<dependencies>
