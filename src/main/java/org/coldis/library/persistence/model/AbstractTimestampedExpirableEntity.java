@@ -31,7 +31,7 @@ public abstract class AbstractTimestampedExpirableEntity extends AbstractTimesta
 	 */
 	@Override
 	@DtoAttribute(readOnly = true, usedInComparison = false)
-	@Column(columnDefinition = "TIMESTAMP WITH TIME ZONE", nullable = false)
+	@Column(columnDefinition = "TIMESTAMP WITHOUT TIME ZONE", nullable = false)
 	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public LocalDateTime getCreatedAt() {
 		return super.getCreatedAt();
@@ -42,7 +42,7 @@ public abstract class AbstractTimestampedExpirableEntity extends AbstractTimesta
 	 */
 	@Override
 	@DtoAttribute(readOnly = true, usedInComparison = false)
-	@Column(columnDefinition = "TIMESTAMP WITH TIME ZONE", nullable = false)
+	@Column(columnDefinition = "TIMESTAMP WITHOUT TIME ZONE", nullable = false)
 	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public LocalDateTime getUpdatedAt() {
 		return super.getUpdatedAt();
@@ -53,7 +53,7 @@ public abstract class AbstractTimestampedExpirableEntity extends AbstractTimesta
 	 */
 	@Override
 	@DtoAttribute(readOnly = true, usedInComparison = false)
-	@Column(columnDefinition = "TIMESTAMP WITH TIME ZONE")
+	@Column(columnDefinition = "TIMESTAMP WITHOUT TIME ZONE")
 	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public LocalDateTime getExpiredAt() {
 		return super.getExpiredAt();
