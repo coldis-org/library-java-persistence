@@ -22,7 +22,7 @@ import org.coldis.library.persistence.history.EntityHistory;
  */
 @Entity
 @Table(indexes = { @Index(columnList = "updatedAt") })
-public class ${historicalEntity.getEntityTypeName()} extends AbstractTimestapableEntity
+public class ${historicalEntity.getEntityTypeName()} extends AbstractTimestampableEntity
 		implements EntityHistory<Map<String, Object>> {
 
 	/**
