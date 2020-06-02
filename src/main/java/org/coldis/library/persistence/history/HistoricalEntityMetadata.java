@@ -35,14 +35,12 @@ public class HistoricalEntityMetadata {
 	/**
 	 * Entity history producer service name suffix.
 	 */
-	public static final String PRODUCER_SERVICE_TYPE_SUFFIX = HistoricalEntityMetadata.ENTITY_TYPE_SUFFIX
-			+ "ProducerService";
+	public static final String PRODUCER_SERVICE_TYPE_SUFFIX = HistoricalEntityMetadata.ENTITY_TYPE_SUFFIX + "ProducerService";
 
 	/**
 	 * Entity history consumer service name suffix.
 	 */
-	public static final String CONSUMER_SERVICE_TYPE_SUFFIX = HistoricalEntityMetadata.ENTITY_TYPE_SUFFIX
-			+ "ConsumerService";
+	public static final String CONSUMER_SERVICE_TYPE_SUFFIX = HistoricalEntityMetadata.ENTITY_TYPE_SUFFIX + "ConsumerService";
 
 	/**
 	 * Producer target path.
@@ -127,12 +125,10 @@ public class HistoricalEntityMetadata {
 	 * @param stateColumnDefinition
 	 *
 	 */
-	public HistoricalEntityMetadata(final String producerTargetPath, final String consumerTargetPath,
-			final String entityTemplatePath, final String repositoryTemplatePath,
-			final String producerServiceTemplatePath, final String consumerServiceTemplatePath,
-			final String repositoryBeanName, final String producerServiceBeanName, final String consumerServiceBeanName,
-			final String basePackageName, final String originalEntityPackageName, final String originalEntityTypeName,
-			final String stateColumnDefinition) {
+	public HistoricalEntityMetadata(final String producerTargetPath, final String consumerTargetPath, final String entityTemplatePath,
+			final String repositoryTemplatePath, final String producerServiceTemplatePath, final String consumerServiceTemplatePath,
+			final String repositoryBeanName, final String producerServiceBeanName, final String consumerServiceBeanName, final String basePackageName,
+			final String originalEntityPackageName, final String originalEntityTypeName, final String stateColumnDefinition) {
 		super();
 		this.producerTargetPath = producerTargetPath;
 		this.consumerTargetPath = consumerTargetPath;
@@ -533,7 +529,7 @@ public class HistoricalEntityMetadata {
 	 * @return The queue name.
 	 */
 	public String getQueueName() {
-		return "queue." + this.getEntityTypeName() + "Queue";
+		return this.getEntityTypeName() + ".queue";
 	}
 
 }

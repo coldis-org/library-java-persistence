@@ -52,13 +52,12 @@ public class ${historicalEntity.getConsumerServiceTypeName()} {
 	 */
 	@Transactional
 	@JmsListener(destination = ${historicalEntity.getConsumerServiceTypeName()}.HISTORICAL_ENTITY_QUEUE)
-	public void handleUpdate(final String state) {
+	public void handleUpdate(final ${historicalEntity.getEntityTypeName()} history) {
 		${historicalEntity.getConsumerServiceTypeName()}.LOGGER.debug("Processing '${historicalEntity.getEntityQualifiedTypeName()}' history update."); 
 		// Tries to process the entity history update.
 		try {
 			// Saves the new entity history state.
-			this.repository.save(new ${historicalEntity.getEntityTypeName()}(ObjectMapperHelper.deserialize(objectMapper, state, new TypeReference<Map<String, Object>>() {
-			}, false)));
+			this.repository.save(history);
 			${historicalEntity.getConsumerServiceTypeName()}.LOGGER.debug("'${historicalEntity.getEntityQualifiedTypeName()}' history update processed."); 
 		}
 		// If the entity state cannot be saved as historical data.
