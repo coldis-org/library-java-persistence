@@ -1,5 +1,7 @@
 package org.coldis.library.persistence.keyvalue;
 
+import java.util.Optional;
+
 import javax.persistence.LockModeType;
 
 import org.coldis.library.model.TypedObject;
@@ -16,8 +18,7 @@ import org.springframework.stereotype.Repository;
  * @param <ValueType> Value type.
  */
 @Repository
-@ConditionalOnProperty(name = "org.coldis.configuration.persistence-keyvalue-enabled", havingValue = "true",
-matchIfMissing = true)
+@ConditionalOnProperty(name = "org.coldis.configuration.persistence-keyvalue-enabled", havingValue = "true", matchIfMissing = true)
 public interface KeyValueRepository<ValueType extends TypedObject> extends CrudRepository<KeyValue<ValueType>, String> {
 
 	/**
@@ -28,6 +29,6 @@ public interface KeyValueRepository<ValueType extends TypedObject> extends CrudR
 	 */
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	@Query("SELECT keyValue FROM KeyValue keyValue WHERE keyValue.key = :key")
-	KeyValue<ValueType> findByIdForUpdate(@Param("key") String key);
+	Optional<KeyValue<ValueType>> findByIdForUpdate(@Param("key") String key);
 
 }
