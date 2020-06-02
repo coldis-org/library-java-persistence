@@ -28,7 +28,7 @@
 	</developers>
 
 	<properties>
-		<project.config.source.test.compile.annotationProcessors>org.coldis.library.dto.DtoGenerator,org.coldis.library.service.client.generator.ServiceClientGenerator,org.coldis.library.persistence.history.HistoricalEntityGenerator</project.config.source.test.compile.annotationProcessors>
+		<project.config.source.test.compile.annotationProcessors>org.coldis.library.persistence.history.HistoricalEntityGenerator</project.config.source.test.compile.annotationProcessors>
 	</properties>
 
 	<scm>
