@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonView;
  */
 @MappedSuperclass
 @EntityListeners(value = EntityTimestampListener.class)
-public abstract class AbstractTimestampedExpirableEntity extends AbstractTimestampedExpirableObject {
+public abstract class AbstractTimestapableExpirableEntity extends AbstractTimestampedExpirableObject {
 
 	/**
 	 * Serial.
