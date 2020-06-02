@@ -14,9 +14,8 @@ import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-/**
- * Entity history test.
- */
+/*** Entity history test. */
+
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, classes = TestApplication.class)
 public class HistoricalEntityTest {
 
@@ -44,17 +43,15 @@ public class HistoricalEntityTest {
 	 * @throws Exception If the test did not pass.
 	 */
 	@Test
-	public void test00EntityHistory() throws Exception {
+	public void testEntityHistoryChange() throws Exception {
 		// Creates a new test entity.
-		final TestHistoricalEntity testHistoricalEntity1 = this.testHistoricalEntityService
-				.save(new TestHistoricalEntity("1"));
+		final TestHistoricalEntity testHistoricalEntity1 = this.testHistoricalEntityService.save(new TestHistoricalEntity("1"));
 		// Makes sure the new entity state is also replicated as historical data.
 		Assertions.assertTrue(TestHelper.waitUntilValid(() -> this.testHistoricalEntityHistoryRepository.findAll(),
 				(entityHistoryList) -> IterableUtils.toList(entityHistoryList).stream().anyMatch((entity) -> {
 					// Converts the state into an entity.
-					final TestHistoricalEntity testHistoricalEntity = ObjectMapperHelper.convert(this.objectMapper,
-							entity.getState(), new TypeReference<TestHistoricalEntity>() {
-					}, false);
+					final TestHistoricalEntity testHistoricalEntity = ObjectMapperHelper.convert(this.objectMapper, entity.getState(),
+							new TypeReference<TestHistoricalEntity>() {}, false);
 					// Compares the two entities.
 					return testHistoricalEntity.equals(testHistoricalEntity1);
 				}), TestHelper.LONG_WAIT, TestHelper.SHORT_WAIT));
@@ -66,18 +63,16 @@ public class HistoricalEntityTest {
 		Assertions.assertTrue(TestHelper.waitUntilValid(() -> this.testHistoricalEntityHistoryRepository.findAll(),
 				(entityHistoryList) -> IterableUtils.toList(entityHistoryList).stream().anyMatch((entity) -> {
 					// Converts the state into an entity.
-					final TestHistoricalEntity testHistoricalEntity = ObjectMapperHelper.convert(this.objectMapper,
-							entity.getState(), new TypeReference<TestHistoricalEntity>() {
-					}, false);
+					final TestHistoricalEntity testHistoricalEntity = ObjectMapperHelper.convert(this.objectMapper, entity.getState(),
+							new TypeReference<TestHistoricalEntity>() {}, false);
 					// Compares the two entities.
 					return testHistoricalEntity.equals(testHistoricalEntity1);
 				}), TestHelper.LONG_WAIT, TestHelper.SHORT_WAIT));
 		Assertions.assertTrue(TestHelper.waitUntilValid(() -> this.testHistoricalEntityHistoryRepository.findAll(),
 				(entityHistoryList) -> IterableUtils.toList(entityHistoryList).stream().anyMatch((entity) -> {
 					// Converts the state into an entity.
-					final TestHistoricalEntity testHistoricalEntity = ObjectMapperHelper.convert(this.objectMapper,
-							entity.getState(), new TypeReference<TestHistoricalEntity>() {
-					}, false);
+					final TestHistoricalEntity testHistoricalEntity = ObjectMapperHelper.convert(this.objectMapper, entity.getState(),
+							new TypeReference<TestHistoricalEntity>() {}, false);
 					// Compares the two entities.
 					return testHistoricalEntity.equals(testHistoricalEntity2);
 				}), TestHelper.LONG_WAIT, TestHelper.SHORT_WAIT));
