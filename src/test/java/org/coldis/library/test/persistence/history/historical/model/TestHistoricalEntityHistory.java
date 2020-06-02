@@ -12,7 +12,7 @@ import javax.persistence.Id;
 import javax.persistence.Index;
 import javax.persistence.Table;
 
-import org.coldis.library.persistence.model.AbstractTimestapableEntity;
+import org.coldis.library.persistence.model.AbstractTimestampableEntity;
 import org.coldis.library.helper.DateTimeHelper;
 import org.coldis.library.persistence.converter.MapJsonConverter;
 import org.coldis.library.persistence.history.EntityHistory;
@@ -22,7 +22,7 @@ import org.coldis.library.persistence.history.EntityHistory;
  */
 @Entity
 @Table(indexes = { @Index(columnList = "updatedAt") })
-public class TestHistoricalEntityHistory extends AbstractTimestapableEntity
+public class TestHistoricalEntityHistory extends AbstractTimestampableEntity
 		implements EntityHistory<Map<String, Object>> {
 
 	/**

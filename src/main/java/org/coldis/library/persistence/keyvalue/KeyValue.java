@@ -13,7 +13,7 @@ import org.coldis.library.dto.DtoAttribute;
 import org.coldis.library.model.ModelView;
 import org.coldis.library.model.TypedObject;
 import org.coldis.library.persistence.converter.TypedObjectJsonConverter;
-import org.coldis.library.persistence.model.AbstractTimestapableEntity;
+import org.coldis.library.persistence.model.AbstractTimestampableEntity;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -27,7 +27,7 @@ import com.fasterxml.jackson.annotation.JsonView;
 @Entity
 @ConditionalOnProperty(name = "org.coldis.configuration.persistence-keyvalue-enabled", havingValue = "true",
 matchIfMissing = true)
-public class KeyValue<ValueType extends TypedObject> extends AbstractTimestapableEntity {
+public class KeyValue<ValueType extends TypedObject> extends AbstractTimestampableEntity {
 
 	/**
 	 * Serial.
