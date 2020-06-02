@@ -8,8 +8,8 @@ import javax.persistence.MappedSuperclass;
 import javax.persistence.Transient;
 
 import org.coldis.library.dto.DtoAttribute;
-import org.coldis.library.model.AbstractTimestampedExpirableObject;
-import org.coldis.library.model.ModelView;
+import org.coldis.library.model.AbstractTimestampableExpirable;
+import org.coldis.library.model.view.ModelView;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonView;
  */
 @MappedSuperclass
 @EntityListeners(value = EntityTimestampListener.class)
-public abstract class AbstractTimestampableExpirableEntity extends AbstractTimestampedExpirableObject {
+public abstract class AbstractTimestampableExpirableEntity extends AbstractTimestampableExpirable {
 
 	/**
 	 * Serial.
@@ -27,7 +27,7 @@ public abstract class AbstractTimestampableExpirableEntity extends AbstractTimes
 	private static final long serialVersionUID = 516365864675481043L;
 
 	/**
-	 * @see org.coldis.library.model.AbstractTimestampedObject#getCreatedAt()
+	 * @see org.coldis.library.model.AbstractTimestampable#getCreatedAt()
 	 */
 	@Override
 	@DtoAttribute(readOnly = true, usedInComparison = false)
@@ -38,7 +38,7 @@ public abstract class AbstractTimestampableExpirableEntity extends AbstractTimes
 	}
 
 	/**
-	 * @see org.coldis.library.model.AbstractTimestampedObject#getUpdatedAt()
+	 * @see org.coldis.library.model.AbstractTimestampable#getUpdatedAt()
 	 */
 	@Override
 	@DtoAttribute(readOnly = true, usedInComparison = false)

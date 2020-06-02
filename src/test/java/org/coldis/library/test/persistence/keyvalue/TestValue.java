@@ -2,8 +2,8 @@ package org.coldis.library.test.persistence.keyvalue;
 
 import java.util.Objects;
 
-import org.coldis.library.model.ModelView;
-import org.coldis.library.model.TypedObject;
+import org.coldis.library.model.Typable;
+import org.coldis.library.model.view.ModelView;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonView;
@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonView;
  * Test value.
  */
 @JsonTypeName(value = TestValue.TYPE_NAME)
-public class TestValue implements TypedObject {
+public class TestValue implements Typable {
 
 	/**
 	 * Serial.
@@ -92,7 +92,7 @@ public class TestValue implements TypedObject {
 	}
 
 	/**
-	 * @see org.coldis.library.model.TypedObject#getTypeName()
+	 * @see org.coldis.library.model.Typable#getTypeName()
 	 */
 	@Override
 	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })

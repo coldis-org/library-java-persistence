@@ -9,9 +9,9 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Transient;
 
-import org.coldis.library.model.IdentifiedObject;
-import org.coldis.library.model.ModelView;
-import org.coldis.library.model.TypedObject;
+import org.coldis.library.model.Identifiable;
+import org.coldis.library.model.Typable;
+import org.coldis.library.model.view.ModelView;
 import org.coldis.library.persistence.history.HistoricalEntity;
 import org.coldis.library.persistence.history.HistoricalEntityListener;
 
@@ -26,7 +26,7 @@ import com.fasterxml.jackson.annotation.JsonView;
 @JsonTypeName(value = TestHistoricalEntity.TYPE_NAME)
 @HistoricalEntity(basePackageName = "org.coldis.library.test.persistence.history.historical",
 producerTargetPath = "src/test/java", consumerTargetPath = "src/test/java")
-public class TestHistoricalEntity implements TypedObject, IdentifiedObject {
+public class TestHistoricalEntity implements Typable, Identifiable {
 
 	/**
 	 * Serial.
@@ -65,7 +65,7 @@ public class TestHistoricalEntity implements TypedObject, IdentifiedObject {
 	}
 
 	/**
-	 * @see org.coldis.library.model.IdentifiedObject#getId()
+	 * @see org.coldis.library.model.Identifiable#getId()
 	 */
 	@Id
 	@Override
@@ -104,7 +104,7 @@ public class TestHistoricalEntity implements TypedObject, IdentifiedObject {
 	}
 
 	/**
-	 * @see org.coldis.library.model.TypedObject#getTypeName()
+	 * @see org.coldis.library.model.Typable#getTypeName()
 	 */
 	@Override
 	@Transient

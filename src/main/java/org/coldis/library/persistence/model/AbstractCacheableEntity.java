@@ -4,8 +4,8 @@ import java.time.LocalDateTime;
 
 import javax.persistence.MappedSuperclass;
 
-import org.coldis.library.model.ModelView;
-import org.coldis.library.model.TypedObject;
+import org.coldis.library.model.Typable;
+import org.coldis.library.model.view.ModelView;
 
 import com.fasterxml.jackson.annotation.JsonView;
 
@@ -13,7 +13,7 @@ import com.fasterxml.jackson.annotation.JsonView;
  * Cached entity.
  */
 @MappedSuperclass
-public abstract class AbstractCacheableEntity extends AbstractTimestampableExpirableEntity implements TypedObject {
+public abstract class AbstractCacheableEntity extends AbstractTimestampableExpirableEntity implements Typable {
 
 	/**
 	 * Serial.

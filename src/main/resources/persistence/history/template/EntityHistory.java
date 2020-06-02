@@ -36,7 +36,7 @@ public class ${historicalEntity.getEntityTypeName()} extends AbstractTimestampab
 	private Long id;
 
 	/**
-	 * @see org.coldis.library.model.IdentifiedObject${h}getId()
+	 * @see org.coldis.library.model.Identifiable${h}getId()
 	 */
 	@Id
 	@Override

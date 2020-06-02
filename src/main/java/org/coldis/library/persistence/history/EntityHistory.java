@@ -1,13 +1,13 @@
 package org.coldis.library.persistence.history;
 
-import org.coldis.library.model.IdentifiedObject;
+import org.coldis.library.model.Identifiable;
 
 /**
  * JPA entity history.
  *
  * @param <EntityType> Original entity type.
  */
-public interface EntityHistory<EntityType> extends IdentifiedObject {
+public interface EntityHistory<EntityType> extends Identifiable {
 
 	/**
 	 * Gets the state of the original entity.

@@ -2,7 +2,7 @@ package org.coldis.library.persistence.converter;
 
 import javax.persistence.AttributeConverter;
 
-import org.coldis.library.model.ModelView;
+import org.coldis.library.model.view.ModelView;
 import org.coldis.library.persistence.configuration.JpaAutoConfiguration;
 import org.coldis.library.serialization.ObjectMapperHelper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,9 +34,8 @@ public abstract class AbstractJsonConverter<ObjectType> implements AttributeConv
 	 */
 	protected ObjectMapper getObjectMapper() {
 		// Makes sure the object mapper is initialized.
-		this.objectMapper = (this.objectMapper == null
-				? (JpaAutoConfiguration.OBJECT_MAPPER == null ? new ObjectMapper() : JpaAutoConfiguration.OBJECT_MAPPER)
-						: this.objectMapper);
+		this.objectMapper = (this.objectMapper == null ? (JpaAutoConfiguration.OBJECT_MAPPER == null ? new ObjectMapper() : JpaAutoConfiguration.OBJECT_MAPPER)
+				: this.objectMapper);
 		// Returns the object mapper.
 		return this.objectMapper;
 	}
@@ -47,8 +46,7 @@ public abstract class AbstractJsonConverter<ObjectType> implements AttributeConv
 	@Override
 	public String convertToDatabaseColumn(final ObjectType originalObject) {
 		// Returns the JSON object.
-		return ObjectMapperHelper.serialize(this.getObjectMapper(), originalObject,
-				AbstractJsonConverter.SERIALIZATION_VIEW, false);
+		return ObjectMapperHelper.serialize(this.getObjectMapper(), originalObject, AbstractJsonConverter.SERIALIZATION_VIEW, false);
 	}
 
 	/**

@@ -2,7 +2,7 @@ package org.coldis.library.persistence.keyvalue;
 
 import java.util.Optional;
 
-import org.coldis.library.model.TypedObject;
+import org.coldis.library.model.Typable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,7 +26,7 @@ public class KeyValueService {
 	 * Repository.
 	 */
 	@Autowired
-	private KeyValueRepository<TypedObject> repository;
+	private KeyValueRepository<Typable> repository;
 
 	/**
 	 * Creates a key entry.
@@ -35,7 +35,7 @@ public class KeyValueService {
 	 * @return     The created entry.
 	 */
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
-	public KeyValue<TypedObject> create(final String key) {
+	public KeyValue<Typable> create(final String key) {
 		return this.repository.save(new KeyValue<>(key, null));
 	}
 
@@ -47,7 +47,7 @@ public class KeyValueService {
 	@Transactional(propagation = Propagation.REQUIRED, noRollbackFor = DataIntegrityViolationException.class)
 	public void lock(final String key) {
 		// Tries to lock the entry.
-		final Optional<KeyValue<TypedObject>> entry = this.repository.findByIdForUpdate(key);
+		final Optional<KeyValue<Typable>> entry = this.repository.findByIdForUpdate(key);
 		// If there is no entry.
 		if (entry.isEmpty()) {
 			// Tries creating the entry.

@@ -76,7 +76,7 @@ public class PersistenceTest {
 	 * Tests typed object converter.
 	 */
 	@Test
-	public void testTypedObjectConverter() {
+	public void testTypableConverter() {
 		// Creates a new test entity.
 		TestEntity testEntity = new TestEntity();
 		testEntity.setAttribute1(new TestObject());
@@ -100,7 +100,7 @@ public class PersistenceTest {
 	 * Tests typed object list converter.
 	 */
 	@Test
-	public void testTypedObjectListConverter() {
+	public void testTypableListConverter() {
 		// Creates a new test entity.
 		TestEntity testEntity = new TestEntity();
 		testEntity.setAttribute3(new ArrayList<>());

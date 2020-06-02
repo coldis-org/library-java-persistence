@@ -10,9 +10,9 @@ import javax.persistence.Id;
 import javax.persistence.Transient;
 
 import org.coldis.library.dto.DtoAttribute;
-import org.coldis.library.model.ModelView;
-import org.coldis.library.model.TypedObject;
-import org.coldis.library.persistence.converter.TypedObjectJsonConverter;
+import org.coldis.library.model.Typable;
+import org.coldis.library.model.view.ModelView;
+import org.coldis.library.persistence.converter.TypableJsonConverter;
 import org.coldis.library.persistence.model.AbstractTimestampableEntity;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
@@ -27,7 +27,7 @@ import com.fasterxml.jackson.annotation.JsonView;
 @Entity
 @ConditionalOnProperty(name = "org.coldis.configuration.persistence-keyvalue-enabled", havingValue = "true",
 matchIfMissing = true)
-public class KeyValue<ValueType extends TypedObject> extends AbstractTimestampableEntity {
+public class KeyValue<ValueType extends Typable> extends AbstractTimestampableEntity {
 
 	/**
 	 * Serial.
@@ -90,7 +90,7 @@ public class KeyValue<ValueType extends TypedObject> extends AbstractTimestampab
 	@JsonIgnore
 	@DtoAttribute(ignore = true)
 	@Column(columnDefinition = "JSONB")
-	@Convert(converter = TypedObjectJsonConverter.class)
+	@Convert(converter = TypableJsonConverter.class)
 	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	protected Serializable getInternalValue() {
 		return this.internalValue;

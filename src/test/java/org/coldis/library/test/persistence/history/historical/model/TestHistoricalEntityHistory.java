@@ -36,7 +36,7 @@ public class TestHistoricalEntityHistory extends AbstractTimestampableEntity
 	private Long id;
 
 	/**
-	 * @see org.coldis.library.model.IdentifiedObject#getId()
+	 * @see org.coldis.library.model.Identifiable#getId()
 	 */
 	@Id
 	@Override

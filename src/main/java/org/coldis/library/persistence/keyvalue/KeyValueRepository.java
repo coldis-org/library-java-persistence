@@ -4,7 +4,7 @@ import java.util.Optional;
 
 import javax.persistence.LockModeType;
 
-import org.coldis.library.model.TypedObject;
+import org.coldis.library.model.Typable;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -19,7 +19,7 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 @ConditionalOnProperty(name = "org.coldis.configuration.persistence-keyvalue-enabled", havingValue = "true", matchIfMissing = true)
-public interface KeyValueRepository<ValueType extends TypedObject> extends CrudRepository<KeyValue<ValueType>, String> {
+public interface KeyValueRepository<ValueType extends Typable> extends CrudRepository<KeyValue<ValueType>, String> {
 
 	/**
 	 * Finds a key/value for update.

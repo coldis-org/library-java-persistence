@@ -9,10 +9,10 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 
-import org.coldis.library.model.IdentifiedObject;
-import org.coldis.library.model.ModelView;
-import org.coldis.library.persistence.converter.TypedObjectJsonConverter;
-import org.coldis.library.persistence.converter.TypedObjectListJsonConverter;
+import org.coldis.library.model.Identifiable;
+import org.coldis.library.model.view.ModelView;
+import org.coldis.library.persistence.converter.TypableJsonConverter;
+import org.coldis.library.persistence.converter.TypableListJsonConverter;
 import org.coldis.library.persistence.model.AbstractTimestampableExpirableEntity;
 
 import com.fasterxml.jackson.annotation.JsonView;
@@ -21,7 +21,7 @@ import com.fasterxml.jackson.annotation.JsonView;
  * Test entity.
  */
 @Entity
-public class TestEntity extends AbstractTimestampableExpirableEntity implements IdentifiedObject {
+public class TestEntity extends AbstractTimestampableExpirableEntity implements Identifiable {
 
 	/**
 	 * Serial.
@@ -75,7 +75,7 @@ public class TestEntity extends AbstractTimestampableExpirableEntity implements 
 	 * @return The attribute1.
 	 */
 	@Column(columnDefinition = "JSON")
-	@Convert(converter = TypedObjectJsonConverter.class)
+	@Convert(converter = TypableJsonConverter.class)
 	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public TestObject getAttribute1() {
 		return this.attribute1;
@@ -96,7 +96,7 @@ public class TestEntity extends AbstractTimestampableExpirableEntity implements 
 	 * @return The attribute2.
 	 */
 	@Column(columnDefinition = "JSON")
-	@Convert(converter = TypedObjectJsonConverter.class)
+	@Convert(converter = TypableJsonConverter.class)
 	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public TestObject getAttribute2() {
 		return this.attribute2;
@@ -117,7 +117,7 @@ public class TestEntity extends AbstractTimestampableExpirableEntity implements 
 	 * @return The attribute3.
 	 */
 	@Column(columnDefinition = "JSON")
-	@Convert(converter = TypedObjectListJsonConverter.class)
+	@Convert(converter = TypableListJsonConverter.class)
 	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public List<TestObject> getAttribute3() {
 		return this.attribute3;

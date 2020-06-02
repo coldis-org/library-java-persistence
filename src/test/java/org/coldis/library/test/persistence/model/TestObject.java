@@ -1,7 +1,7 @@
 package org.coldis.library.test.persistence.model;
 
-import org.coldis.library.model.ModelView;
-import org.coldis.library.model.TypedObject;
+import org.coldis.library.model.Typable;
+import org.coldis.library.model.view.ModelView;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonView;
@@ -10,7 +10,7 @@ import com.fasterxml.jackson.annotation.JsonView;
  * Test object.
  */
 @JsonTypeName(TestObject.TYPE_NAME)
-public class TestObject implements TypedObject {
+public class TestObject implements Typable {
 
 	/**
 	 * Serial.
@@ -95,7 +95,7 @@ public class TestObject implements TypedObject {
 	}
 
 	/**
-	 * @see org.coldis.library.model.TypedObject#getTypeName()
+	 * @see org.coldis.library.model.Typable#getTypeName()
 	 */
 	@Override
 	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
