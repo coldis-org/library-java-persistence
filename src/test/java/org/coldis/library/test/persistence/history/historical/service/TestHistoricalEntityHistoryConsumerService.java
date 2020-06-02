@@ -21,7 +21,7 @@ import org.coldis.library.test.persistence.history.historical.repository.TestHis
 /**
  * JPA entity history consumer service for {@link org.coldis.library.test.persistence.history.TestHistoricalEntity}.
  */
-@Controller
+@Controller(value = "")
 public class TestHistoricalEntityHistoryConsumerService {
 
 	/**
@@ -32,7 +32,7 @@ public class TestHistoricalEntityHistoryConsumerService {
 	/**
 	 * Historical entity queue.
 	 */
-	private static final String HISTORICAL_ENTITY_QUEUE = "queue.TestHistoricalEntityHistoryQueue";
+	private static final String HISTORICAL_ENTITY_QUEUE = "TestHistoricalEntityHistory.queue";
 	
 	/**
 	 * Object mapper.
@@ -52,13 +52,12 @@ public class TestHistoricalEntityHistoryConsumerService {
 	 */
 	@Transactional
 	@JmsListener(destination = TestHistoricalEntityHistoryConsumerService.HISTORICAL_ENTITY_QUEUE)
-	public void handleUpdate(final String state) {
+	public void handleUpdate(final TestHistoricalEntityHistory history) {
 		TestHistoricalEntityHistoryConsumerService.LOGGER.debug("Processing 'org.coldis.library.test.persistence.history.historical.model.TestHistoricalEntityHistory' history update."); 
 		// Tries to process the entity history update.
 		try {
 			// Saves the new entity history state.
-			this.repository.save(new TestHistoricalEntityHistory(ObjectMapperHelper.deserialize(objectMapper, state, new TypeReference<Map<String, Object>>() {
-			}, false)));
+			this.repository.save(history);
 			TestHistoricalEntityHistoryConsumerService.LOGGER.debug("'org.coldis.library.test.persistence.history.historical.model.TestHistoricalEntityHistory' history update processed."); 
 		}
 		// If the entity state cannot be saved as historical data.

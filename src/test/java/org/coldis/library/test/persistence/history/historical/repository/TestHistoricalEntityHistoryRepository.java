@@ -8,7 +8,7 @@ import org.coldis.library.test.persistence.history.historical.model.TestHistoric
 /**
  * JPA entity history repository for {@link org.coldis.library.test.persistence.history.TestHistoricalEntity}.
  */
-@Repository
+@Repository(value = "")
 public interface TestHistoricalEntityHistoryRepository extends CrudRepository<TestHistoricalEntityHistory, Long> {
 
 }

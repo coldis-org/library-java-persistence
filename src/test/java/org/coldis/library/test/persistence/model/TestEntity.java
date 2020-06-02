@@ -13,7 +13,7 @@ import org.coldis.library.model.IdentifiedObject;
 import org.coldis.library.model.ModelView;
 import org.coldis.library.persistence.converter.TypedObjectJsonConverter;
 import org.coldis.library.persistence.converter.TypedObjectListJsonConverter;
-import org.coldis.library.persistence.model.AbstractTimestampedExpirableEntity;
+import org.coldis.library.persistence.model.AbstractTimestapableExpirableEntity;
 
 import com.fasterxml.jackson.annotation.JsonView;
 
@@ -21,7 +21,7 @@ import com.fasterxml.jackson.annotation.JsonView;
  * Test entity.
  */
 @Entity
-public class TestEntity extends AbstractTimestampedExpirableEntity implements IdentifiedObject {
+public class TestEntity extends AbstractTimestapableExpirableEntity implements IdentifiedObject {
 
 	/**
 	 * Serial.

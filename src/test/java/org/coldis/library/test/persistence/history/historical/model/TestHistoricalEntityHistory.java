@@ -12,7 +12,8 @@ import javax.persistence.Id;
 import javax.persistence.Index;
 import javax.persistence.Table;
 
-import org.coldis.library.persistence.model.AbstractTimestampedEntity;
+import org.coldis.library.persistence.model.AbstractTimestapableEntity;
+import org.coldis.library.helper.DateTimeHelper;
 import org.coldis.library.persistence.converter.MapJsonConverter;
 import org.coldis.library.persistence.history.EntityHistory;
 
@@ -21,7 +22,7 @@ import org.coldis.library.persistence.history.EntityHistory;
  */
 @Entity
 @Table(indexes = { @Index(columnList = "updatedAt") })
-public class TestHistoricalEntityHistory extends AbstractTimestampedEntity
+public class TestHistoricalEntityHistory extends AbstractTimestapableEntity
 		implements EntityHistory<Map<String, Object>> {
 
 	/**
@@ -72,6 +73,7 @@ public class TestHistoricalEntityHistory extends AbstractTimestampedEntity
 	public TestHistoricalEntityHistory(final Map<String, Object> state) {
 		super();
 		this.state = state;
+		setCreatedAt(DateTimeHelper.getCurrentLocalDateTime());
 	}
 
 	/**
