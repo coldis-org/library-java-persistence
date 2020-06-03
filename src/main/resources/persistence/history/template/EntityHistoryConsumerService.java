@@ -2,6 +2,8 @@ package  ${historicalEntity.getServicePackageName()};
 
 import java.util.Map;
 
+import javax.jms.Message;
+
 import org.coldis.library.exception.IntegrationException;
 import org.coldis.library.model.SimpleMessage;
 import org.coldis.library.serialization.ObjectMapperHelper;
@@ -52,12 +54,14 @@ public class ${historicalEntity.getConsumerServiceTypeName()} {
 	 */
 	@Transactional
 	@JmsListener(destination = ${historicalEntity.getConsumerServiceTypeName()}.HISTORICAL_ENTITY_QUEUE)
-	public void handleUpdate(final ${historicalEntity.getEntityTypeName()} history) {
+	public void handleUpdate(final Message message) {
 		${historicalEntity.getConsumerServiceTypeName()}.LOGGER.debug("Processing '${historicalEntity.getEntityQualifiedTypeName()}' history update."); 
 		// Tries to process the entity history update.
 		try {
 			// Saves the new entity history state.
-			this.repository.save(history);
+			this.repository.save(new ${historicalEntity.getEntityTypeName()}(ObjectMapperHelper.deserialize(objectMapper, message.getBody(String.class), new TypeReference<Map<String, Object>>() {
+			}, false), LocalDateTime.ofInstant(Instant.ofEpochMilli(message.getJMSTimestamp()), 
+                    TimeZone.getDefault().toZoneId())));
 			${historicalEntity.getConsumerServiceTypeName()}.LOGGER.debug("'${historicalEntity.getEntityQualifiedTypeName()}' history update processed."); 
 		}
 		// If the entity state cannot be saved as historical data.

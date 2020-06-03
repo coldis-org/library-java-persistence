@@ -1,7 +1,6 @@
 package  ${historicalEntity.getServicePackageName()};
 
-import java.util.Map;
-
+import org.coldis.library.model.ModelView;
 import org.coldis.library.persistence.history.EntityHistoryProducerService;
 import org.coldis.library.serialization.ObjectMapperHelper;
 import org.slf4j.Logger;
@@ -10,11 +9,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Controller;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import ${historicalEntity.getOriginalEntityQualifiedTypeName()};
-import ${historicalEntity.getEntityQualifiedTypeName()};
 
 /**
  * JPA entity history service for
@@ -54,7 +51,7 @@ public class ${historicalEntity.getProducerServiceTypeName()} implements EntityH
 		${historicalEntity.getProducerServiceTypeName()}.LOGGER.debug("Sending '${historicalEntity.getEntityQualifiedTypeName()}' update to history queue '" + 
 				${historicalEntity.getProducerServiceTypeName()}.HISTORICAL_ENTITY_QUEUE + "'.");
 		this.jmsTemplate.convertAndSend(${historicalEntity.getProducerServiceTypeName()}.HISTORICAL_ENTITY_QUEUE, 
-				new ${historicalEntity.getEntityTypeName()}(ObjectMapperHelper.convert(objectMapper, state, new TypeReference<Map<String, Object>>() {}, false)));
+				ObjectMapperHelper.serialize(objectMapper, state, ModelView.Persistent.class, false));
 		${historicalEntity.getProducerServiceTypeName()}.LOGGER.debug("'${historicalEntity.getEntityQualifiedTypeName()}' update sent to history queue '" + 
 				${historicalEntity.getProducerServiceTypeName()}.HISTORICAL_ENTITY_QUEUE + "'.");
 	}

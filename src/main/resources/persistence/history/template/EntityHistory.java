@@ -3,6 +3,8 @@ package ${historicalEntity.getEntityPackageName()};
 import java.util.Map;
 import java.util.Objects;
 
+import java.util.LocalDateTime;
+
 import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.Entity;
@@ -69,11 +71,12 @@ public class ${historicalEntity.getEntityTypeName()} extends AbstractTimestampab
 	 * Entity state constructor.
 	 *
 	 * @param state New entity state.
+	 * @param createdAt When entity was created.
 	 */
-	public ${historicalEntity.getEntityTypeName()}(final Map<String, Object> state) {
+	public ${historicalEntity.getEntityTypeName()}(final Map<String, Object> state, final LocalDateTime createdAt) {
 		super();
 		this.state = state;
-		setCreatedAt(DateTimeHelper.getCurrentLocalDateTime());
+		setCreatedAt(createdAt);
 	}
 
 	/**
