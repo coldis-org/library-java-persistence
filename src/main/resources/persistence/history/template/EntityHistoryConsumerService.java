@@ -1,6 +1,10 @@
 package  ${historicalEntity.getServicePackageName()};
 
 import java.util.Map;
+import java.util.TimeZone;
+
+import java.time.Instant;
+import java.time.LocalDateTime;
 
 import javax.jms.Message;
 

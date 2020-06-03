@@ -3,7 +3,7 @@ package ${historicalEntity.getEntityPackageName()};
 import java.util.Map;
 import java.util.Objects;
 
-import java.util.LocalDateTime;
+import java.time.LocalDateTime;
 
 import javax.persistence.Column;
 import javax.persistence.Convert;

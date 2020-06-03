@@ -1,6 +1,6 @@
 package  ${historicalEntity.getServicePackageName()};
 
-import org.coldis.library.model.ModelView;
+import org.coldis.library.model.view.ModelView;
 import org.coldis.library.persistence.history.EntityHistoryProducerService;
 import org.coldis.library.serialization.ObjectMapperHelper;
 import org.slf4j.Logger;

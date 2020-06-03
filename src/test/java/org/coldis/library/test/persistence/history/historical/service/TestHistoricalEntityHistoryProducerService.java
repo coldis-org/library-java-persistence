@@ -1,7 +1,6 @@
 package  org.coldis.library.test.persistence.history.historical.service;
 
-import java.util.Map;
-
+import org.coldis.library.model.view.ModelView;
 import org.coldis.library.persistence.history.EntityHistoryProducerService;
 import org.coldis.library.serialization.ObjectMapperHelper;
 import org.slf4j.Logger;
@@ -10,11 +9,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Controller;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.coldis.library.test.persistence.history.TestHistoricalEntity;
-import org.coldis.library.test.persistence.history.historical.model.TestHistoricalEntityHistory;
 
 /**
  * JPA entity history service for
@@ -54,7 +51,7 @@ public class TestHistoricalEntityHistoryProducerService implements EntityHistory
 		TestHistoricalEntityHistoryProducerService.LOGGER.debug("Sending 'org.coldis.library.test.persistence.history.historical.model.TestHistoricalEntityHistory' update to history queue '" + 
 				TestHistoricalEntityHistoryProducerService.HISTORICAL_ENTITY_QUEUE + "'.");
 		this.jmsTemplate.convertAndSend(TestHistoricalEntityHistoryProducerService.HISTORICAL_ENTITY_QUEUE, 
-				new TestHistoricalEntityHistory(ObjectMapperHelper.convert(objectMapper, state, new TypeReference<Map<String, Object>>() {}, false)));
+				ObjectMapperHelper.serialize(objectMapper, state, ModelView.Persistent.class, false));
 		TestHistoricalEntityHistoryProducerService.LOGGER.debug("'org.coldis.library.test.persistence.history.historical.model.TestHistoricalEntityHistory' update sent to history queue '" + 
 				TestHistoricalEntityHistoryProducerService.HISTORICAL_ENTITY_QUEUE + "'.");
 	}

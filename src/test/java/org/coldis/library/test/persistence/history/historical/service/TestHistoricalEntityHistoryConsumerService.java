@@ -1,6 +1,12 @@
 package  org.coldis.library.test.persistence.history.historical.service;
 
 import java.util.Map;
+import java.util.TimeZone;
+
+import java.time.Instant;
+import java.time.LocalDateTime;
+
+import javax.jms.Message;
 
 import org.coldis.library.exception.IntegrationException;
 import org.coldis.library.model.SimpleMessage;
@@ -52,12 +58,14 @@ public class TestHistoricalEntityHistoryConsumerService {
 	 */
 	@Transactional
 	@JmsListener(destination = TestHistoricalEntityHistoryConsumerService.HISTORICAL_ENTITY_QUEUE)
-	public void handleUpdate(final TestHistoricalEntityHistory history) {
+	public void handleUpdate(final Message message) {
 		TestHistoricalEntityHistoryConsumerService.LOGGER.debug("Processing 'org.coldis.library.test.persistence.history.historical.model.TestHistoricalEntityHistory' history update."); 
 		// Tries to process the entity history update.
 		try {
 			// Saves the new entity history state.
-			this.repository.save(history);
+			this.repository.save(new TestHistoricalEntityHistory(ObjectMapperHelper.deserialize(objectMapper, message.getBody(String.class), new TypeReference<Map<String, Object>>() {
+			}, false), LocalDateTime.ofInstant(Instant.ofEpochMilli(message.getJMSTimestamp()), 
+                    TimeZone.getDefault().toZoneId())));
 			TestHistoricalEntityHistoryConsumerService.LOGGER.debug("'org.coldis.library.test.persistence.history.historical.model.TestHistoricalEntityHistory' history update processed."); 
 		}
 		// If the entity state cannot be saved as historical data.

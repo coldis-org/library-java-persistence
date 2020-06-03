@@ -3,6 +3,8 @@ package org.coldis.library.test.persistence.history.historical.model;
 import java.util.Map;
 import java.util.Objects;
 
+import java.time.LocalDateTime;
+
 import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.Entity;
@@ -69,11 +71,12 @@ public class TestHistoricalEntityHistory extends AbstractTimestampableEntity
 	 * Entity state constructor.
 	 *
 	 * @param state New entity state.
+	 * @param createdAt When entity was created.
 	 */
-	public TestHistoricalEntityHistory(final Map<String, Object> state) {
+	public TestHistoricalEntityHistory(final Map<String, Object> state, final LocalDateTime createdAt) {
 		super();
 		this.state = state;
-		setCreatedAt(DateTimeHelper.getCurrentLocalDateTime());
+		setCreatedAt(createdAt);
 	}
 
 	/**
