@@ -2,10 +2,16 @@ package org.coldis.library.persistence.model;
 
 import java.time.LocalDateTime;
 
+import javax.persistence.AttributeOverride;
+import javax.persistence.Column;
 import javax.persistence.MappedSuperclass;
 
+import org.coldis.library.dto.DtoAttribute;
 import org.coldis.library.helper.DateTimeHelper;
 import org.coldis.library.model.DistributionGroup;
+import org.coldis.library.model.view.ModelView;
+
+import com.fasterxml.jackson.annotation.JsonView;
 
 /**
  * Abstract distribution group JPA entity.
@@ -49,6 +55,7 @@ public abstract class AbstractDistributionGroupEntity extends AbstractTimestampa
 	 * @return The primary.
 	 */
 	@Override
+	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public Boolean getPrimary() {
 		return this.primary;
 	}
@@ -69,6 +76,7 @@ public abstract class AbstractDistributionGroupEntity extends AbstractTimestampa
 	 * @return The distributionSize.
 	 */
 	@Override
+	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public Integer getDistributionSize() {
 		return this.distributionSize;
 	}
@@ -89,6 +97,7 @@ public abstract class AbstractDistributionGroupEntity extends AbstractTimestampa
 	 * @return The absoluteLimit.
 	 */
 	@Override
+	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public Long getAbsoluteLimit() {
 		return this.absoluteLimit;
 	}
@@ -109,6 +118,7 @@ public abstract class AbstractDistributionGroupEntity extends AbstractTimestampa
 	 * @return The currentSize.
 	 */
 	@Override
+	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public Long getCurrentSize() {
 		return this.currentSize;
 	}
@@ -129,6 +139,7 @@ public abstract class AbstractDistributionGroupEntity extends AbstractTimestampa
 	 * @return The expiredAt.
 	 */
 	@Override
+	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public LocalDateTime getExpiredAt() {
 		return this.expiredAt;
 	}
@@ -147,12 +158,22 @@ public abstract class AbstractDistributionGroupEntity extends AbstractTimestampa
 	 * @see org.coldis.library.model.Expirable#getExpired()
 	 */
 	@Override
+	@AttributeOverride(column = @Column, name = "expired")
+	@DtoAttribute(readOnly = true, usedInComparison = false)
+	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public Boolean getExpired() {
 		return
 		// If the limit has been reached.
 		(this.getCurrentSize().compareTo(this.getAbsoluteLimit()) >= 0)
 				// Or if the expiration date has been reached.
 				|| ((this.getExpiredAt() != null) && this.getExpiredAt().isBefore(DateTimeHelper.getCurrentLocalDateTime()));
+	}
+
+	/**
+	 * @see org.coldis.library.persistence.model.AbstractTimestampableExpirableEntity#setExpired(java.lang.Boolean)
+	 */
+	@Override
+	public void setExpired(Boolean expired) {
 	}
 
 }
