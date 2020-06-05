@@ -2,7 +2,6 @@ package org.coldis.library.persistence.model;
 
 import java.time.LocalDateTime;
 
-import javax.persistence.AttributeOverride;
 import javax.persistence.Column;
 import javax.persistence.MappedSuperclass;
 
@@ -55,6 +54,7 @@ public abstract class AbstractDistributionGroupEntity extends AbstractTimestampa
 	 * @return The primary.
 	 */
 	@Override
+	@Column(name = "pr1mary")
 	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public Boolean getPrimary() {
 		return this.primary;
@@ -158,7 +158,6 @@ public abstract class AbstractDistributionGroupEntity extends AbstractTimestampa
 	 * @see org.coldis.library.model.Expirable#getExpired()
 	 */
 	@Override
-	@AttributeOverride(column = @Column, name = "expired")
 	@DtoAttribute(readOnly = true, usedInComparison = false)
 	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public Boolean getExpired() {
@@ -173,7 +172,7 @@ public abstract class AbstractDistributionGroupEntity extends AbstractTimestampa
 	 * @see org.coldis.library.persistence.model.AbstractTimestampableExpirableEntity#setExpired(java.lang.Boolean)
 	 */
 	@Override
-	public void setExpired(Boolean expired) {
+	protected void setExpired(Boolean expired) {
 	}
 
 }
