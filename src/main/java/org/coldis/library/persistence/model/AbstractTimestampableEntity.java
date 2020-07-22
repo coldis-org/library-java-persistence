@@ -29,7 +29,7 @@ public abstract class AbstractTimestampableEntity extends AbstractTimestampable 
 	 */
 	@Override
 	@DtoAttribute(readOnly = true, usedInComparison = false)
-	@Column(columnDefinition = "TIMESTAMP WITHOUT TIME ZONE", nullable = false)
+	@Column(columnDefinition = "TIMESTAMPTZ", nullable = false)
 	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public LocalDateTime getCreatedAt() {
 		return super.getCreatedAt();
@@ -40,7 +40,7 @@ public abstract class AbstractTimestampableEntity extends AbstractTimestampable 
 	 */
 	@Override
 	@DtoAttribute(readOnly = true, usedInComparison = false)
-	@Column(columnDefinition = "TIMESTAMP WITHOUT TIME ZONE", nullable = false)
+	@Column(columnDefinition = "TIMESTAMPTZ", nullable = false)
 	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public LocalDateTime getUpdatedAt() {
 		return super.getUpdatedAt();

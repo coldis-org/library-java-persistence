@@ -139,6 +139,7 @@ public abstract class AbstractDistributionGroupEntity extends AbstractTimestampa
 	 * @return The expiredAt.
 	 */
 	@Override
+	@Column(columnDefinition = "TIMESTAMPTZ")
 	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public LocalDateTime getExpiredAt() {
 		return this.expiredAt;
