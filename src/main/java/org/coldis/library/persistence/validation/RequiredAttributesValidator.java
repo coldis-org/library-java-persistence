@@ -30,7 +30,8 @@ public class RequiredAttributesValidator implements ConstraintValidator<Required
 	 * @see javax.validation.ConstraintValidator#initialize(java.lang.annotation.Annotation)
 	 */
 	@Override
-	public void initialize(final RequiredAttributes requiredAttributes) {
+	public void initialize(
+			final RequiredAttributes requiredAttributes) {
 		this.requiredAttributes = requiredAttributes;
 	}
 
@@ -40,7 +41,9 @@ public class RequiredAttributesValidator implements ConstraintValidator<Required
 	 */
 	@Override
 	@SuppressWarnings("unchecked")
-	public boolean isValid(final Object value, final ConstraintValidatorContext context) {
+	public boolean isValid(
+			final Object value,
+			final ConstraintValidatorContext context) {
 		// The value is valid by default.
 		Boolean valid = true;
 		// Tries to validate the object.
