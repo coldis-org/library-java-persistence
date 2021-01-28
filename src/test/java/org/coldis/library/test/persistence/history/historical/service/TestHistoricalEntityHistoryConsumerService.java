@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 import javax.jms.Message;
 
 import org.coldis.library.exception.IntegrationException;
+import org.coldis.library.helper.DateTimeHelper;
 import org.coldis.library.model.SimpleMessage;
 import org.coldis.library.serialization.ObjectMapperHelper;
 import org.slf4j.Logger;
@@ -62,10 +63,23 @@ public class TestHistoricalEntityHistoryConsumerService {
 		TestHistoricalEntityHistoryConsumerService.LOGGER.debug("Processing 'org.coldis.library.test.persistence.history.historical.model.TestHistoricalEntityHistory' history update."); 
 		// Tries to process the entity history update.
 		try {
-			// Saves the new entity history state.
-			this.repository.save(new TestHistoricalEntityHistory(ObjectMapperHelper.deserialize(objectMapper, message.getBody(String.class), new TypeReference<Map<String, Object>>() {
+			// Converts the entity state to a map.
+			TestHistoricalEntityHistory entity = new TestHistoricalEntityHistory(ObjectMapperHelper.deserialize(objectMapper, message.getBody(String.class), new TypeReference<Map<String, Object>>() {
 			}, false), LocalDateTime.ofInstant(Instant.ofEpochMilli(message.getJMSTimestamp()), 
-                    TimeZone.getDefault().toZoneId())));
+                    TimeZone.getDefault().toZoneId()));
+			// Tries retrieve the update date from the entity.
+			try {
+				LocalDateTime updatedAt = LocalDateTime.parse(entity.getState().get("updatedAt").toString(), DateTimeHelper.DATE_TIME_FORMATTER);
+				entity.setCreatedAt(updatedAt);
+				entity.setUpdatedAt(updatedAt);
+			}
+			// If the entity update date cannot be retrieved.
+			catch (Exception exception) {
+				// Logs it.
+				TestHistoricalEntityHistoryConsumerService.LOGGER.debug("'org.coldis.library.test.persistence.history.historical.model.TestHistoricalEntityHistory' update date could not be retrieved."); 
+			}
+			// Saves the new entity history state.
+			this.repository.save(entity);
 			TestHistoricalEntityHistoryConsumerService.LOGGER.debug("'org.coldis.library.test.persistence.history.historical.model.TestHistoricalEntityHistory' history update processed."); 
 		}
 		// If the entity state cannot be saved as historical data.

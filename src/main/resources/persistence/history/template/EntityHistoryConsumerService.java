@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 import javax.jms.Message;
 
 import org.coldis.library.exception.IntegrationException;
+import org.coldis.library.helper.DateTimeHelper;
 import org.coldis.library.model.SimpleMessage;
 import org.coldis.library.serialization.ObjectMapperHelper;
 import org.slf4j.Logger;
@@ -62,10 +63,23 @@ public class ${historicalEntity.getConsumerServiceTypeName()} {
 		${historicalEntity.getConsumerServiceTypeName()}.LOGGER.debug("Processing '${historicalEntity.getEntityQualifiedTypeName()}' history update."); 
 		// Tries to process the entity history update.
 		try {
-			// Saves the new entity history state.
-			this.repository.save(new ${historicalEntity.getEntityTypeName()}(ObjectMapperHelper.deserialize(objectMapper, message.getBody(String.class), new TypeReference<Map<String, Object>>() {
+			// Converts the entity state to a map.
+			${historicalEntity.getEntityTypeName()} entity = new ${historicalEntity.getEntityTypeName()}(ObjectMapperHelper.deserialize(objectMapper, message.getBody(String.class), new TypeReference<Map<String, Object>>() {
 			}, false), LocalDateTime.ofInstant(Instant.ofEpochMilli(message.getJMSTimestamp()), 
-                    TimeZone.getDefault().toZoneId())));
+                    TimeZone.getDefault().toZoneId()));
+			// Tries retrieve the update date from the entity.
+			try {
+				LocalDateTime updatedAt = LocalDateTime.parse(entity.getState().get("updatedAt").toString(), DateTimeHelper.DATE_TIME_FORMATTER);
+				entity.setCreatedAt(updatedAt);
+				entity.setUpdatedAt(updatedAt);
+			}
+			// If the entity update date cannot be retrieved.
+			catch (Exception exception) {
+				// Logs it.
+				${historicalEntity.getConsumerServiceTypeName()}.LOGGER.debug("'${historicalEntity.getEntityQualifiedTypeName()}' update date could not be retrieved."); 
+			}
+			// Saves the new entity history state.
+			this.repository.save(entity);
 			${historicalEntity.getConsumerServiceTypeName()}.LOGGER.debug("'${historicalEntity.getEntityQualifiedTypeName()}' history update processed."); 
 		}
 		// If the entity state cannot be saved as historical data.
