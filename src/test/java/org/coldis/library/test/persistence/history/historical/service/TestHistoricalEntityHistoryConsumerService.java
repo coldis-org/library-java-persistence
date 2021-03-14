@@ -58,7 +58,8 @@ public class TestHistoricalEntityHistoryConsumerService {
 	 * @param state	Current entity state.
 	 */
 	@Transactional
-	@JmsListener(destination = TestHistoricalEntityHistoryConsumerService.HISTORICAL_ENTITY_QUEUE)
+	@JmsListener(destination = TestHistoricalEntityHistoryConsumerService.HISTORICAL_ENTITY_QUEUE,
+		concurrency = "1-7")
 	public void handleUpdate(final Message message) {
 		TestHistoricalEntityHistoryConsumerService.LOGGER.debug("Processing 'org.coldis.library.test.persistence.history.historical.model.TestHistoricalEntityHistory' history update."); 
 		// Tries to process the entity history update.

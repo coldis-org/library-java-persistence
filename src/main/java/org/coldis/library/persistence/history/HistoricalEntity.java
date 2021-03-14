@@ -70,4 +70,9 @@ public @interface HistoricalEntity {
 	 */
 	public String stateColumnDefinition() default "JSONB";
 
+	/**
+	 * Consumer concurrency.
+	 */
+	public String consumerConcurrency() default "1-7";
+
 }

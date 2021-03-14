@@ -41,7 +41,8 @@ public class HistoricalEntityGenerator extends AbstractProcessor {
 	 * @param  historicalEntityMetadata Metadata.
 	 * @throws IOException              If the classes cannot be generated.
 	 */
-	private void generateClasses(final HistoricalEntityMetadata historicalEntityMetadata) throws IOException {
+	private void generateClasses(
+			final HistoricalEntityMetadata historicalEntityMetadata) throws IOException {
 		// Gets the velocity engine.
 		final VelocityEngine velocityEngine = new VelocityEngine();
 		// Configures the resource loader to also look at the classpath.
@@ -56,28 +57,21 @@ public class HistoricalEntityGenerator extends AbstractProcessor {
 		velocityContext.put("h", "#");
 		// Gets the templates for the entity history classes.
 		final Template entityTemplate = velocityEngine.getTemplate(historicalEntityMetadata.getEntityTemplatePath());
-		final Template repositoryTemplate = velocityEngine
-				.getTemplate(historicalEntityMetadata.getRepositoryTemplatePath());
-		final Template producerServiceTemplate = velocityEngine
-				.getTemplate(historicalEntityMetadata.getProducerServiceTemplatePath());
-		final Template consumerServiceTemplate = velocityEngine
-				.getTemplate(historicalEntityMetadata.getConsumerServiceTemplatePath());
+		final Template repositoryTemplate = velocityEngine.getTemplate(historicalEntityMetadata.getRepositoryTemplatePath());
+		final Template producerServiceTemplate = velocityEngine.getTemplate(historicalEntityMetadata.getProducerServiceTemplatePath());
+		final Template consumerServiceTemplate = velocityEngine.getTemplate(historicalEntityMetadata.getConsumerServiceTemplatePath());
 		// Gets the writer for the generated classes.
 		final File entityFile = new File(
-				historicalEntityMetadata.getConsumerTargetPath() + File.separator
-				+ historicalEntityMetadata.getEntityFilePackageName(),
+				historicalEntityMetadata.getConsumerTargetPath() + File.separator + historicalEntityMetadata.getEntityFilePackageName(),
 				historicalEntityMetadata.getEntityTypeName() + ".java");
 		final File daoFile = new File(
-				historicalEntityMetadata.getConsumerTargetPath() + File.separator
-				+ historicalEntityMetadata.getRepositoryFilePackageName(),
+				historicalEntityMetadata.getConsumerTargetPath() + File.separator + historicalEntityMetadata.getRepositoryFilePackageName(),
 				historicalEntityMetadata.getRepositoryTypeName() + ".java");
 		final File producerServiceFile = new File(
-				historicalEntityMetadata.getProducerTargetPath() + File.separator
-				+ historicalEntityMetadata.getServiceFilePackageName(),
+				historicalEntityMetadata.getProducerTargetPath() + File.separator + historicalEntityMetadata.getServiceFilePackageName(),
 				historicalEntityMetadata.getProducerServiceTypeName() + ".java");
 		final File consumerServiceFile = new File(
-				historicalEntityMetadata.getConsumerTargetPath() + File.separator
-				+ historicalEntityMetadata.getServiceFilePackageName(),
+				historicalEntityMetadata.getConsumerTargetPath() + File.separator + historicalEntityMetadata.getServiceFilePackageName(),
 				historicalEntityMetadata.getConsumerServiceTypeName() + ".java");
 		FileUtils.forceMkdir(entityFile.getParentFile());
 		FileUtils.forceMkdir(daoFile.getParentFile());
@@ -105,18 +99,17 @@ public class HistoricalEntityGenerator extends AbstractProcessor {
 	 * @param  entityType Entity type.
 	 * @return            Entity type.
 	 */
-	private HistoricalEntityMetadata getEntityHistoryMetadata(final TypeElement entityType) {
+	private HistoricalEntityMetadata getEntityHistoryMetadata(
+			final TypeElement entityType) {
 		// Gets the historical entity metadata.
 		final HistoricalEntity historicalEntity = entityType.getAnnotation(HistoricalEntity.class);
 		// Creates the default metadata.
-		final HistoricalEntityMetadata historicalEntityMetadata = new HistoricalEntityMetadata(
-				historicalEntity.producerTargetPath(), historicalEntity.consumerTargetPath(),
-				historicalEntity.entityTemplatePath(), historicalEntity.repositoryTemplatePath(),
-				historicalEntity.producerServiceTemplatePath(), historicalEntity.consumerServiceTemplatePath(),
-				historicalEntity.repositoryBeanName(), historicalEntity.producerServiceBeanName(),
-				historicalEntity.consumerServiceBeanName(), historicalEntity.basePackageName(),
-				((PackageElement) entityType.getEnclosingElement()).getQualifiedName().toString(),
-				entityType.getSimpleName().toString(), historicalEntity.stateColumnDefinition());
+		final HistoricalEntityMetadata historicalEntityMetadata = new HistoricalEntityMetadata(historicalEntity.producerTargetPath(),
+				historicalEntity.consumerTargetPath(), historicalEntity.entityTemplatePath(), historicalEntity.repositoryTemplatePath(),
+				historicalEntity.producerServiceTemplatePath(), historicalEntity.consumerServiceTemplatePath(), historicalEntity.repositoryBeanName(),
+				historicalEntity.producerServiceBeanName(), historicalEntity.consumerServiceBeanName(), historicalEntity.basePackageName(),
+				((PackageElement) entityType.getEnclosingElement()).getQualifiedName().toString(), entityType.getSimpleName().toString(),
+				historicalEntity.stateColumnDefinition(), historicalEntity.consumerConcurrency());
 		// Returns the historical entity metadata.
 		return historicalEntityMetadata;
 	}
@@ -127,25 +120,22 @@ public class HistoricalEntityGenerator extends AbstractProcessor {
 	 */
 	@Override
 	@SuppressWarnings("unchecked")
-	public boolean process(final Set<? extends TypeElement> annotations, final RoundEnvironment roundEnv) {
+	public boolean process(
+			final Set<? extends TypeElement> annotations,
+			final RoundEnvironment roundEnv) {
 		HistoricalEntityGenerator.LOGGER.debug("Initializing HistoricalEntityGenerator...");
 		// For each historical entity.
-		for (final TypeElement entityType : (Set<TypeElement>) roundEnv
-				.getElementsAnnotatedWith(HistoricalEntity.class)) {
-			HistoricalEntityGenerator.LOGGER
-			.debug("Generating entity history classes for '" + entityType.getSimpleName() + "'...");
+		for (final TypeElement entityType : (Set<TypeElement>) roundEnv.getElementsAnnotatedWith(HistoricalEntity.class)) {
+			HistoricalEntityGenerator.LOGGER.debug("Generating entity history classes for '" + entityType.getSimpleName() + "'...");
 			// Tries to generate the entity history classes.
 			try {
 				this.generateClasses(this.getEntityHistoryMetadata(entityType));
-				HistoricalEntityGenerator.LOGGER
-				.debug("Historical entity '" + entityType.getSimpleName() + "' processed successfully.");
+				HistoricalEntityGenerator.LOGGER.debug("Historical entity '" + entityType.getSimpleName() + "' processed successfully.");
 			}
 			// If the historical entity could not be processed correctly.
 			catch (final IOException exception) {
 				// Logs the error.
-				HistoricalEntityGenerator.LOGGER.debug(
-						"Historical entity '" + entityType.getSimpleName() + "' not processed successfully.",
-						exception);
+				HistoricalEntityGenerator.LOGGER.debug("Historical entity '" + entityType.getSimpleName() + "' not processed successfully.", exception);
 			}
 		}
 		// Returns that the annotations have been processed.

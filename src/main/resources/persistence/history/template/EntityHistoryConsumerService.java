@@ -58,7 +58,8 @@ public class ${historicalEntity.getConsumerServiceTypeName()} {
 	 * @param state	Current entity state.
 	 */
 	@Transactional
-	@JmsListener(destination = ${historicalEntity.getConsumerServiceTypeName()}.HISTORICAL_ENTITY_QUEUE)
+	@JmsListener(destination = ${historicalEntity.getConsumerServiceTypeName()}.HISTORICAL_ENTITY_QUEUE,
+		concurrency = "${historicalEntity.getConsumerConcurrency()}")
 	public void handleUpdate(final Message message) {
 		${historicalEntity.getConsumerServiceTypeName()}.LOGGER.debug("Processing '${historicalEntity.getEntityQualifiedTypeName()}' history update."); 
 		// Tries to process the entity history update.

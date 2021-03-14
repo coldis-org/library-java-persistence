@@ -108,6 +108,11 @@ public class HistoricalEntityMetadata {
 	private String stateColumnDefinition;
 
 	/**
+	 * Consumer concurrency.
+	 */
+	private String consumerConcurrency;
+
+	/**
 	 * Default constructor.
 	 *
 	 * @param producerTargetPath
@@ -123,12 +128,24 @@ public class HistoricalEntityMetadata {
 	 * @param originalEntityPackageName
 	 * @param originalEntityTypeName
 	 * @param stateColumnDefinition
+	 * @param consumerConcurrency
 	 *
 	 */
-	public HistoricalEntityMetadata(final String producerTargetPath, final String consumerTargetPath, final String entityTemplatePath,
-			final String repositoryTemplatePath, final String producerServiceTemplatePath, final String consumerServiceTemplatePath,
-			final String repositoryBeanName, final String producerServiceBeanName, final String consumerServiceBeanName, final String basePackageName,
-			final String originalEntityPackageName, final String originalEntityTypeName, final String stateColumnDefinition) {
+	public HistoricalEntityMetadata(
+			final String producerTargetPath,
+			final String consumerTargetPath,
+			final String entityTemplatePath,
+			final String repositoryTemplatePath,
+			final String producerServiceTemplatePath,
+			final String consumerServiceTemplatePath,
+			final String repositoryBeanName,
+			final String producerServiceBeanName,
+			final String consumerServiceBeanName,
+			final String basePackageName,
+			final String originalEntityPackageName,
+			final String originalEntityTypeName,
+			final String stateColumnDefinition,
+			final String consumerConcurrency) {
 		super();
 		this.producerTargetPath = producerTargetPath;
 		this.consumerTargetPath = consumerTargetPath;
@@ -143,6 +160,7 @@ public class HistoricalEntityMetadata {
 		this.originalEntityPackageName = originalEntityPackageName;
 		this.originalEntityTypeName = originalEntityTypeName;
 		this.stateColumnDefinition = stateColumnDefinition;
+		this.consumerConcurrency = consumerConcurrency;
 	}
 
 	/**
@@ -159,7 +177,8 @@ public class HistoricalEntityMetadata {
 	 *
 	 * @param producerTargetPath New producerTargetPath.
 	 */
-	public void setProducerTargetPath(final String producerTargetPath) {
+	public void setProducerTargetPath(
+			final String producerTargetPath) {
 		this.producerTargetPath = producerTargetPath;
 	}
 
@@ -177,7 +196,8 @@ public class HistoricalEntityMetadata {
 	 *
 	 * @param consumerTargetPath New consumerTargetPath.
 	 */
-	public void setConsumerTargetPath(final String consumerTargetPath) {
+	public void setConsumerTargetPath(
+			final String consumerTargetPath) {
 		this.consumerTargetPath = consumerTargetPath;
 	}
 
@@ -195,7 +215,8 @@ public class HistoricalEntityMetadata {
 	 *
 	 * @param entityTemplatePath New entityTemplatePath.
 	 */
-	public void setEntityTemplatePath(final String entityTemplatePath) {
+	public void setEntityTemplatePath(
+			final String entityTemplatePath) {
 		this.entityTemplatePath = entityTemplatePath;
 	}
 
@@ -213,7 +234,8 @@ public class HistoricalEntityMetadata {
 	 *
 	 * @param repositoryTemplatePath New repositoryTemplatePath.
 	 */
-	public void setRepositoryTemplatePath(final String repositoryTemplatePath) {
+	public void setRepositoryTemplatePath(
+			final String repositoryTemplatePath) {
 		this.repositoryTemplatePath = repositoryTemplatePath;
 	}
 
@@ -231,7 +253,8 @@ public class HistoricalEntityMetadata {
 	 *
 	 * @param producerServiceTemplatePath New producerServiceTemplatePath.
 	 */
-	public void setProducerServiceTemplatePath(final String producerServiceTemplatePath) {
+	public void setProducerServiceTemplatePath(
+			final String producerServiceTemplatePath) {
 		this.producerServiceTemplatePath = producerServiceTemplatePath;
 	}
 
@@ -249,7 +272,8 @@ public class HistoricalEntityMetadata {
 	 *
 	 * @param consumerServiceTemplatePath New consumerServiceTemplatePath.
 	 */
-	public void setConsumerServiceTemplatePath(final String consumerServiceTemplatePath) {
+	public void setConsumerServiceTemplatePath(
+			final String consumerServiceTemplatePath) {
 		this.consumerServiceTemplatePath = consumerServiceTemplatePath;
 	}
 
@@ -267,7 +291,8 @@ public class HistoricalEntityMetadata {
 	 *
 	 * @param repositoryBeanName New repositoryBeanName.
 	 */
-	public void setRepositoryBeanName(final String repositoryBeanName) {
+	public void setRepositoryBeanName(
+			final String repositoryBeanName) {
 		this.repositoryBeanName = repositoryBeanName;
 	}
 
@@ -285,7 +310,8 @@ public class HistoricalEntityMetadata {
 	 *
 	 * @param producerServiceBeanName New producerServiceBeanName.
 	 */
-	public void setProducerServiceBeanName(final String producerServiceBeanName) {
+	public void setProducerServiceBeanName(
+			final String producerServiceBeanName) {
 		this.producerServiceBeanName = producerServiceBeanName;
 	}
 
@@ -303,7 +329,8 @@ public class HistoricalEntityMetadata {
 	 *
 	 * @param consumerServiceBeanName New consumerServiceBeanName.
 	 */
-	public void setConsumerServiceBeanName(final String consumerServiceBeanName) {
+	public void setConsumerServiceBeanName(
+			final String consumerServiceBeanName) {
 		this.consumerServiceBeanName = consumerServiceBeanName;
 	}
 
@@ -321,7 +348,8 @@ public class HistoricalEntityMetadata {
 	 *
 	 * @param basePackageName New basePackageName.
 	 */
-	public void setBasePackageName(final String basePackageName) {
+	public void setBasePackageName(
+			final String basePackageName) {
 		this.basePackageName = basePackageName;
 	}
 
@@ -339,7 +367,8 @@ public class HistoricalEntityMetadata {
 	 *
 	 * @param originalEntityPackageName New originalEntityPackageName.
 	 */
-	public void setOriginalEntityPackageName(final String originalEntityPackageName) {
+	public void setOriginalEntityPackageName(
+			final String originalEntityPackageName) {
 		this.originalEntityPackageName = originalEntityPackageName;
 	}
 
@@ -411,7 +440,8 @@ public class HistoricalEntityMetadata {
 	 *
 	 * @param originalEntityTypeName New originalEntityTypeName.
 	 */
-	public void setOriginalEntityTypeName(final String originalEntityTypeName) {
+	public void setOriginalEntityTypeName(
+			final String originalEntityTypeName) {
 		this.originalEntityTypeName = originalEntityTypeName;
 	}
 
@@ -510,7 +540,8 @@ public class HistoricalEntityMetadata {
 	 *
 	 * @param stateColumnDefinition New stateColumnDefinition.
 	 */
-	public void setStateColumnDefinition(final String stateColumnDefinition) {
+	public void setStateColumnDefinition(
+			final String stateColumnDefinition) {
 		this.stateColumnDefinition = stateColumnDefinition;
 	}
 
@@ -530,6 +561,25 @@ public class HistoricalEntityMetadata {
 	 */
 	public String getQueueName() {
 		return this.getEntityTypeName() + ".queue";
+	}
+
+	/**
+	 * Gets the consumerConcurrency.
+	 *
+	 * @return The consumerConcurrency.
+	 */
+	public String getConsumerConcurrency() {
+		return this.consumerConcurrency;
+	}
+
+	/**
+	 * Sets the consumerConcurrency.
+	 *
+	 * @param consumerConcurrency New consumerConcurrency.
+	 */
+	public void setConsumerConcurrency(
+			final String consumerConcurrency) {
+		this.consumerConcurrency = consumerConcurrency;
 	}
 
 }

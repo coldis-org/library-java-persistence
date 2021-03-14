@@ -43,12 +43,12 @@
 		<dependency>
 			<groupId>org.coldis.library</groupId>
 			<artifactId>core</artifactId>
-			<version>0.0.24</version>
+			<version>0.0.29</version>
 		</dependency>
 		<dependency>
 			<groupId>org.coldis.library</groupId>
 			<artifactId>dto</artifactId>
-			<version>0.0.11</version>
+			<version>0.0.13</version>
 		</dependency>
 		<dependency>
 			<groupId>org.coldis.library</groupId>
