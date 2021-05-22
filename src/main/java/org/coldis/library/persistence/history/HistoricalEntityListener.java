@@ -34,7 +34,8 @@ public class HistoricalEntityListener implements ApplicationContextAware {
 	 * @see org.springframework.context.ApplicationContextAware#setApplicationContext(org.springframework.context.ApplicationContext)
 	 */
 	@Override
-	public void setApplicationContext(final ApplicationContext applicationContext) throws BeansException {
+	public void setApplicationContext(
+			final ApplicationContext applicationContext) throws BeansException {
 		HistoricalEntityListener.appContext = applicationContext;
 	}
 
@@ -49,7 +50,8 @@ public class HistoricalEntityListener implements ApplicationContextAware {
 	 *                                      found.
 	 */
 	@SuppressWarnings("unchecked")
-	private <EntityType> EntityHistoryProducerService<EntityType> getEntityHistoryService(final Object entity,
+	private <EntityType> EntityHistoryProducerService<EntityType> getEntityHistoryService(
+			final Object entity,
 			final HistoricalEntity historicalEntityMetadata) throws IntegrationException {
 		// Service name is retrieved from the annotation.
 		String serviceName = historicalEntityMetadata.producerServiceBeanName();
@@ -66,8 +68,7 @@ public class HistoricalEntityListener implements ApplicationContextAware {
 		// If the entity history service cannot be found.
 		catch (final NoSuchBeanDefinitionException exception) {
 			// Throws an entity history service not found exception.
-			HistoricalEntityListener.LOGGER
-			.error("The entity history service bean could not be found: " + exception.getLocalizedMessage());
+			HistoricalEntityListener.LOGGER.error("The entity history service bean could not be found: " + exception.getLocalizedMessage());
 			HistoricalEntityListener.LOGGER.debug("The entity history service bean could not be found.", exception);
 			throw new IntegrationException(new SimpleMessage("entity.history.service.notfound"), exception);
 		}
@@ -81,7 +82,8 @@ public class HistoricalEntityListener implements ApplicationContextAware {
 	 */
 	@PostUpdate
 	@PostPersist
-	public void handleUpdate(final Object entity) {
+	public void handleUpdate(
+			final Object entity) {
 		// Gets the entity history metadata.
 		final HistoricalEntity historicalEntityMetadata = entity.getClass().getAnnotation(HistoricalEntity.class);
 		// If the entity is should track its history.
