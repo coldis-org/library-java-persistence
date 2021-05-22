@@ -3,6 +3,7 @@ package org.coldis.library.test.persistence.validation;
 import java.util.List;
 
 import org.coldis.library.model.Identifiable;
+import org.coldis.library.model.view.ModelView;
 import org.coldis.library.persistence.model.AbstractTimestampableExpirableEntity;
 import org.coldis.library.persistence.validation.RequiredAttributes;
 
@@ -10,6 +11,10 @@ import org.coldis.library.persistence.validation.RequiredAttributes;
  * Test entity.
  */
 @RequiredAttributes(supplierMethod = "getRequiredAttributes")
+@RequiredAttributes(
+		supplierMethod = "getRequiredAttributes2",
+		groups = ModelView.Sensitive.class
+)
 public class TestObject extends AbstractTimestampableExpirableEntity implements Identifiable {
 
 	/**
@@ -52,7 +57,8 @@ public class TestObject extends AbstractTimestampableExpirableEntity implements 
 	 *
 	 * @param id New id.
 	 */
-	public void setId(final Long id) {
+	public void setId(
+			final Long id) {
 		this.id = id;
 	}
 
@@ -70,7 +76,8 @@ public class TestObject extends AbstractTimestampableExpirableEntity implements 
 	 *
 	 * @param attribute1 New attribute1.
 	 */
-	public void setAttribute1(final String attribute1) {
+	public void setAttribute1(
+			final String attribute1) {
 		this.attribute1 = attribute1;
 	}
 
@@ -88,7 +95,8 @@ public class TestObject extends AbstractTimestampableExpirableEntity implements 
 	 *
 	 * @param attribute2 New attribute2.
 	 */
-	public void setAttribute2(final List<TestObject> attribute2) {
+	public void setAttribute2(
+			final List<TestObject> attribute2) {
 		this.attribute2 = attribute2;
 	}
 
@@ -98,6 +106,15 @@ public class TestObject extends AbstractTimestampableExpirableEntity implements 
 	 * @return The required attributes.
 	 */
 	public static List<String> getRequiredAttributes() {
+		return TestObject.REQUIRED_ATTRIBUTES;
+	}
+
+	/**
+	 * Gets the required attributes.
+	 *
+	 * @return The required attributes.
+	 */
+	public static List<String> getRequiredAttributes2() {
 		return TestObject.REQUIRED_ATTRIBUTES;
 	}
 

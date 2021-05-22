@@ -5,11 +5,9 @@ import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 import java.lang.annotation.Documented;
-import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
-import javax.validation.Constraint;
 import javax.validation.Payload;
 
 /**
@@ -18,9 +16,7 @@ import javax.validation.Payload;
 @Documented
 @Target({ TYPE, METHOD })
 @Retention(RUNTIME)
-@Repeatable(MutipleRequiredAttributes.class)
-@Constraint(validatedBy = RequiredAttributesValidator.class)
-public @interface RequiredAttributes {
+public @interface MutipleRequiredAttributes {
 
 	/**
 	 * Validation groups.
@@ -38,22 +34,8 @@ public @interface RequiredAttributes {
 	String message() default "Required attributes must be present";
 
 	/**
-	 * Supplier method. Must return a collection of attributes names (string).
+	 * Required attributes.
 	 */
-	String supplierMethod();
+	RequiredAttributes[] value();
 
-	/**
-	 * If not null is used as validation.
-	 */
-	boolean notNull() default true;
-
-	/**
-	 * If not empty string is used as validation.
-	 */
-	boolean notEmptyString() default true;
-
-	/**
-	 * If not empty collection is used as validation.
-	 */
-	boolean notEmptyCollection() default true;
 }

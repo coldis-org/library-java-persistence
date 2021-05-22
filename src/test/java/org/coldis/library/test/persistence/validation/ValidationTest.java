@@ -5,6 +5,7 @@ import java.util.List;
 
 import javax.validation.Validator;
 
+import org.coldis.library.model.view.ModelView;
 import org.coldis.library.test.persistence.TestApplication;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -15,7 +16,11 @@ import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 /**
  * Persistence model test.
  */
-@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = "test.properties", classes = TestApplication.class)
+@SpringBootTest(
+		webEnvironment = WebEnvironment.RANDOM_PORT,
+		properties = "test.properties",
+		classes = TestApplication.class
+)
 public class ValidationTest {
 
 	/**
@@ -33,42 +38,52 @@ public class ValidationTest {
 		final TestObject testObject = new TestObject();
 		// It should be valid since no attribute defined as required.
 		Assertions.assertTrue(this.validator.validate(testObject).size() == 0);
+		Assertions.assertTrue(this.validator.validate(testObject, ModelView.Sensitive.class).size() == 0);
 		// Sets the first attribute as mandatory.
 		TestObject.REQUIRED_ATTRIBUTES = List.of("id");
 		// Makes sure the validation does not pass.
 		Assertions.assertTrue(this.validator.validate(testObject).size() == 1);
+		Assertions.assertTrue(this.validator.validate(testObject, ModelView.Sensitive.class).size() == 1);
 		// Fills the attribute.
 		testObject.setId(1L);
 		// Makes sure the validation does pass.
 		Assertions.assertTrue(this.validator.validate(testObject).size() == 0);
+		Assertions.assertTrue(this.validator.validate(testObject, ModelView.Sensitive.class).size() == 0);
 		// Sets the second attribute as mandatory.
 		TestObject.REQUIRED_ATTRIBUTES = List.of("id", "attribute1");
 		// Makes sure the validation does not pass.
 		Assertions.assertTrue(this.validator.validate(testObject).size() == 1);
+		Assertions.assertTrue(this.validator.validate(testObject, ModelView.Sensitive.class).size() == 1);
 		// Fills the attribute with an empty string.
 		testObject.setAttribute1("");
 		// Makes sure the validation does not pass.
 		Assertions.assertTrue(this.validator.validate(testObject).size() == 1);
+		Assertions.assertTrue(this.validator.validate(testObject, ModelView.Sensitive.class).size() == 1);
 		// Fills the attribute.
 		testObject.setAttribute1("abc");
 		// Makes sure the validation does pass.
 		Assertions.assertTrue(this.validator.validate(testObject).size() == 0);
+		Assertions.assertTrue(this.validator.validate(testObject, ModelView.Sensitive.class).size() == 0);
 		// Sets the third attribute as mandatory.
 		TestObject.REQUIRED_ATTRIBUTES = List.of("id", "attribute1", "attribute2");
 		// Makes sure the validation does not pass.
 		Assertions.assertTrue(this.validator.validate(testObject).size() == 1);
+		Assertions.assertTrue(this.validator.validate(testObject, ModelView.Sensitive.class).size() == 1);
 		// Fills the attribute with an empty list.
 		testObject.setAttribute2(new ArrayList<>());
 		// Makes sure the validation does not pass.
 		Assertions.assertTrue(this.validator.validate(testObject).size() == 1);
+		Assertions.assertTrue(this.validator.validate(testObject, ModelView.Sensitive.class).size() == 1);
 		// Adds one item to the attribute list.
 		testObject.getAttribute2().add(new TestObject());
 		// Makes sure the validation does pass.
 		Assertions.assertTrue(this.validator.validate(testObject).size() == 0);
+		Assertions.assertTrue(this.validator.validate(testObject, ModelView.Sensitive.class).size() == 0);
 		// Un-fills the attribute.
 		testObject.setId(null);
 		// Makes sure the validation does not pass.
 		Assertions.assertTrue(this.validator.validate(testObject).size() == 1);
+		Assertions.assertTrue(this.validator.validate(testObject, ModelView.Sensitive.class).size() == 1);
 
 	}
 
