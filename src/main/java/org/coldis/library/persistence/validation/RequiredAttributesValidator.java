@@ -63,6 +63,12 @@ public class RequiredAttributesValidator implements ConstraintValidator<Required
 				}
 				// If the object is not null.
 				else {
+					// If the attribute does not pass the not false validation.
+					if (this.requiredAttributes.notFalse() && (requiredAttributeValue instanceof Boolean) && !((Boolean) requiredAttributeValue)) {
+						// The object is not valid.
+						valid = false;
+						break;
+					}
 					// If the attribute does not pass the empty string validation.
 					if (this.requiredAttributes.notEmptyString() && (requiredAttributeValue instanceof String)
 							&& StringUtils.isEmpty((String) requiredAttributeValue)) {

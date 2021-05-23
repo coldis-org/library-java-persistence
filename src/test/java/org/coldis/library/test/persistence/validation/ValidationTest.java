@@ -84,6 +84,18 @@ public class ValidationTest {
 		// Makes sure the validation does not pass.
 		Assertions.assertTrue(this.validator.validate(testObject).size() == 1);
 		Assertions.assertTrue(this.validator.validate(testObject, ModelView.Sensitive.class).size() == 1);
+		// Sets the fourth attribute as mandatory.
+		TestObject.REQUIRED_ATTRIBUTES = List.of("attribute3");
+		// Sets the object as false.
+		testObject.setAttribute3(false);
+		// Makes sure the validation does not pass.
+		Assertions.assertTrue(this.validator.validate(testObject).size() == 1);
+		Assertions.assertTrue(this.validator.validate(testObject, ModelView.Sensitive.class).size() == 1);
+		// Sets the object as false.
+		testObject.setAttribute3(true);
+		// Makes sure the validation does pass.
+		Assertions.assertTrue(this.validator.validate(testObject).size() == 0);
+		Assertions.assertTrue(this.validator.validate(testObject, ModelView.Sensitive.class).size() == 0);
 
 	}
 

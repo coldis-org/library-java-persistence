@@ -48,6 +48,11 @@ public @interface RequiredAttributes {
 	boolean notNull() default true;
 
 	/**
+	 * If not false is used as validation.
+	 */
+	boolean notFalse() default true;
+
+	/**
 	 * If not empty string is used as validation.
 	 */
 	boolean notEmptyString() default true;

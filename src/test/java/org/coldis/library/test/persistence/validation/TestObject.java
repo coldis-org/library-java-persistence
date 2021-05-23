@@ -43,6 +43,11 @@ public class TestObject extends AbstractTimestampableExpirableEntity implements 
 	private List<TestObject> attribute2;
 
 	/**
+	 * Test attribute.
+	 */
+	private Boolean attribute3;
+
+	/**
 	 * Gets the id.
 	 *
 	 * @return The id.
@@ -98,6 +103,25 @@ public class TestObject extends AbstractTimestampableExpirableEntity implements 
 	public void setAttribute2(
 			final List<TestObject> attribute2) {
 		this.attribute2 = attribute2;
+	}
+
+	/**
+	 * Gets the attribute3.
+	 * 
+	 * @return The attribute3.
+	 */
+	public Boolean getAttribute3() {
+		return attribute3;
+	}
+
+	/**
+	 * Sets the attribute3.
+	 * 
+	 * @param attribute3 New attribute3.
+	 */
+	public void setAttribute3(
+			Boolean attribute3) {
+		this.attribute3 = attribute3;
 	}
 
 	/**
