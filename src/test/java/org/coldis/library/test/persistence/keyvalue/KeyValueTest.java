@@ -22,7 +22,10 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Key/value test.
  */
-@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, classes = TestApplication.class)
+@SpringBootTest(
+		webEnvironment = WebEnvironment.RANDOM_PORT,
+		classes = TestApplication.class
+)
 public class KeyValueTest {
 
 	/**
@@ -50,7 +53,8 @@ public class KeyValueTest {
 	 * @return          The saved key/value.
 	 */
 	@Transactional
-	public KeyValue<TestValue> save(final KeyValue<TestValue> keyValue) {
+	public KeyValue<TestValue> save(
+			final KeyValue<TestValue> keyValue) {
 		return this.keyValueRepository.save(keyValue);
 	}
 
@@ -81,7 +85,8 @@ public class KeyValueTest {
 	 *
 	 * @param locks New locks.
 	 */
-	public void setLocks(final List<LocalDateTime> locks) {
+	public void setLocks(
+			final List<LocalDateTime> locks) {
 		this.locks = locks;
 	}
 
@@ -150,8 +155,8 @@ public class KeyValueTest {
 		thread2.start();
 		thread3.start();
 		// Waits until all locks have been acquired.
-		Assertions
-				.assertTrue(TestHelper.waitUntilValid(() -> this.getLocks(), (locks -> locks.size() == 3), TestHelper.VERY_LONG_WAIT, TestHelper.REGULAR_WAIT));
+		Assertions.assertTrue(
+				TestHelper.waitUntilValid(() -> this.getLocks(), (locks -> locks.size() == 3), TestHelper.VERY_LONG_WAIT * 2, TestHelper.REGULAR_WAIT));
 		// For each lock.
 		for (Integer lockNumber = 0; lockNumber < 2; lockNumber++) {
 			// Asserts that the lock acquire time is always respected between locks.

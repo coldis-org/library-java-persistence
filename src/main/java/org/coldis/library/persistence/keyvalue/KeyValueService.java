@@ -30,13 +30,25 @@ public class KeyValueService {
 
 	/**
 	 * Creates a key entry.
-	 * 
+	 *
 	 * @param  key The key.
 	 * @return     The created entry.
 	 */
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
-	public KeyValue<Typable> create(final String key) {
+	public KeyValue<Typable> create(
+			final String key) {
 		return this.repository.save(new KeyValue<>(key, null));
+	}
+
+	/**
+	 * Deletes a key entry.
+	 *
+	 * @param key The key.
+	 */
+	@Transactional(propagation = Propagation.REQUIRED)
+	public void delete(
+			final String key) {
+		this.repository.delete(new KeyValue<>(key, null));
 	}
 
 	/**
@@ -44,15 +56,19 @@ public class KeyValueService {
 	 *
 	 * @param key Key.
 	 */
-	@Transactional(propagation = Propagation.REQUIRED, noRollbackFor = DataIntegrityViolationException.class)
-	public void lock(final String key) {
+	@Transactional(
+			propagation = Propagation.REQUIRED,
+			noRollbackFor = DataIntegrityViolationException.class
+	)
+	public void lock(
+			final String key) {
 		// Tries to lock the entry.
 		final Optional<KeyValue<Typable>> entry = this.repository.findByIdForUpdate(key);
 		// If there is no entry.
 		if (entry.isEmpty()) {
 			// Tries creating the entry.
 			try {
-				create(key);
+				this.create(key);
 			}
 			catch (final Exception exception) {
 				KeyValueService.LOGGER.warn("Could not create key: " + exception.getLocalizedMessage());
@@ -62,4 +78,5 @@ public class KeyValueService {
 			this.repository.findByIdForUpdate(key);
 		}
 	}
+
 }
