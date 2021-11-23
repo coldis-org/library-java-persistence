@@ -48,7 +48,6 @@ public class KeyValueService {
 	@Transactional(propagation = Propagation.REQUIRED)
 	public void delete(
 			final String key) {
-		this.repository.flush();
 		if (this.repository.existsById(key)) {
 			this.repository.deleteById(key);
 		}
