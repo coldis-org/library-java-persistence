@@ -48,7 +48,7 @@ public class KeyValueService {
 	@Transactional(propagation = Propagation.REQUIRED)
 	public void delete(
 			final String key) {
-		this.repository.delete(new KeyValue<>(key, null));
+		this.repository.deleteById(key);
 	}
 
 	/**
