@@ -6,9 +6,9 @@ import javax.persistence.LockModeType;
 
 import org.coldis.library.model.Typable;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -18,8 +18,12 @@ import org.springframework.stereotype.Repository;
  * @param <ValueType> Value type.
  */
 @Repository
-@ConditionalOnProperty(name = "org.coldis.configuration.persistence-keyvalue-enabled", havingValue = "true", matchIfMissing = true)
-public interface KeyValueRepository<ValueType extends Typable> extends CrudRepository<KeyValue<ValueType>, String> {
+@ConditionalOnProperty(
+		name = "org.coldis.configuration.persistence-keyvalue-enabled",
+		havingValue = "true",
+		matchIfMissing = true
+)
+public interface KeyValueRepository<ValueType extends Typable> extends JpaRepository<KeyValue<ValueType>, String> {
 
 	/**
 	 * Finds a key/value for update.
@@ -29,6 +33,8 @@ public interface KeyValueRepository<ValueType extends Typable> extends CrudRepos
 	 */
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	@Query("SELECT keyValue FROM KeyValue keyValue WHERE keyValue.key = :key")
-	Optional<KeyValue<ValueType>> findByIdForUpdate(@Param("key") String key);
+	Optional<KeyValue<ValueType>> findByIdForUpdate(
+			@Param("key")
+			String key);
 
 }
