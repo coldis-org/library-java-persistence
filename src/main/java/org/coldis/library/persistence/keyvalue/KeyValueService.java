@@ -29,6 +29,15 @@ public class KeyValueService {
 	private KeyValueRepository<Typable> repository;
 
 	/**
+	 * Gets the repository.
+	 *
+	 * @return The repository.
+	 */
+	public KeyValueRepository<Typable> getRepository() {
+		return this.repository;
+	}
+
+	/**
 	 * Creates a key entry.
 	 *
 	 * @param  key The key.
@@ -56,16 +65,17 @@ public class KeyValueService {
 	/**
 	 * Locks a key.
 	 *
-	 * @param key Key.
+	 * @param  key Key.
+	 * @return     Returns the locked object.
 	 */
 	@Transactional(
 			propagation = Propagation.REQUIRED,
 			noRollbackFor = DataIntegrityViolationException.class
 	)
-	public void lock(
+	public Optional<KeyValue<Typable>> lock(
 			final String key) {
 		// Tries to lock the entry.
-		final Optional<KeyValue<Typable>> entry = this.repository.findByIdForUpdate(key);
+		Optional<KeyValue<Typable>> entry = this.repository.findByIdForUpdate(key);
 		// If there is no entry.
 		if (entry.isEmpty()) {
 			// Tries creating the entry.
@@ -77,8 +87,10 @@ public class KeyValueService {
 				KeyValueService.LOGGER.debug("Could not create key.", exception);
 			}
 			// Locks the entry.
-			this.repository.findByIdForUpdate(key);
+			entry = this.repository.findByIdForUpdate(key);
 		}
+		// Returns the object.
+		return entry;
 	}
 
 }
