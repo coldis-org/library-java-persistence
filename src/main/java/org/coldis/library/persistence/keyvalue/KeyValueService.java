@@ -2,6 +2,8 @@ package org.coldis.library.persistence.keyvalue;
 
 import java.util.Optional;
 
+import org.coldis.library.exception.BusinessException;
+import org.coldis.library.model.SimpleMessage;
 import org.coldis.library.model.Typable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,15 +40,52 @@ public class KeyValueService {
 	}
 
 	/**
+	 * Finds a key entry.
+	 *
+	 * @param  key               The key.
+	 * @param  lock              If the object should be clocked.
+	 * @return                   The entry.
+	 * @throws BusinessException If the entry is not found.
+	 */
+	public KeyValue<Typable> findById(
+			final String key,
+			final Boolean lock) throws BusinessException {
+		// Tries to find the keyValue.
+		final KeyValue<Typable> keyValue = (lock ? this.repository.findByIdForUpdate(key).orElse(null) : this.repository.findById(key).orElse(null));
+		// If no keyValue is found.
+		if (keyValue == null) {
+			// Throws a not found exception.
+			throw new BusinessException(new SimpleMessage("keyValue.notfound"));
+		}
+		// If the keyValue is found, returns it.
+		return keyValue;
+	}
+
+	/**
+	 * Finds a key entry.
+	 *
+	 * @param  key               The key.
+	 * @return                   The entry.
+	 * @throws BusinessException If the entry is not found.
+	 */
+	@Transactional(propagation = Propagation.NOT_SUPPORTED)
+	public KeyValue<Typable> findById(
+			final String key) throws BusinessException {
+		return this.findById(key, false);
+	}
+
+	/**
 	 * Creates a key entry.
 	 *
-	 * @param  key The key.
-	 * @return     The created entry.
+	 * @param  key   The key.
+	 * @param  value Value.
+	 * @return       The created entry.
 	 */
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public KeyValue<Typable> create(
-			final String key) {
-		return this.repository.save(new KeyValue<>(key, null));
+			final String key,
+			final Typable value) {
+		return this.repository.save(new KeyValue<>(key, value));
 	}
 
 	/**
@@ -80,7 +119,7 @@ public class KeyValueService {
 		if (entry.isEmpty()) {
 			// Tries creating the entry.
 			try {
-				this.create(key);
+				this.create(key, null);
 			}
 			catch (final Exception exception) {
 				KeyValueService.LOGGER.warn("Could not create key: " + exception.getLocalizedMessage());

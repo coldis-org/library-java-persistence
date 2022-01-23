@@ -5,9 +5,9 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.coldis.library.exception.BusinessException;
 import org.coldis.library.helper.DateTimeHelper;
 import org.coldis.library.persistence.keyvalue.KeyValue;
-import org.coldis.library.persistence.keyvalue.KeyValueRepository;
 import org.coldis.library.persistence.keyvalue.KeyValueService;
 import org.coldis.library.test.TestHelper;
 import org.coldis.library.test.persistence.TestApplication;
@@ -35,28 +35,10 @@ public class KeyValueTest {
 			new KeyValue<>("3", new TestValue("3", 3L)));
 
 	/**
-	 * Key/value repository.
-	 */
-	@Autowired
-	private KeyValueRepository<TestValue> keyValueRepository;
-
-	/**
 	 * Key/value service.
 	 */
 	@Autowired
 	private KeyValueService keyValueService;
-
-	/**
-	 * Saves the key/value.
-	 *
-	 * @param  keyValue Key/value.
-	 * @return          The saved key/value.
-	 */
-	@Transactional
-	public KeyValue<TestValue> save(
-			final KeyValue<TestValue> keyValue) {
-		return this.keyValueRepository.save(keyValue);
-	}
 
 	/**
 	 * Test lock period.
@@ -92,15 +74,17 @@ public class KeyValueTest {
 
 	/**
 	 * Tests the key/value persistence
+	 * 
+	 * @throws BusinessException If the test fails.
 	 */
 	@Test
-	public void testKeyValuePersistence() {
+	public void testKeyValuePersistence() throws BusinessException {
 		// For each test object.
 		for (final KeyValue<TestValue> keyValue : KeyValueTest.TEST_DATA) {
 			// Saves the value.
-			this.save(keyValue);
+			this.keyValueService.create(keyValue.getKey(), keyValue.getValue());
 			// Makes sure the value is persisted correctly.
-			Assertions.assertEquals(keyValue, this.keyValueRepository.findById(keyValue.getKey()).orElse(null));
+			Assertions.assertEquals(keyValue, this.keyValueService.findById(keyValue.getKey()));
 		}
 	}
 
