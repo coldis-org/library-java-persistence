@@ -127,6 +127,9 @@ public abstract class AbstractDistributionGroupEntity extends AbstractTimestampa
 	@Override
 	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public Long getCurrentSize() {
+		// Make sure the object is initialized.
+		this.currentSize = (this.currentSize == null ? 0L : this.currentSize);
+		// Returns the number.
 		return this.currentSize;
 	}
 
@@ -138,8 +141,6 @@ public abstract class AbstractDistributionGroupEntity extends AbstractTimestampa
 	@Override
 	public void setCurrentSize(
 			final Long currentSize) {
-		// Make sure the object is initialized.
-		this.currentSize = (this.currentSize == null ? 0L : this.currentSize);
 		// Returns the object.
 		this.currentSize = currentSize;
 	}
