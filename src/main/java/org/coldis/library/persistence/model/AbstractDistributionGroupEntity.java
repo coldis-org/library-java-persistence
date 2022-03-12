@@ -1,12 +1,13 @@
 package org.coldis.library.persistence.model;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 import javax.persistence.Column;
 import javax.persistence.MappedSuperclass;
 
 import org.coldis.library.dto.DtoAttribute;
-import org.coldis.library.helper.DateTimeHelper;
+import org.coldis.library.model.science.AbstractDistributionGroup;
 import org.coldis.library.model.science.DistributionGroup;
 import org.coldis.library.model.view.ModelView;
 
@@ -31,17 +32,17 @@ public abstract class AbstractDistributionGroupEntity extends AbstractTimestampa
 	/**
 	 * Distribution size.
 	 */
-	private Integer distributionSize = 0;
+	private Integer distributionSize;
 
 	/**
 	 * Absolute limit.
 	 */
-	private Long absoluteLimit = 0L;
+	private Long absoluteLimit;
 
 	/**
 	 * Current size.
 	 */
-	private Long currentSize = 0L;
+	private Long currentSize;
 
 	/**
 	 * When group expires.
@@ -66,7 +67,8 @@ public abstract class AbstractDistributionGroupEntity extends AbstractTimestampa
 	 * @param primary New primary.
 	 */
 	@Override
-	public void setPrimary(final Boolean primary) {
+	public void setPrimary(
+			final Boolean primary) {
 		this.primary = primary;
 	}
 
@@ -78,6 +80,9 @@ public abstract class AbstractDistributionGroupEntity extends AbstractTimestampa
 	@Override
 	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public Integer getDistributionSize() {
+		// Make sure the object is initialized.
+		this.distributionSize = (this.distributionSize == null ? 0 : this.distributionSize);
+		// Returns the object.
 		return this.distributionSize;
 	}
 
@@ -87,7 +92,8 @@ public abstract class AbstractDistributionGroupEntity extends AbstractTimestampa
 	 * @param distributionSize New distributionSize.
 	 */
 	@Override
-	public void setDistributionSize(final Integer distributionSize) {
+	public void setDistributionSize(
+			final Integer distributionSize) {
 		this.distributionSize = distributionSize;
 	}
 
@@ -108,7 +114,8 @@ public abstract class AbstractDistributionGroupEntity extends AbstractTimestampa
 	 * @param absoluteLimit New absoluteLimit.
 	 */
 	@Override
-	public void setAbsoluteLimit(final Long absoluteLimit) {
+	public void setAbsoluteLimit(
+			final Long absoluteLimit) {
 		this.absoluteLimit = absoluteLimit;
 	}
 
@@ -129,7 +136,11 @@ public abstract class AbstractDistributionGroupEntity extends AbstractTimestampa
 	 * @param currentSize New currentSize.
 	 */
 	@Override
-	public void setCurrentSize(final Long currentSize) {
+	public void setCurrentSize(
+			final Long currentSize) {
+		// Make sure the object is initialized.
+		this.currentSize = (this.currentSize == null ? 0L : this.currentSize);
+		// Returns the object.
 		this.currentSize = currentSize;
 	}
 
@@ -151,7 +162,8 @@ public abstract class AbstractDistributionGroupEntity extends AbstractTimestampa
 	 * @param expiredAt New expiredAt.
 	 */
 	@Override
-	public void setExpiredAt(final LocalDateTime expiredAt) {
+	public void setExpiredAt(
+			final LocalDateTime expiredAt) {
 		this.expiredAt = expiredAt;
 	}
 
@@ -159,21 +171,50 @@ public abstract class AbstractDistributionGroupEntity extends AbstractTimestampa
 	 * @see org.coldis.library.model.Expirable#getExpired()
 	 */
 	@Override
-	@DtoAttribute(readOnly = true, usedInComparison = false)
+	@DtoAttribute(
+			readOnly = true,
+			usedInComparison = false
+	)
 	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public Boolean getExpired() {
-		return
-		// If the limit has been reached.
-		(this.getCurrentSize().compareTo(this.getAbsoluteLimit()) >= 0)
-				// Or if the expiration date has been reached.
-				|| ((this.getExpiredAt() != null) && this.getExpiredAt().isBefore(DateTimeHelper.getCurrentLocalDateTime()));
+		return AbstractDistributionGroup.getExpired(this.getExpiredAt(), this.getAbsoluteLimit(), this.getCurrentSize());
 	}
 
 	/**
 	 * @see org.coldis.library.persistence.model.AbstractTimestampableExpirableEntity#setExpired(java.lang.Boolean)
 	 */
 	@Override
-	protected void setExpired(Boolean expired) {
+	protected void setExpired(
+			final Boolean expired) {
+	}
+
+	/**
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = super.hashCode();
+		result = (prime * result) + Objects.hash(this.absoluteLimit, this.currentSize, this.distributionSize, this.expiredAt, this.primary);
+		return result;
+	}
+
+	/**
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(
+			final Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (!super.equals(obj) || !(obj instanceof AbstractDistributionGroupEntity)) {
+			return false;
+		}
+		final AbstractDistributionGroupEntity other = (AbstractDistributionGroupEntity) obj;
+		return Objects.equals(this.absoluteLimit, other.absoluteLimit) && Objects.equals(this.currentSize, other.currentSize)
+				&& Objects.equals(this.distributionSize, other.distributionSize) && Objects.equals(this.expiredAt, other.expiredAt)
+				&& Objects.equals(this.primary, other.primary);
 	}
 
 }
