@@ -7,7 +7,7 @@ import javax.persistence.MappedSuperclass;
 
 import org.coldis.library.dto.DtoAttribute;
 import org.coldis.library.helper.DateTimeHelper;
-import org.coldis.library.model.DistributionGroup;
+import org.coldis.library.model.science.DistributionGroup;
 import org.coldis.library.model.view.ModelView;
 
 import com.fasterxml.jackson.annotation.JsonView;

@@ -5,12 +5,12 @@
 	<parent>
 		<groupId>org.coldis</groupId>
 		<artifactId>configuration</artifactId>
-		<version>0.0.57</version>
+		<version>1.0.2</version>
 	</parent>
 
 	<groupId>org.coldis.library</groupId>
 	<artifactId>persistence</artifactId>
-	<version>0.0.45-SNAPSHOT</version>
+	<version>1.0.0-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<name>Persistence utilities</name>
@@ -43,7 +43,7 @@
 		<dependency>
 			<groupId>org.coldis.library</groupId>
 			<artifactId>core</artifactId>
-			<version>0.0.32</version>
+			<version>1.0.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.coldis.library</groupId>
