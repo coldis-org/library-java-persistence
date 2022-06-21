@@ -89,6 +89,23 @@ public class KeyValueService {
 	}
 
 	/**
+	 * Creates a key entry.
+	 *
+	 * @param  key               The key.
+	 * @param  value             Value.
+	 * @return                   The created entry.
+	 * @throws BusinessException If the key value cannot be updated.
+	 */
+	@Transactional(propagation = Propagation.REQUIRED)
+	public KeyValue<Typable> update(
+			final String key,
+			final Typable value) throws BusinessException {
+		final KeyValue<Typable> keyValue = this.findById(key, true);
+		keyValue.setValue(value);
+		return this.repository.save(keyValue);
+	}
+
+	/**
 	 * Deletes a key entry.
 	 *
 	 * @param key The key.
