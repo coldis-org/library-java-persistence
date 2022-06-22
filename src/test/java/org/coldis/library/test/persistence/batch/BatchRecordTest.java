@@ -144,7 +144,8 @@ public class BatchRecordTest {
 		Assertions.assertNotEquals(lastFinishedAt, batchRecord.getLastFinishedAt());
 		Assertions.assertNotNull(batchRecord.getLastFinishedAt());
 
-		// Runs the clock forward and executes the batch again.
+		// Runs the clock forward and executes the batch again (now with a bigger delay
+		// so it should not finish in time).
 		DateTimeHelper.setClock(
 				Clock.fixed(DateTimeHelper.getCurrentLocalDateTime().plusHours(1).atZone(ZoneId.systemDefault()).toInstant(), ZoneId.systemDefault()));
 		lastStartedAt = batchRecord.getLastStartedAt();
@@ -158,7 +159,7 @@ public class BatchRecordTest {
 		catch (final Exception exception) {
 		}
 
-		// Waits until batch is finished.
+		// Waits for a while (this batch should not reach the end).
 		TestHelper.waitUntilValid(() -> {
 			try {
 				return (BatchRecord) this.keyValueService.findById(batchKey, false).getValue();
