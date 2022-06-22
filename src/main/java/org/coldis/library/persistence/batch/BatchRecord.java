@@ -132,7 +132,7 @@ public class BatchRecord implements Typable {
 	public void reset() {
 		this.setLastStartedAt(null);
 		this.setLastProcessedId(null);
-		this.setLastFinishedAt(null);
+		this.setLastProcessedCount(null);
 		this.setLastFinishedAt(null);
 	}
 
