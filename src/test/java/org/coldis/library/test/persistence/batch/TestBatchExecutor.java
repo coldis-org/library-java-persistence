@@ -1,10 +1,10 @@
 package org.coldis.library.test.persistence.batch;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
 
 import org.coldis.library.exception.IntegrationException;
-import org.coldis.library.helper.DateTimeHelper;
 import org.coldis.library.persistence.batch.BatchExecutor;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -16,6 +16,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 public class TestBatchExecutor extends BatchExecutor {
 
 	public static Integer processedAlways = 0;
+	public static Integer processedLatestCompleteBatch = 0;
 	public static Integer processedLatestPartialBatch = 0;
 
 	/**
@@ -32,7 +33,7 @@ public class TestBatchExecutor extends BatchExecutor {
 	 *
 	 */
 	public TestBatchExecutor() {
-		super("test", 10L, null, DateTimeHelper.getCurrentLocalDateTime().minusMinutes(10));
+		super("test", 10L, null, Duration.ofMinutes(10));
 	}
 
 	/**
@@ -48,6 +49,8 @@ public class TestBatchExecutor extends BatchExecutor {
 	 */
 	@Override
 	public void start() {
+		TestBatchExecutor.processedLatestCompleteBatch = 0;
+		TestBatchExecutor.processedLatestPartialBatch = 0;
 	}
 
 	/**
@@ -70,7 +73,7 @@ public class TestBatchExecutor extends BatchExecutor {
 	 */
 	@Override
 	public List<String> getNextToProcess() {
-		return TestBatchExecutor.processedAlways < 100
+		return TestBatchExecutor.processedLatestCompleteBatch < 100
 				? List.of(Objects.toString(BatchRecordTest.RANDOM.nextInt()), Objects.toString(BatchRecordTest.RANDOM.nextInt()),
 						Objects.toString(BatchRecordTest.RANDOM.nextInt()), Objects.toString(BatchRecordTest.RANDOM.nextInt()),
 						Objects.toString(BatchRecordTest.RANDOM.nextInt()), Objects.toString(BatchRecordTest.RANDOM.nextInt()),
@@ -91,6 +94,7 @@ public class TestBatchExecutor extends BatchExecutor {
 		try {
 			Thread.sleep(50);
 			TestBatchExecutor.processedAlways++;
+			TestBatchExecutor.processedLatestCompleteBatch++;
 			TestBatchExecutor.processedLatestPartialBatch++;
 		}
 		catch (final Exception exception) {

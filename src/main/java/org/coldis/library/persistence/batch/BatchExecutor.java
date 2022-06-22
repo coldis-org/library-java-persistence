@@ -1,5 +1,6 @@
 package org.coldis.library.persistence.batch;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -34,7 +35,7 @@ public abstract class BatchExecutor implements Typable {
 	/**
 	 * Last processed id.
 	 */
-	private LocalDateTime restartIfLastStartedAtBefore = DateTimeHelper.getCurrentLocalDateTime().minusDays(1L);
+	private Duration restartIfLastStartedAtBeforeDuration = Duration.ofDays(1);
 
 	/**
 	 * No arguments constructor.
@@ -46,17 +47,17 @@ public abstract class BatchExecutor implements Typable {
 	/**
 	 * Default constructor.
 	 *
-	 * @param keySuffix                    Key suffix.
-	 * @param size                         Size.
-	 * @param lastProcessedId              Last processed id.
-	 * @param restartIfLastStartedAtBefore Restart if last started before.
+	 * @param keySuffix                            Key suffix.
+	 * @param size                                 Size.
+	 * @param lastProcessedId                      Last processed id.
+	 * @param restartIfLastStartedAtBeforeDuration Restart if last started before.
 	 */
-	public BatchExecutor(final String keySuffix, final Long size, final String lastProcessedId, final LocalDateTime restartIfLastStartedAtBefore) {
+	public BatchExecutor(final String keySuffix, final Long size, final String lastProcessedId, final Duration restartIfLastStartedAtBeforeDuration) {
 		super();
 		this.keySuffix = keySuffix;
 		this.size = size;
 		this.lastProcessedId = lastProcessedId;
-		this.restartIfLastStartedAtBefore = restartIfLastStartedAtBefore;
+		this.restartIfLastStartedAtBeforeDuration = restartIfLastStartedAtBeforeDuration;
 	}
 
 	/**
@@ -117,22 +118,32 @@ public abstract class BatchExecutor implements Typable {
 	}
 
 	/**
-	 * Gets the restartIfLastStartedAtBefore.
+	 * Gets the restartIfLastStartedAtBeforeDuration.
 	 *
-	 * @return The restartIfLastStartedAtBefore.
+	 * @return The restartIfLastStartedAtBeforeDuration.
 	 */
-	public LocalDateTime getRestartIfLastStartedAtBefore() {
-		return this.restartIfLastStartedAtBefore;
+	public Duration getRestartIfLastStartedAtBeforeDuration() {
+		return this.restartIfLastStartedAtBeforeDuration;
 	}
 
 	/**
-	 * Sets the restartIfLastStartedAtBefore.
+	 * Sets the restartIfLastStartedAtBeforeDuration.
 	 *
-	 * @param restartIfLastStartedAtBefore New restartIfLastStartedAtBefore.
+	 * @param restartIfLastStartedAtBeforeDuration New restartIfLastStartedAtBeforeDuration.
 	 */
-	public void setRestartIfLastStartedAtBefore(
-			final LocalDateTime restartIfLastStartedAtBefore) {
-		this.restartIfLastStartedAtBefore = restartIfLastStartedAtBefore;
+	public void setRestartIfLastStartedAtBeforeDuration(
+			final Duration restartIfLastStartedAtBeforeDuration) {
+		this.restartIfLastStartedAtBeforeDuration = restartIfLastStartedAtBeforeDuration;
+	}
+
+	/**
+	 * Gets the restartIfLastStartedAtBeforeDuration.
+	 *
+	 * @return The restartIfLastStartedAtBeforeDuration.
+	 */
+	public LocalDateTime getRestartIfLastStartedAtBefore() {
+		return (this.restartIfLastStartedAtBeforeDuration == null ? null
+				: DateTimeHelper.getCurrentLocalDateTime().minus(this.getRestartIfLastStartedAtBeforeDuration()));
 	}
 
 	/**
