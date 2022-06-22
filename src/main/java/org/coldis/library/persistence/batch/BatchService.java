@@ -9,7 +9,9 @@ import org.coldis.library.helper.DateTimeHelper;
 import org.coldis.library.model.Typable;
 import org.coldis.library.persistence.keyvalue.KeyValue;
 import org.coldis.library.persistence.keyvalue.KeyValueService;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Component;
@@ -20,8 +22,12 @@ import org.springframework.transaction.annotation.Transactional;
  * Batch helper.
  */
 @Component
-@ConditionalOnBean(value = { KeyValueService.class, JmsTemplate.class })
 public class BatchService {
+
+	/**
+	 * Logger.
+	 */
+	private static final Logger LOGGER = LoggerFactory.getLogger(BatchService.class);
 
 	/**
 	 * Batch key prefix.
@@ -41,11 +47,13 @@ public class BatchService {
 	/**
 	 * JMS template.
 	 */
+	@Autowired(required = false)
 	private JmsTemplate jmsTemplate;
 
 	/**
 	 * Key value service.
 	 */
+	@Autowired(required = false)
 	private KeyValueService keyValueService;
 
 	/**
@@ -81,17 +89,26 @@ public class BatchService {
 	public String getLastProcessedId(
 			final String keySuffix,
 			final LocalDateTime restartIfLastStartedAtBefore) {
-		// Gets the batch record.
+
+		// Gets the batch record (and initiates it if necessary).
 		final String key = this.getKey(keySuffix);
-		final KeyValue<Typable> keyValue = this.keyValueService.lock(key).get();
-		final BatchRecord value = (BatchRecord) keyValue.getValue();
+		KeyValue<Typable> keyValue = this.keyValueService.lock(key).get();
+		if (keyValue.getValue() == null) {
+			keyValue.setValue(new BatchRecord());
+		}
+
 		// Gets the last processed id.
+		final BatchRecord value = (BatchRecord) keyValue.getValue();
 		String lastProcessedId = value.getLastProcessedId();
+
 		// Clears the last processed id, if data has expired.
 		if ((value.getLastStartedAt() == null) || (restartIfLastStartedAtBefore == null) || value.getLastStartedAt().isBefore(restartIfLastStartedAtBefore)) {
+			value.reset();
 			lastProcessedId = null;
 		}
+
 		// Returns the last processed id.
+		keyValue = this.keyValueService.getRepository().save(keyValue);
 		return lastProcessedId;
 	}
 
@@ -124,6 +141,7 @@ public class BatchService {
 		for (final String nextId : nextBatchToProcess) {
 			executor.execute(nextId);
 			actualLastProcessedId = nextId;
+			value.setLastProcessedCount(value.getLastProcessedCount() + 1);
 		}
 
 		// Updates the last processed id.
@@ -160,20 +178,41 @@ public class BatchService {
 			final String initialProcessedId = this.getLastProcessedId(executor.getKeySuffix(), executor.getRestartIfLastStartedAtBefore());
 			String previousLastProcessedId = initialProcessedId;
 			String currentLastProcessedId = initialProcessedId;
+			boolean justStarted = true;
+
+			// Starts or resumes the batch.
 			if (initialProcessedId == null) {
 				executor.start();
 			}
-			while (Objects.equals(initialProcessedId, currentLastProcessedId) || !Objects.equals(previousLastProcessedId, currentLastProcessedId)) {
+			else {
+				executor.resume();
+			}
+
+			// Runs the batch until the next id does not change.
+			while (justStarted || !Objects.equals(previousLastProcessedId, currentLastProcessedId)) {
+				justStarted = false;
 				executor.setLastProcessedId(currentLastProcessedId);
 				final String nextLastProcessedId = this.executePartialBatch(executor);
 				previousLastProcessedId = currentLastProcessedId;
 				currentLastProcessedId = nextLastProcessedId;
 			}
-			executor.finish();
+
+			// Finishes the batch.
+			if (!Objects.equals(initialProcessedId, currentLastProcessedId)) {
+				executor.finish();
+				final KeyValue<Typable> keyValue = this.keyValueService.findById(this.getKey(executor.getKeySuffix()), true);
+				final BatchRecord value = (BatchRecord) keyValue.getValue();
+				value.setLastFinishedAt(DateTimeHelper.getCurrentLocalDateTime());
+				this.keyValueService.getRepository().save(keyValue);
+			}
+
 		}
 		// If there is an error in the batch, retry.
 		catch (final Throwable throwable) {
+			BatchService.LOGGER.error("Error processing batch '" + this.getKey(executor.getKeySuffix()) + "': " + throwable.getLocalizedMessage());
+			BatchService.LOGGER.debug("Error processing batch '" + this.getKey(executor.getKeySuffix()) + "'.", throwable);
 			this.processExecuteCompleteBatchAsync(executor);
+			throw throwable;
 		}
 		// Releases the lock.
 		finally {

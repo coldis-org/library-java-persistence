@@ -36,6 +36,16 @@ public class BatchRecord implements Typable {
 	private String lastProcessedId;
 
 	/**
+	 * Last processed cout.
+	 */
+	private Long lastProcessedCount;
+
+	/**
+	 * Last finished at.
+	 */
+	private LocalDateTime lastFinishedAt;
+
+	/**
 	 * Gets the lastStartedAt.
 	 *
 	 * @return The lastStartedAt.
@@ -76,6 +86,57 @@ public class BatchRecord implements Typable {
 	}
 
 	/**
+	 * Gets the lastProcessedCount.
+	 *
+	 * @return The lastProcessedCount.
+	 */
+	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
+	public Long getLastProcessedCount() {
+		this.lastProcessedCount = (this.lastProcessedCount == null ? 0 : this.lastProcessedCount);
+		return this.lastProcessedCount;
+	}
+
+	/**
+	 * Sets the lastProcessedCount.
+	 *
+	 * @param lastProcessedCount New lastProcessedCount.
+	 */
+	public void setLastProcessedCount(
+			final Long lastProcessedCount) {
+		this.lastProcessedCount = lastProcessedCount;
+	}
+
+	/**
+	 * Gets the lastFinishedAt.
+	 *
+	 * @return The lastFinishedAt.
+	 */
+	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
+	public LocalDateTime getLastFinishedAt() {
+		return this.lastFinishedAt;
+	}
+
+	/**
+	 * Sets the lastFinishedAt.
+	 *
+	 * @param lastFinishedAt New lastFinishedAt.
+	 */
+	public void setLastFinishedAt(
+			final LocalDateTime lastFinishedAt) {
+		this.lastFinishedAt = lastFinishedAt;
+	}
+
+	/**
+	 * Resets the batch record.
+	 */
+	public void reset() {
+		this.setLastStartedAt(null);
+		this.setLastProcessedId(null);
+		this.setLastFinishedAt(null);
+		this.setLastFinishedAt(null);
+	}
+
+	/**
 	 * @see org.coldis.library.model.Typable#getTypeName()
 	 */
 	@Override
@@ -89,7 +150,7 @@ public class BatchRecord implements Typable {
 	 */
 	@Override
 	public int hashCode() {
-		return Objects.hash(this.lastProcessedId, this.lastStartedAt);
+		return Objects.hash(this.lastFinishedAt, this.lastProcessedCount, this.lastProcessedId, this.lastStartedAt);
 	}
 
 	/**
@@ -105,7 +166,8 @@ public class BatchRecord implements Typable {
 			return false;
 		}
 		final BatchRecord other = (BatchRecord) obj;
-		return Objects.equals(this.lastProcessedId, other.lastProcessedId) && Objects.equals(this.lastStartedAt, other.lastStartedAt);
+		return Objects.equals(this.lastFinishedAt, other.lastFinishedAt) && Objects.equals(this.lastProcessedCount, other.lastProcessedCount)
+				&& Objects.equals(this.lastProcessedId, other.lastProcessedId) && Objects.equals(this.lastStartedAt, other.lastStartedAt);
 	}
 
 }
