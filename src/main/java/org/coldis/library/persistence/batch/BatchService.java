@@ -1,14 +1,18 @@
 package org.coldis.library.persistence.batch;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Objects;
+import java.util.Properties;
 
+import org.apache.commons.lang3.StringUtils;
 import org.coldis.library.exception.BusinessException;
 import org.coldis.library.helper.DateTimeHelper;
 import org.coldis.library.model.Typable;
 import org.coldis.library.persistence.keyvalue.KeyValue;
 import org.coldis.library.persistence.keyvalue.KeyValueService;
+import org.coldis.library.service.slack.SlackIntegration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +21,7 @@ import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.PropertyPlaceholderHelper;
 
 /**
  * Batch helper.
@@ -45,16 +50,27 @@ public class BatchService {
 	private static final String BATCH_RECORD_EXECUTE_QUEUE = "BatchRecordExecuteQueue";
 
 	/**
+	 * Placeholder resolver.
+	 */
+	private static final PropertyPlaceholderHelper PLACEHOLDER_HELPER = new PropertyPlaceholderHelper("${", "}");
+
+	/**
 	 * JMS template.
 	 */
 	@Autowired(required = false)
 	private JmsTemplate jmsTemplate;
 
 	/**
-	 * Key value service.
+	 * Key batchRecordValue service.
 	 */
 	@Autowired(required = false)
 	private KeyValueService keyValueService;
+
+	/**
+	 * Slack integration.
+	 */
+	@Autowired
+	private SlackIntegration slackIntegration;
 
 	/**
 	 * Gets the batch key.
@@ -92,24 +108,71 @@ public class BatchService {
 
 		// Gets the batch record (and initiates it if necessary).
 		final String key = this.getKey(keySuffix);
-		KeyValue<Typable> keyValue = this.keyValueService.lock(key).get();
-		if (keyValue.getValue() == null) {
-			keyValue.setValue(new BatchRecord());
+		KeyValue<Typable> batchRecord = this.keyValueService.lock(key).get();
+		if (batchRecord.getValue() == null) {
+			batchRecord.setValue(new BatchRecord());
 		}
 
 		// Gets the last processed id.
-		final BatchRecord value = (BatchRecord) keyValue.getValue();
-		String lastProcessedId = value.getLastProcessedId();
+		final BatchRecord batchRecordValue = (BatchRecord) batchRecord.getValue();
+		String lastProcessedId = batchRecordValue.getLastProcessedId();
 
 		// Clears the last processed id, if data has expired.
-		if ((value.getLastStartedAt() == null) || (expiration == null) || value.getLastStartedAt().isBefore(expiration)) {
-			value.reset();
+		if ((batchRecordValue.getLastStartedAt() == null) || (expiration == null) || batchRecordValue.getLastStartedAt().isBefore(expiration)) {
+			batchRecordValue.reset();
 			lastProcessedId = null;
 		}
 
 		// Returns the last processed id.
-		keyValue = this.keyValueService.getRepository().save(keyValue);
+		batchRecord = this.keyValueService.getRepository().save(batchRecord);
 		return lastProcessedId;
+	}
+
+	/**
+	 * Logs the action.
+	 *
+	 * @param  executor          Executor.
+	 * @param  action            Action.
+	 * @throws BusinessException Exception.
+	 */
+	@Transactional(propagation = Propagation.NOT_SUPPORTED)
+	private void log(
+			final BatchExecutor executor,
+			final BatchAction action) throws BusinessException {
+		try {
+			// Gets the template and Slack channel.
+			final String template = executor.getMessagesTemplates().get(action);
+			final String slackChannel = executor.getSlackChannels().get(action);
+			// If the template is given.
+			if (StringUtils.isNotBlank(template)) {
+				// Gets the message properties.
+				final String key = this.getKey(executor.getKeySuffix());
+				final String id = executor.getLastProcessedId();
+				final KeyValue<Typable> batchRecord = this.keyValueService.findById(key, false);
+				final BatchRecord batchRecordValue = (BatchRecord) batchRecord.getValue();
+				final Long duration = batchRecordValue.getLastStartedAt().until(DateTimeHelper.getCurrentLocalDateTime(), ChronoUnit.MINUTES);
+				final Properties messageProperties = new Properties();
+				messageProperties.put("key", key);
+				messageProperties.put("id", id);
+				messageProperties.put("duration", duration);
+				// Gets the message from the template.
+				final String message = BatchService.PLACEHOLDER_HELPER.replacePlaceholders(template, messageProperties);
+				// If there is a message.
+				if (StringUtils.isNoneBlank(message)) {
+					BatchService.LOGGER.info(message);
+					// If there is a channel to use, sends the message.
+					if (StringUtils.isNotBlank(slackChannel)) {
+						this.slackIntegration.send(slackChannel, message);
+					}
+				}
+			}
+		}
+		// Ignores errors.
+		catch (final Throwable exception) {
+			BatchService.LOGGER.error("Batch action could not be logged: " + exception.getLocalizedMessage());
+			BatchService.LOGGER.debug("Batch action could not be logged.", exception);
+		}
+
 	}
 
 	/**
@@ -127,35 +190,35 @@ public class BatchService {
 			final BatchExecutor executor) throws BusinessException {
 
 		// Gets the batch record.
-		final KeyValue<Typable> keyValue = this.keyValueService.findById(this.getKey(executor.getKeySuffix()), true);
-		final BatchRecord value = (BatchRecord) keyValue.getValue();
+		final KeyValue<Typable> batchRecord = this.keyValueService.findById(this.getKey(executor.getKeySuffix()), true);
+		final BatchRecord batchRecordValue = (BatchRecord) batchRecord.getValue();
 		String actualLastProcessedId = executor.getLastProcessedId();
 
 		// Updates the last processed start.
-		if ((executor.getLastProcessedId() == null) || (value.getLastStartedAt() == null)) {
-			value.setLastStartedAt(DateTimeHelper.getCurrentLocalDateTime());
+		if ((executor.getLastProcessedId() == null) || (batchRecordValue.getLastStartedAt() == null)) {
+			batchRecordValue.setLastStartedAt(DateTimeHelper.getCurrentLocalDateTime());
 		}
 
 		// If the batch has not expired.
-		if (!value.getLastStartedAt().isBefore(executor.getExpiration())) {
+		if (!batchRecordValue.getLastStartedAt().isBefore(executor.getExpiration())) {
 
 			// For each item in the next batch.
 			final List<String> nextBatchToProcess = executor.getNextToProcess();
 			for (final String nextId : nextBatchToProcess) {
 				executor.execute(nextId);
+				this.log(executor, BatchAction.EXECUTE);
 				actualLastProcessedId = nextId;
-				value.setLastProcessedCount(value.getLastProcessedCount() + 1);
+				batchRecordValue.setLastProcessedCount(batchRecordValue.getLastProcessedCount() + 1);
 			}
 
 		}
 
 		// Updates the last processed id.
-		value.setLastProcessedId(actualLastProcessedId);
-		this.keyValueService.getRepository().save(keyValue);
+		batchRecordValue.setLastProcessedId(actualLastProcessedId);
+		this.keyValueService.getRepository().save(batchRecord);
 
 		// Returns the last processed. id.
 		return actualLastProcessedId;
-
 	}
 
 	/**
@@ -188,9 +251,11 @@ public class BatchService {
 			// Starts or resumes the batch.
 			if (initialProcessedId == null) {
 				executor.start();
+				this.log(executor, BatchAction.START);
 			}
 			else {
 				executor.resume();
+				this.log(executor, BatchAction.RESUME);
 			}
 
 			// Runs the batch until the next id does not change.
@@ -205,10 +270,11 @@ public class BatchService {
 			// Finishes the batch.
 			if (!Objects.equals(initialProcessedId, currentLastProcessedId)) {
 				executor.finish();
-				final KeyValue<Typable> keyValue = this.keyValueService.findById(this.getKey(executor.getKeySuffix()), true);
-				final BatchRecord value = (BatchRecord) keyValue.getValue();
-				value.setLastFinishedAt(DateTimeHelper.getCurrentLocalDateTime());
-				this.keyValueService.getRepository().save(keyValue);
+				this.log(executor, BatchAction.FINISH);
+				final KeyValue<Typable> batchRecord = this.keyValueService.findById(this.getKey(executor.getKeySuffix()), true);
+				final BatchRecord batchRecordValue = (BatchRecord) batchRecord.getValue();
+				batchRecordValue.setLastFinishedAt(DateTimeHelper.getCurrentLocalDateTime());
+				this.keyValueService.getRepository().save(batchRecord);
 			}
 
 		}

@@ -12,11 +12,13 @@ import org.springframework.context.annotation.PropertySource;
  * Persistence auto configuration.
  */
 @Configuration
-@ConditionalOnProperty(name = "org.coldis.configuration.persistence-enabled", havingValue = "true",
-matchIfMissing = true)
+@ConditionalOnProperty(
+		name = "org.coldis.configuration.persistence-enabled",
+		havingValue = "true",
+		matchIfMissing = true
+)
 @PropertySource(value = { PersistenceAutoConfiguration.PERSISTENCE_PROPERTIES })
-@Import(value = { AopTransactionManagementAutoConfiguration.class, ProxyTransactionManagementAutoConfiguration.class,
-				JpaAutoConfiguration.class })
+@Import(value = { AopTransactionManagementAutoConfiguration.class, ProxyTransactionManagementAutoConfiguration.class, JpaAutoConfiguration.class })
 @AutoConfigureBefore(value = { JpaBaseConfiguration.class, HibernateJpaAutoConfiguration.class })
 public class PersistenceAutoConfiguration {
 

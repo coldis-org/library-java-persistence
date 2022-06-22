@@ -11,6 +11,8 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Key/value repository.
@@ -32,6 +34,10 @@ public interface KeyValueRepository<ValueType extends Typable> extends JpaReposi
 	 * @return     A key/value for update.
 	 */
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
+	@Transactional(
+			propagation = Propagation.REQUIRED,
+			timeout = 31
+	)
 	@Query("SELECT keyValue FROM KeyValue keyValue WHERE keyValue.key = :key")
 	Optional<KeyValue<ValueType>> findByIdForUpdate(
 			@Param("key")

@@ -70,7 +70,7 @@ public class BatchRecordTest {
 	public void testBatch() throws Exception {
 		// Makes sure the batch is not started.
 		final TestBatchExecutor testBatchExecutor = new TestBatchExecutor();
-		TestBatchExecutor.processDelay = 10;
+		TestBatchExecutor.processDelay = 3;
 		final String batchKey = this.batchService.getKey(testBatchExecutor.getKeySuffix());
 		try {
 			this.keyValueService.findById(batchKey, false).getValue();
@@ -102,8 +102,8 @@ public class BatchRecordTest {
 			}
 		}, record -> record.getLastFinishedAt() != null, TestHelper.VERY_LONG_WAIT, TestHelper.SHORT_WAIT);
 		batchRecord = (BatchRecord) this.keyValueService.findById(batchKey, false).getValue();
-		Assertions.assertEquals(100, batchRecord.getLastProcessedCount());
 		Assertions.assertEquals(100, TestBatchExecutor.processedAlways);
+		Assertions.assertEquals(100, batchRecord.getLastProcessedCount());
 		Assertions.assertNotNull(batchRecord.getLastStartedAt());
 		Assertions.assertNotNull(batchRecord.getLastProcessedId());
 		Assertions.assertNotNull(batchRecord.getLastFinishedAt());

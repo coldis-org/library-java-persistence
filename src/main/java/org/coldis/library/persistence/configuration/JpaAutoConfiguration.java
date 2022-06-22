@@ -9,11 +9,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 /**
  * JPA auto configuration.
  */
-@EntityScan(basePackages = { PersistenceAutoConfiguration.PERSISTENCE_PACKAGE,
-"${org.coldis.configuration.persistence.jpa.base-package}" })
-@EnableJpaRepositories(enableDefaultTransactions = false,
-basePackages = { PersistenceAutoConfiguration.PERSISTENCE_PACKAGE,
-				"${org.coldis.configuration.persistence.jpa.base-package}" })
+@EntityScan(basePackages = { PersistenceAutoConfiguration.PERSISTENCE_PACKAGE, "${org.coldis.configuration.persistence.jpa.base-package}" })
+@EnableJpaRepositories(
+		enableDefaultTransactions = false,
+		basePackages = { PersistenceAutoConfiguration.PERSISTENCE_PACKAGE, "${org.coldis.configuration.persistence.jpa.base-package}" }
+)
 public class JpaAutoConfiguration {
 
 	/**
@@ -27,7 +27,8 @@ public class JpaAutoConfiguration {
 	 * @param objectMapper Object mapper.
 	 */
 	@Autowired
-	public void setObjectMapper(final ObjectMapper objectMapper) {
+	public void setObjectMapper(
+			final ObjectMapper objectMapper) {
 		JpaAutoConfiguration.OBJECT_MAPPER = objectMapper;
 	}
 

@@ -10,7 +10,11 @@ import org.springframework.transaction.aspectj.AspectJTransactionManagementConfi
  * AOP transaction manager configuration.
  */
 @EnableTransactionManagement(mode = AdviceMode.ASPECTJ)
-@ConditionalOnProperty(name = "org.coldis.configuration.aspectj-enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(
+		name = "org.coldis.configuration.aspectj-enabled",
+		havingValue = "true",
+		matchIfMissing = true
+)
 @ConditionalOnClass(value = { AspectJTransactionManagementConfiguration.class, EnableTransactionManagement.class })
 public class AopTransactionManagementAutoConfiguration {
 
