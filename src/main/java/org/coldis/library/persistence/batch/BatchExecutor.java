@@ -141,6 +141,16 @@ public abstract class BatchExecutor implements Typable {
 	public abstract void start();
 
 	/**
+	 * Resumes the batch.
+	 */
+	public abstract void resume();
+
+	/**
+	 * Finishes the batch.
+	 */
+	public abstract void finish();
+
+	/**
 	 * Gets the next batch to be processed.
 	 *
 	 * @return The next batch to be processed.
@@ -154,10 +164,5 @@ public abstract class BatchExecutor implements Typable {
 	 */
 	public abstract void execute(
 			String id);
-
-	/**
-	 * Finishes the batch.
-	 */
-	public abstract void finish();
 
 }
