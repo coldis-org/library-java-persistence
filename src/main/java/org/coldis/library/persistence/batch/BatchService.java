@@ -81,14 +81,14 @@ public class BatchService {
 	/**
 	 * Get the last id processed in the batch.
 	 *
-	 * @param  keySuffix                    The batch key suffix.
-	 * @param  restartIfLastStartedAtBefore When the batch should be restarted.
-	 * @return                              The last id processed.
+	 * @param  keySuffix  The batch key suffix.
+	 * @param  expiration Maximum interval to finish the batch.
+	 * @return            The last id processed.
 	 */
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public String getLastProcessedId(
 			final String keySuffix,
-			final LocalDateTime restartIfLastStartedAtBefore) {
+			final LocalDateTime expiration) {
 
 		// Gets the batch record (and initiates it if necessary).
 		final String key = this.getKey(keySuffix);
@@ -102,7 +102,7 @@ public class BatchService {
 		String lastProcessedId = value.getLastProcessedId();
 
 		// Clears the last processed id, if data has expired.
-		if ((value.getLastStartedAt() == null) || (restartIfLastStartedAtBefore == null) || value.getLastStartedAt().isBefore(restartIfLastStartedAtBefore)) {
+		if ((value.getLastStartedAt() == null) || (expiration == null) || value.getLastStartedAt().isBefore(expiration)) {
 			value.reset();
 			lastProcessedId = null;
 		}
@@ -129,19 +129,24 @@ public class BatchService {
 		// Gets the batch record.
 		final KeyValue<Typable> keyValue = this.keyValueService.findById(this.getKey(executor.getKeySuffix()), true);
 		final BatchRecord value = (BatchRecord) keyValue.getValue();
+		String actualLastProcessedId = executor.getLastProcessedId();
 
 		// Updates the last processed start.
-		if (executor.getLastProcessedId() == null) {
+		if ((executor.getLastProcessedId() == null) || (value.getLastStartedAt() == null)) {
 			value.setLastStartedAt(DateTimeHelper.getCurrentLocalDateTime());
 		}
 
-		// For each item in the next batch.
-		String actualLastProcessedId = executor.getLastProcessedId();
-		final List<String> nextBatchToProcess = executor.getNextToProcess();
-		for (final String nextId : nextBatchToProcess) {
-			executor.execute(nextId);
-			actualLastProcessedId = nextId;
-			value.setLastProcessedCount(value.getLastProcessedCount() + 1);
+		// If the batch has not expired.
+		if (!value.getLastStartedAt().isBefore(executor.getExpiration())) {
+
+			// For each item in the next batch.
+			final List<String> nextBatchToProcess = executor.getNextToProcess();
+			for (final String nextId : nextBatchToProcess) {
+				executor.execute(nextId);
+				actualLastProcessedId = nextId;
+				value.setLastProcessedCount(value.getLastProcessedCount() + 1);
+			}
+
 		}
 
 		// Updates the last processed id.
@@ -175,7 +180,7 @@ public class BatchService {
 		this.keyValueService.lock(lockKey);
 		try {
 			// Gets the next id to be processed.
-			final String initialProcessedId = this.getLastProcessedId(executor.getKeySuffix(), executor.getRestartIfLastStartedAtBefore());
+			final String initialProcessedId = this.getLastProcessedId(executor.getKeySuffix(), executor.getExpiration());
 			String previousLastProcessedId = initialProcessedId;
 			String currentLastProcessedId = initialProcessedId;
 			boolean justStarted = true;

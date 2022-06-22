@@ -18,12 +18,12 @@ public abstract class BatchExecutor implements Typable {
 	private static final long serialVersionUID = 3022111202119271553L;
 
 	/**
-	 * Last processed id.
+	 * Key suffix.
 	 */
 	private String keySuffix;
 
 	/**
-	 * Last processed id.
+	 * Batch size.
 	 */
 	private Long size = 13000L;
 
@@ -33,9 +33,9 @@ public abstract class BatchExecutor implements Typable {
 	private String lastProcessedId;
 
 	/**
-	 * Last processed id.
+	 * Maximum interval to finish the batch.
 	 */
-	private Duration restartIfLastStartedAtBeforeDuration = Duration.ofDays(1);
+	private Duration finishWithin = Duration.ofDays(1);
 
 	/**
 	 * No arguments constructor.
@@ -47,17 +47,17 @@ public abstract class BatchExecutor implements Typable {
 	/**
 	 * Default constructor.
 	 *
-	 * @param keySuffix                            Key suffix.
-	 * @param size                                 Size.
-	 * @param lastProcessedId                      Last processed id.
-	 * @param restartIfLastStartedAtBeforeDuration Restart if last started before.
+	 * @param keySuffix       Key suffix.
+	 * @param size            Size.
+	 * @param lastProcessedId Last processed id.
+	 * @param finishWithin    Maximum interval to finish the batch.
 	 */
-	public BatchExecutor(final String keySuffix, final Long size, final String lastProcessedId, final Duration restartIfLastStartedAtBeforeDuration) {
+	public BatchExecutor(final String keySuffix, final Long size, final String lastProcessedId, final Duration finishWithin) {
 		super();
 		this.keySuffix = keySuffix;
 		this.size = size;
 		this.lastProcessedId = lastProcessedId;
-		this.restartIfLastStartedAtBeforeDuration = restartIfLastStartedAtBeforeDuration;
+		this.finishWithin = finishWithin;
 	}
 
 	/**
@@ -118,32 +118,31 @@ public abstract class BatchExecutor implements Typable {
 	}
 
 	/**
-	 * Gets the restartIfLastStartedAtBeforeDuration.
+	 * Gets the finishWithin.
 	 *
-	 * @return The restartIfLastStartedAtBeforeDuration.
+	 * @return The finishWithin.
 	 */
-	public Duration getRestartIfLastStartedAtBeforeDuration() {
-		return this.restartIfLastStartedAtBeforeDuration;
+	public Duration getFinishWithin() {
+		return this.finishWithin;
 	}
 
 	/**
-	 * Sets the restartIfLastStartedAtBeforeDuration.
+	 * Sets the finishWithin.
 	 *
-	 * @param restartIfLastStartedAtBeforeDuration New restartIfLastStartedAtBeforeDuration.
+	 * @param finishWithin New finishWithin.
 	 */
-	public void setRestartIfLastStartedAtBeforeDuration(
-			final Duration restartIfLastStartedAtBeforeDuration) {
-		this.restartIfLastStartedAtBeforeDuration = restartIfLastStartedAtBeforeDuration;
+	public void setFinishWithin(
+			final Duration finishWithin) {
+		this.finishWithin = finishWithin;
 	}
 
 	/**
-	 * Gets the restartIfLastStartedAtBeforeDuration.
+	 * Gets the finishWithin.
 	 *
-	 * @return The restartIfLastStartedAtBeforeDuration.
+	 * @return The finishWithin.
 	 */
-	public LocalDateTime getRestartIfLastStartedAtBefore() {
-		return (this.restartIfLastStartedAtBeforeDuration == null ? null
-				: DateTimeHelper.getCurrentLocalDateTime().minus(this.getRestartIfLastStartedAtBeforeDuration()));
+	public LocalDateTime getExpiration() {
+		return (this.finishWithin == null ? null : DateTimeHelper.getCurrentLocalDateTime().minus(this.getFinishWithin()));
 	}
 
 	/**

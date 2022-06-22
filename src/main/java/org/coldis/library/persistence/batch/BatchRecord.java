@@ -36,7 +36,7 @@ public class BatchRecord implements Typable {
 	private String lastProcessedId;
 
 	/**
-	 * Last processed cout.
+	 * Last processed count.
 	 */
 	private Long lastProcessedCount;
 

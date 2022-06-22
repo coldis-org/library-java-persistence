@@ -15,6 +15,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 @JsonTypeName(value = TestBatchExecutor.TYPE_NAME)
 public class TestBatchExecutor extends BatchExecutor {
 
+	public static Integer processDelay = 10;
 	public static Integer processedAlways = 0;
 	public static Integer processedLatestCompleteBatch = 0;
 	public static Integer processedLatestPartialBatch = 0;
@@ -33,7 +34,7 @@ public class TestBatchExecutor extends BatchExecutor {
 	 *
 	 */
 	public TestBatchExecutor() {
-		super("test", 10L, null, Duration.ofMinutes(10));
+		super("test", 10L, null, Duration.ofSeconds(30));
 	}
 
 	/**
@@ -92,7 +93,7 @@ public class TestBatchExecutor extends BatchExecutor {
 			throw new IntegrationException();
 		}
 		try {
-			Thread.sleep(50);
+			Thread.sleep(TestBatchExecutor.processDelay);
 			TestBatchExecutor.processedAlways++;
 			TestBatchExecutor.processedLatestCompleteBatch++;
 			TestBatchExecutor.processedLatestPartialBatch++;

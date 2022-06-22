@@ -70,6 +70,7 @@ public class BatchRecordTest {
 	public void testBatch() throws Exception {
 		// Makes sure the batch is not started.
 		final TestBatchExecutor testBatchExecutor = new TestBatchExecutor();
+		TestBatchExecutor.processDelay = 10;
 		final String batchKey = this.batchService.getKey(testBatchExecutor.getKeySuffix());
 		try {
 			this.keyValueService.findById(batchKey, false).getValue();
@@ -99,7 +100,7 @@ public class BatchRecordTest {
 			catch (final BusinessException e) {
 				return null;
 			}
-		}, record -> record.getLastFinishedAt() != null, TestHelper.SHORT_WAIT, TestHelper.VERY_LONG_WAIT);
+		}, record -> record.getLastFinishedAt() != null, TestHelper.VERY_LONG_WAIT, TestHelper.SHORT_WAIT);
 		batchRecord = (BatchRecord) this.keyValueService.findById(batchKey, false).getValue();
 		Assertions.assertEquals(100, batchRecord.getLastProcessedCount());
 		Assertions.assertEquals(100, TestBatchExecutor.processedAlways);
@@ -116,8 +117,9 @@ public class BatchRecordTest {
 		// Runs the clock forward and executes the batch again.
 		DateTimeHelper.setClock(
 				Clock.fixed(DateTimeHelper.getCurrentLocalDateTime().plusHours(1).atZone(ZoneId.systemDefault()).toInstant(), ZoneId.systemDefault()));
-		final LocalDateTime lastStartedAt = batchRecord.getLastStartedAt();
-		final LocalDateTime lastFinishedAt = batchRecord.getLastFinishedAt();
+		LocalDateTime lastStartedAt = batchRecord.getLastStartedAt();
+		String lastProcessedId = batchRecord.getLastProcessedId();
+		LocalDateTime lastFinishedAt = batchRecord.getLastFinishedAt();
 		try {
 			this.batchService.executeCompleteBatch(testBatchExecutor);
 			Assertions.fail("Batch should have failed.");
@@ -133,13 +135,47 @@ public class BatchRecordTest {
 			catch (final BusinessException e) {
 				return null;
 			}
-		}, record -> record.getLastFinishedAt() != null, TestHelper.SHORT_WAIT, TestHelper.VERY_LONG_WAIT);
+		}, record -> record.getLastFinishedAt() != null, TestHelper.VERY_LONG_WAIT, TestHelper.SHORT_WAIT);
 		batchRecord = (BatchRecord) this.keyValueService.findById(batchKey, false).getValue();
 		Assertions.assertEquals(200, TestBatchExecutor.processedAlways);
 		Assertions.assertEquals(100, batchRecord.getLastProcessedCount());
 		Assertions.assertNotEquals(lastStartedAt, batchRecord.getLastStartedAt());
-		Assertions.assertNotEquals(lastFinishedAt, batchRecord.getLastProcessedId());
+		Assertions.assertNotEquals(lastProcessedId, batchRecord.getLastProcessedId());
+		Assertions.assertNotEquals(lastFinishedAt, batchRecord.getLastFinishedAt());
 		Assertions.assertNotNull(batchRecord.getLastFinishedAt());
+
+		// Runs the clock forward and executes the batch again.
+		DateTimeHelper.setClock(
+				Clock.fixed(DateTimeHelper.getCurrentLocalDateTime().plusHours(1).atZone(ZoneId.systemDefault()).toInstant(), ZoneId.systemDefault()));
+		lastStartedAt = batchRecord.getLastStartedAt();
+		lastProcessedId = batchRecord.getLastProcessedId();
+		lastFinishedAt = batchRecord.getLastFinishedAt();
+		TestBatchExecutor.processDelay = 1000;
+		try {
+			this.batchService.executeCompleteBatch(testBatchExecutor);
+			Assertions.fail("Batch should have failed.");
+		}
+		catch (final Exception exception) {
+		}
+
+		// Waits until batch is finished.
+		TestHelper.waitUntilValid(() -> {
+			try {
+				return (BatchRecord) this.keyValueService.findById(batchKey, false).getValue();
+			}
+			catch (final BusinessException e) {
+				return null;
+			}
+		}, record -> record.getLastFinishedAt() != null, TestHelper.VERY_LONG_WAIT * 2, TestHelper.SHORT_WAIT);
+		batchRecord = (BatchRecord) this.keyValueService.findById(batchKey, false).getValue();
+		Assertions.assertTrue(TestBatchExecutor.processedAlways > 200);
+		Assertions.assertTrue(TestBatchExecutor.processedAlways < 300);
+		Assertions.assertTrue(batchRecord.getLastProcessedCount() > 0);
+		Assertions.assertTrue(batchRecord.getLastProcessedCount() < 100);
+		Assertions.assertNotEquals(lastStartedAt, batchRecord.getLastStartedAt());
+		Assertions.assertNotEquals(lastProcessedId, batchRecord.getLastProcessedId());
+		Assertions.assertNotEquals(lastFinishedAt, batchRecord.getLastFinishedAt());
+		Assertions.assertNull(batchRecord.getLastFinishedAt());
 
 	}
 
