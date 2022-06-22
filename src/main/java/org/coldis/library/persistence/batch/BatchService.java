@@ -10,6 +10,7 @@ import org.coldis.library.model.Typable;
 import org.coldis.library.persistence.keyvalue.KeyValue;
 import org.coldis.library.persistence.keyvalue.KeyValueService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.jms.annotation.JmsListener;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
@@ -31,6 +32,11 @@ public class BatchService {
 	 * Batch lock key prefix.
 	 */
 	public static final String BATCH_LOCK_KEY_PREFIX = BatchService.BATCH_KEY_PREFIX + "lock-";
+
+	/**
+	 * Batch record execute queue.
+	 */
+	private static final String BATCH_RECORD_EXECUTE_QUEUE = "BatchRecordExecuteQueue";
 
 	/**
 	 * JMS template.
@@ -90,31 +96,9 @@ public class BatchService {
 	}
 
 	/**
-	 * Batch supplier.
-	 */
-	public interface BatchSupplier {
-
-		/**
-		 * Gets the next batch to be processed.
-		 *
-		 * @param  lastProcessedId Last processed id.
-		 * @param  size            Size.
-		 * @return                 The next batch to be processed.
-		 */
-		List<String> getNextBatchToProcess(
-				final String lastProcessedId,
-				final Long size);
-
-	}
-
-	/**
 	 * Processes a partial batch.
 	 *
-	 * @param  keySuffix         Batch key suffix.
-	 * @param  lastProcessedId   Last processed id.
-	 * @param  size              Size.
-	 * @param  queue             Queue.
-	 * @param  supplier          Supplier.
+	 * @param  executor          Executor.
 	 * @return                   The last processed id.
 	 * @throws BusinessException If the batch could not be processed.
 	 */
@@ -122,27 +106,23 @@ public class BatchService {
 			propagation = Propagation.REQUIRES_NEW,
 			timeout = 173
 	)
-	protected String processPartialBatch(
-			final String keySuffix,
-			final String lastProcessedId,
-			final Long size,
-			final String queue,
-			final BatchSupplier supplier) throws BusinessException {
+	protected String executePartialBatch(
+			final BatchExecutor executor) throws BusinessException {
 
 		// Gets the batch record.
-		final KeyValue<Typable> keyValue = this.keyValueService.findById(this.getKey(keySuffix), true);
+		final KeyValue<Typable> keyValue = this.keyValueService.findById(this.getKey(executor.getKeySuffix()), true);
 		final BatchRecord value = (BatchRecord) keyValue.getValue();
 
 		// Updates the last processed start.
-		if (lastProcessedId == null) {
+		if (executor.getLastProcessedId() == null) {
 			value.setLastStartedAt(DateTimeHelper.getCurrentLocalDateTime());
 		}
 
 		// For each item in the next batch.
-		String actualLastProcessedId = lastProcessedId;
-		final List<String> nextBatchToProcess = supplier.getNextBatchToProcess(lastProcessedId, size);
+		String actualLastProcessedId = executor.getLastProcessedId();
+		final List<String> nextBatchToProcess = executor.getNextToProcess();
 		for (final String nextId : nextBatchToProcess) {
-			this.jmsTemplate.convertAndSend(queue, nextId);
+			executor.execute(nextId);
 			actualLastProcessedId = nextId;
 		}
 
@@ -158,43 +138,60 @@ public class BatchService {
 	/**
 	 * Processes a complete batch.
 	 *
-	 * @param  keySuffix                    Batch key suffix.
-	 * @param  restartIfLastStartedAtBefore When the batch should be restarted.
-	 * @param  size                         Size.
-	 * @param  queue                        Queue.
-	 * @param  supplier                     Supplier.
-	 * @throws BusinessException            If the batch fails.
+	 * @param  executor          Executor.
+	 * @throws BusinessException If the batch fails.
 	 */
+	@JmsListener(
+			destination = BatchService.BATCH_RECORD_EXECUTE_QUEUE,
+			concurrency = "1-7"
+	)
 	@Transactional(
 			propagation = Propagation.REQUIRED,
 			noRollbackFor = Throwable.class,
 			timeout = 1237
 	)
-	public void processCompleteBatch(
-			final String keySuffix,
-			final LocalDateTime restartIfLastStartedAtBefore,
-			final Long size,
-			final String queue,
-			final BatchSupplier supplier) throws BusinessException {
+	public void executeCompleteBatch(
+			final BatchExecutor executor) throws BusinessException {
 		// Synchronizes the batch (preventing to happen in parallel).
-		final String lockKey = this.getLockKey(keySuffix);
+		final String lockKey = this.getLockKey(executor.getKeySuffix());
 		this.keyValueService.lock(lockKey);
 		try {
 			// Gets the next id to be processed.
-			final String initialProcessedId = this.getLastProcessedId(keySuffix, restartIfLastStartedAtBefore);
+			final String initialProcessedId = this.getLastProcessedId(executor.getKeySuffix(), executor.getRestartIfLastStartedAtBefore());
 			String previousLastProcessedId = initialProcessedId;
 			String currentLastProcessedId = initialProcessedId;
+			if (initialProcessedId == null) {
+				executor.start();
+			}
 			while (Objects.equals(initialProcessedId, currentLastProcessedId) || !Objects.equals(previousLastProcessedId, currentLastProcessedId)) {
-				final String nextLastProcessedId = this.processPartialBatch(keySuffix, currentLastProcessedId, size, queue, supplier);
+				executor.setLastProcessedId(currentLastProcessedId);
+				final String nextLastProcessedId = this.executePartialBatch(executor);
 				previousLastProcessedId = currentLastProcessedId;
 				currentLastProcessedId = nextLastProcessedId;
 			}
+			executor.finish();
+		}
+		// If there is an error in the batch, retry.
+		catch (final Throwable throwable) {
+			this.processExecuteCompleteBatchAsync(executor);
 		}
 		// Releases the lock.
 		finally {
 			this.keyValueService.delete(lockKey);
 		}
 
+	}
+
+	/**
+	 * Processes a complete batch.
+	 *
+	 * @param  executor          Executor.
+	 * @throws BusinessException If the batch fails.
+	 */
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	public void processExecuteCompleteBatchAsync(
+			final BatchExecutor executor) throws BusinessException {
+		this.jmsTemplate.convertAndSend(BatchService.BATCH_RECORD_EXECUTE_QUEUE, executor);
 	}
 
 }
