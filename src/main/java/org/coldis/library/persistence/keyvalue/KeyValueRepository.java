@@ -28,6 +28,20 @@ import org.springframework.transaction.annotation.Transactional;
 public interface KeyValueRepository<ValueType extends Typable> extends JpaRepository<KeyValue<ValueType>, String> {
 
 	/**
+	 * Finds a key/value.
+	 *
+	 * @param  key The key for the value.
+	 * @return     A key/value.
+	 */
+	@Override
+	@Transactional(
+			propagation = Propagation.NOT_SUPPORTED,
+			timeout = 3
+	)
+	Optional<KeyValue<ValueType>> findById(
+			String key);
+
+	/**
 	 * Finds a key/value for update.
 	 *
 	 * @param  key The key for the value.
