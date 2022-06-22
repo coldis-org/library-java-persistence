@@ -5,6 +5,6 @@ package org.coldis.library.persistence.batch;
  */
 public enum BatchAction {
 
-	START, RESUME, EXECUTE, FINISH;
+	START, RESUME, GET, EXECUTE, FINISH;
 
 }

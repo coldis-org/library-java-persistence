@@ -1,12 +1,14 @@
 package org.coldis.library.test.persistence.batch;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Random;
 
 import org.coldis.library.exception.BusinessException;
 import org.coldis.library.helper.DateTimeHelper;
+import org.coldis.library.persistence.batch.BatchExecutor;
 import org.coldis.library.persistence.batch.BatchRecord;
 import org.coldis.library.persistence.batch.BatchService;
 import org.coldis.library.persistence.keyvalue.KeyValueService;
@@ -68,9 +70,10 @@ public class BatchRecordTest {
 	 */
 	@Test
 	public void testBatch() throws Exception {
+
 		// Makes sure the batch is not started.
-		final TestBatchExecutor testBatchExecutor = new TestBatchExecutor();
-		TestBatchExecutor.processDelay = 3;
+		final BatchExecutor testBatchExecutor = new BatchExecutor("test", 10L, null, Duration.ofSeconds(60), "batchRecordTestService", null, null, null);
+		BatchRecordTestService.processDelay = 3;
 		final String batchKey = this.batchService.getKey(testBatchExecutor.getKeySuffix());
 		try {
 			this.keyValueService.findById(batchKey, false).getValue();
@@ -102,7 +105,7 @@ public class BatchRecordTest {
 			}
 		}, record -> record.getLastFinishedAt() != null, TestHelper.VERY_LONG_WAIT, TestHelper.SHORT_WAIT);
 		batchRecord = (BatchRecord) this.keyValueService.findById(batchKey, false).getValue();
-		Assertions.assertEquals(100, TestBatchExecutor.processedAlways);
+		Assertions.assertEquals(100, BatchRecordTestService.processedAlways);
 		Assertions.assertEquals(100, batchRecord.getLastProcessedCount());
 		Assertions.assertNotNull(batchRecord.getLastStartedAt());
 		Assertions.assertNotNull(batchRecord.getLastProcessedId());
@@ -112,7 +115,7 @@ public class BatchRecordTest {
 		this.batchService.executeCompleteBatch(testBatchExecutor);
 		batchRecord = (BatchRecord) this.keyValueService.findById(batchKey, false).getValue();
 		Assertions.assertEquals(100, batchRecord.getLastProcessedCount());
-		Assertions.assertEquals(100, TestBatchExecutor.processedAlways);
+		Assertions.assertEquals(100, BatchRecordTestService.processedAlways);
 
 		// Runs the clock forward and executes the batch again.
 		DateTimeHelper.setClock(
@@ -137,7 +140,7 @@ public class BatchRecordTest {
 			}
 		}, record -> record.getLastFinishedAt() != null, TestHelper.VERY_LONG_WAIT, TestHelper.SHORT_WAIT);
 		batchRecord = (BatchRecord) this.keyValueService.findById(batchKey, false).getValue();
-		Assertions.assertEquals(200, TestBatchExecutor.processedAlways);
+		Assertions.assertEquals(200, BatchRecordTestService.processedAlways);
 		Assertions.assertEquals(100, batchRecord.getLastProcessedCount());
 		Assertions.assertNotEquals(lastStartedAt, batchRecord.getLastStartedAt());
 		Assertions.assertNotEquals(lastProcessedId, batchRecord.getLastProcessedId());
@@ -151,7 +154,7 @@ public class BatchRecordTest {
 		lastStartedAt = batchRecord.getLastStartedAt();
 		lastProcessedId = batchRecord.getLastProcessedId();
 		lastFinishedAt = batchRecord.getLastFinishedAt();
-		TestBatchExecutor.processDelay = 1000;
+		BatchRecordTestService.processDelay = 1000;
 		try {
 			this.batchService.executeCompleteBatch(testBatchExecutor);
 			Assertions.fail("Batch should have failed.");
@@ -169,8 +172,8 @@ public class BatchRecordTest {
 			}
 		}, record -> record.getLastFinishedAt() != null, TestHelper.VERY_LONG_WAIT * 2, TestHelper.SHORT_WAIT);
 		batchRecord = (BatchRecord) this.keyValueService.findById(batchKey, false).getValue();
-		Assertions.assertTrue(TestBatchExecutor.processedAlways > 200);
-		Assertions.assertTrue(TestBatchExecutor.processedAlways < 300);
+		Assertions.assertTrue(BatchRecordTestService.processedAlways > 200);
+		Assertions.assertTrue(BatchRecordTestService.processedAlways < 300);
 		Assertions.assertTrue(batchRecord.getLastProcessedCount() > 0);
 		Assertions.assertTrue(batchRecord.getLastProcessedCount() < 100);
 		Assertions.assertNotEquals(lastStartedAt, batchRecord.getLastStartedAt());

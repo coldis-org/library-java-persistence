@@ -7,18 +7,33 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import org.apache.commons.lang3.reflect.MethodUtils;
+import org.coldis.library.exception.BusinessException;
+import org.coldis.library.exception.IntegrationException;
 import org.coldis.library.helper.DateTimeHelper;
+import org.coldis.library.model.SimpleMessage;
 import org.coldis.library.model.Typable;
+import org.coldis.library.model.view.ModelView;
+import org.coldis.library.persistence.bean.StaticContextAccessor;
+
+import com.fasterxml.jackson.annotation.JsonTypeName;
+import com.fasterxml.jackson.annotation.JsonView;
 
 /**
  * Batch executor.
  */
-public abstract class BatchExecutor implements Typable {
+@JsonTypeName(value = BatchExecutor.TYPE_NAME)
+public class BatchExecutor implements Typable {
 
 	/**
 	 * Serial.
 	 */
 	private static final long serialVersionUID = 3022111202119271553L;
+
+	/**
+	 * Type name.
+	 */
+	public static final String TYPE_NAME = "org.coldis.library.persistence.batch.BatchExecutor";
 
 	/**
 	 * Key suffix.
@@ -41,15 +56,24 @@ public abstract class BatchExecutor implements Typable {
 	private Duration finishWithin = Duration.ofDays(1);
 
 	/**
+	 * Action bean name.
+	 */
+	private String actionBeanName;
+
+	/**
+	 * Action delegate methods.
+	 */
+	private Map<BatchAction, String> actionDelegateMethods;
+
+	/**
 	 * Messages templates.
 	 */
-	private Map<BatchAction, String> messagesTemplates = new HashMap<>(Map.of(BatchAction.START, "Starting batch for '${key}'.", BatchAction.RESUME,
-			"Resuming batch for '${key}' from id '${id}'.", BatchAction.FINISH, "Finishing batch for '${key}' at id '${id}' in '${duration}' minutes."));
+	private Map<BatchAction, String> messagesTemplates;
 
 	/**
 	 * Slack channels to communicate.
 	 */
-	private Map<BatchAction, String> slackChannels = new HashMap<>();
+	private Map<BatchAction, String> slackChannels;
 
 	/**
 	 * No arguments constructor.
@@ -77,18 +101,22 @@ public abstract class BatchExecutor implements Typable {
 	/**
 	 * Complete constructor.
 	 *
-	 * @param keySuffix         Key suffix.
-	 * @param size              Size.
-	 * @param lastProcessedId   Last processed id.
-	 * @param finishWithin      Maximum interval to finish the batch.
-	 * @param messagesTemplates Messages templates.
-	 * @param slackChannels     Slack channels.
+	 * @param keySuffix             Key suffix.
+	 * @param size                  Size.
+	 * @param lastProcessedId       Last processed id.
+	 * @param finishWithin          Maximum interval to finish the batch.
+	 * @param actionBeanName        Action bean name.
+	 * @param actionDelegateMethods Action delegate methods.
+	 * @param messagesTemplates     Messages templates.
+	 * @param slackChannels         Slack channels.
 	 */
 	public BatchExecutor(
 			final String keySuffix,
 			final Long size,
 			final String lastProcessedId,
 			final Duration finishWithin,
+			final String actionBeanName,
+			final Map<BatchAction, String> actionDelegateMethods,
 			final Map<BatchAction, String> messagesTemplates,
 			final Map<BatchAction, String> slackChannels) {
 		super();
@@ -96,6 +124,8 @@ public abstract class BatchExecutor implements Typable {
 		this.size = size;
 		this.lastProcessedId = lastProcessedId;
 		this.finishWithin = finishWithin;
+		this.actionBeanName = actionBeanName;
+		this.actionDelegateMethods = actionDelegateMethods;
 		this.messagesTemplates = messagesTemplates;
 		this.slackChannels = slackChannels;
 	}
@@ -186,12 +216,85 @@ public abstract class BatchExecutor implements Typable {
 	}
 
 	/**
+	 * Gets the actionBeanName.
+	 *
+	 * @return The actionBeanName.
+	 */
+	public String getActionBeanName() {
+		return this.actionBeanName;
+	}
+
+	/**
+	 * Sets the actionBeanName.
+	 *
+	 * @param actionBeanName New actionBeanName.
+	 */
+	public void setActionBeanName(
+			final String actionBeanName) {
+		this.actionBeanName = actionBeanName;
+	}
+
+	/**
+	 * Gets the actionDelegateMethods.
+	 *
+	 * @return The actionDelegateMethods.
+	 */
+	public Map<BatchAction, String> getActionDelegateMethods() {
+		this.actionDelegateMethods = (this.actionDelegateMethods == null
+				? new HashMap<>(Map.of(BatchAction.START, "start", BatchAction.RESUME, "resume", BatchAction.GET, "get", BatchAction.EXECUTE, "execute",
+						BatchAction.FINISH, "finish"))
+				: this.actionDelegateMethods);
+		return this.actionDelegateMethods;
+	}
+
+	/**
+	 * Sets the actionDelegateMethods.
+	 *
+	 * @param actionDelegateMethods New actionDelegateMethods.
+	 */
+	public void setActionDelegateMethods(
+			final Map<BatchAction, String> actionDelegateMethods) {
+		this.actionDelegateMethods = actionDelegateMethods;
+	}
+
+	/**
+	 * Executes a delegate method.
+	 *
+	 * @param  action            Action.
+	 * @param  arguments         Arguments.
+	 * @return                   The object return.
+	 * @throws BusinessException If the method fails.
+	 */
+	public Object executeActionDelegateMethod(
+			final BatchAction action,
+			final Object... arguments) throws BusinessException {
+		Object returnObject = null;
+		if (this.getActionBeanName() != null) {
+			if (this.getActionDelegateMethods().containsKey(action)) {
+				try {
+					final Object bean = StaticContextAccessor.getBean(this.getActionBeanName());
+					returnObject = MethodUtils.invokeMethod(bean, this.getActionDelegateMethods().get(action), arguments);
+				}
+				catch (final IntegrationException exception) {
+					throw exception;
+				}
+				catch (final Exception exception) {
+					throw new IntegrationException(new SimpleMessage("batch.action.error"), exception);
+				}
+			}
+		}
+		return returnObject;
+	}
+
+	/**
 	 * Gets the messagesTemplates.
 	 *
 	 * @return The messagesTemplates.
 	 */
 	public Map<BatchAction, String> getMessagesTemplates() {
-		this.messagesTemplates = (this.messagesTemplates == null ? new HashMap<>() : this.messagesTemplates);
+		this.messagesTemplates = (this.messagesTemplates == null ? new HashMap<>(Map.of(BatchAction.START, "Starting batch for '${key}'.", BatchAction.RESUME,
+				"Resuming batch for '${key}' from id '${id}'.", BatchAction.FINISH, "Finishing batch for '${key}' at id '${id}' in '${duration}' minutes."))
+				: this.messagesTemplates);
 		return this.messagesTemplates;
 	}
 
@@ -211,6 +314,7 @@ public abstract class BatchExecutor implements Typable {
 	 * @return The slackChannels.
 	 */
 	public Map<BatchAction, String> getSlackChannels() {
+		this.slackChannels = (this.slackChannels == null ? new HashMap<>() : this.slackChannels);
 		return this.slackChannels;
 	}
 
@@ -225,11 +329,20 @@ public abstract class BatchExecutor implements Typable {
 	}
 
 	/**
+	 * @see org.coldis.library.model.Typable#getTypeName()
+	 */
+	@Override
+	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
+	public String getTypeName() {
+		return BatchExecutor.TYPE_NAME;
+	}
+
+	/**
 	 * @see java.lang.Object#hashCode()
 	 */
 	@Override
 	public int hashCode() {
-		return Objects.hash(finishWithin, keySuffix, lastProcessedId, messagesTemplates, size, slackChannels);
+		return Objects.hash(this.finishWithin, this.keySuffix, this.lastProcessedId, this.messagesTemplates, this.size, this.slackChannels);
 	}
 
 	/**
@@ -237,47 +350,66 @@ public abstract class BatchExecutor implements Typable {
 	 */
 	@Override
 	public boolean equals(
-			Object obj) {
+			final Object obj) {
 		if (this == obj) {
 			return true;
 		}
 		if (!(obj instanceof BatchExecutor)) {
 			return false;
 		}
-		BatchExecutor other = (BatchExecutor) obj;
-		return Objects.equals(finishWithin, other.finishWithin) && Objects.equals(keySuffix, other.keySuffix)
-				&& Objects.equals(lastProcessedId, other.lastProcessedId) && Objects.equals(messagesTemplates, other.messagesTemplates)
-				&& Objects.equals(size, other.size) && Objects.equals(slackChannels, other.slackChannels);
+		final BatchExecutor other = (BatchExecutor) obj;
+		return Objects.equals(this.finishWithin, other.finishWithin) && Objects.equals(this.keySuffix, other.keySuffix)
+				&& Objects.equals(this.lastProcessedId, other.lastProcessedId) && Objects.equals(this.messagesTemplates, other.messagesTemplates)
+				&& Objects.equals(this.size, other.size) && Objects.equals(this.slackChannels, other.slackChannels);
 	}
 
 	/**
 	 * Starts the batch.
+	 *
+	 * @throws BusinessException If start fails.
 	 */
-	public abstract void start();
+	public void start() throws BusinessException {
+		this.executeActionDelegateMethod(BatchAction.START);
+	}
 
 	/**
 	 * Resumes the batch.
+	 *
+	 * @throws BusinessException If resume fails.
 	 */
-	public abstract void resume();
-
-	/**
-	 * Finishes the batch.
-	 */
-	public abstract void finish();
+	public void resume() throws BusinessException {
+		this.executeActionDelegateMethod(BatchAction.RESUME);
+	}
 
 	/**
 	 * Gets the next batch to be processed.
 	 *
-	 * @return The next batch to be processed.
+	 * @return                   The next batch to be processed.
+	 * @throws BusinessException If the next to process cannot be retrieved.
 	 */
-	public abstract List<String> getNextToProcess();
+	@SuppressWarnings("unchecked")
+	public List<String> get() throws BusinessException {
+		return (List<String>) this.executeActionDelegateMethod(BatchAction.GET, this.getLastProcessedId(), this.getSize());
+	}
+
+	/**
+	 * Finishes the batch.
+	 *
+	 * @throws BusinessException If finish fails.
+	 */
+	public void finish() throws BusinessException {
+		this.executeActionDelegateMethod(BatchAction.FINISH);
+	}
 
 	/**
 	 * Executes the batch for one item.
 	 *
-	 * @param id Item id.
+	 * @param  id                Item id.
+	 * @throws BusinessException If execution fails.
 	 */
-	public abstract void execute(
-			String id);
+	public void execute(
+			final String id) throws BusinessException {
+		this.executeActionDelegateMethod(BatchAction.EXECUTE, id);
+	}
 
 }

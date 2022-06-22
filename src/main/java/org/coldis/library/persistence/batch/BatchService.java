@@ -150,7 +150,8 @@ public class BatchService {
 				final String id = executor.getLastProcessedId();
 				final KeyValue<Typable> batchRecord = this.keyValueService.findById(key, false);
 				final BatchRecord batchRecordValue = (BatchRecord) batchRecord.getValue();
-				final Long duration = batchRecordValue.getLastStartedAt().until(DateTimeHelper.getCurrentLocalDateTime(), ChronoUnit.MINUTES);
+				final Long duration = (batchRecordValue.getLastStartedAt() == null ? 0
+						: batchRecordValue.getLastStartedAt().until(DateTimeHelper.getCurrentLocalDateTime(), ChronoUnit.MINUTES));
 				final Properties messageProperties = new Properties();
 				messageProperties.put("key", key);
 				messageProperties.put("id", id);
@@ -203,7 +204,8 @@ public class BatchService {
 		if (!batchRecordValue.getLastStartedAt().isBefore(executor.getExpiration())) {
 
 			// For each item in the next batch.
-			final List<String> nextBatchToProcess = executor.getNextToProcess();
+			this.log(executor, BatchAction.GET);
+			final List<String> nextBatchToProcess = executor.get();
 			for (final String nextId : nextBatchToProcess) {
 				executor.execute(nextId);
 				this.log(executor, BatchAction.EXECUTE);
