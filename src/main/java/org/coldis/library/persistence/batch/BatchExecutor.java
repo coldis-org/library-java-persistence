@@ -56,6 +56,11 @@ public class BatchExecutor implements Typable {
 	private Duration finishWithin = Duration.ofDays(1);
 
 	/**
+	 * Arguments used to get next batch.
+	 */
+	private Map<String, String> arguments;
+
+	/**
 	 * Action bean name.
 	 */
 	private String actionBeanName;
@@ -216,6 +221,26 @@ public class BatchExecutor implements Typable {
 	}
 
 	/**
+	 * Gets the arguments.
+	 *
+	 * @return The arguments.
+	 */
+	public Map<String, String> getArguments() {
+		this.arguments = (this.arguments == null ? new HashMap<>() : this.arguments);
+		return this.arguments;
+	}
+
+	/**
+	 * Sets the arguments.
+	 *
+	 * @param arguments New arguments.
+	 */
+	public void setGetArguments(
+			final Map<String, String> getArguments) {
+		this.arguments = getArguments;
+	}
+
+	/**
 	 * Gets the actionBeanName.
 	 *
 	 * @return The actionBeanName.
@@ -342,7 +367,7 @@ public class BatchExecutor implements Typable {
 	 */
 	@Override
 	public int hashCode() {
-		return Objects.hash(this.finishWithin, this.keySuffix, this.lastProcessedId, this.messagesTemplates, this.size, this.slackChannels);
+		return Objects.hash(actionBeanName, actionDelegateMethods, arguments, finishWithin, keySuffix, lastProcessedId, messagesTemplates, size, slackChannels);
 	}
 
 	/**
@@ -350,17 +375,18 @@ public class BatchExecutor implements Typable {
 	 */
 	@Override
 	public boolean equals(
-			final Object obj) {
+			Object obj) {
 		if (this == obj) {
 			return true;
 		}
 		if (!(obj instanceof BatchExecutor)) {
 			return false;
 		}
-		final BatchExecutor other = (BatchExecutor) obj;
-		return Objects.equals(this.finishWithin, other.finishWithin) && Objects.equals(this.keySuffix, other.keySuffix)
-				&& Objects.equals(this.lastProcessedId, other.lastProcessedId) && Objects.equals(this.messagesTemplates, other.messagesTemplates)
-				&& Objects.equals(this.size, other.size) && Objects.equals(this.slackChannels, other.slackChannels);
+		BatchExecutor other = (BatchExecutor) obj;
+		return Objects.equals(actionBeanName, other.actionBeanName) && Objects.equals(actionDelegateMethods, other.actionDelegateMethods)
+				&& Objects.equals(arguments, other.arguments) && Objects.equals(finishWithin, other.finishWithin) && Objects.equals(keySuffix, other.keySuffix)
+				&& Objects.equals(lastProcessedId, other.lastProcessedId) && Objects.equals(messagesTemplates, other.messagesTemplates)
+				&& Objects.equals(size, other.size) && Objects.equals(slackChannels, other.slackChannels);
 	}
 
 	/**
@@ -389,7 +415,7 @@ public class BatchExecutor implements Typable {
 	 */
 	@SuppressWarnings("unchecked")
 	public List<String> get() throws BusinessException {
-		return (List<String>) this.executeActionDelegateMethod(BatchAction.GET, this.getLastProcessedId(), this.getSize());
+		return (List<String>) this.executeActionDelegateMethod(BatchAction.GET, this.getLastProcessedId(), this.getSize(), this.getArguments());
 	}
 
 	/**

@@ -1,6 +1,7 @@
 package org.coldis.library.test.persistence.batch;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
 
@@ -39,7 +40,8 @@ public class BatchRecordTestService {
 	 */
 	public List<String> get(
 			final String id,
-			final Long size) {
+			final Long size,
+			final Map<String, String> arguments) {
 		return BatchRecordTestService.processedLatestCompleteBatch < 100
 				? List.of(Objects.toString(BatchRecordTestService.RANDOM.nextInt()), Objects.toString(BatchRecordTestService.RANDOM.nextInt()),
 						Objects.toString(BatchRecordTestService.RANDOM.nextInt()), Objects.toString(BatchRecordTestService.RANDOM.nextInt()),
