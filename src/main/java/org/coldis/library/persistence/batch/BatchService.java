@@ -16,6 +16,7 @@ import org.coldis.library.service.slack.SlackIntegration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Component;
@@ -27,6 +28,11 @@ import org.springframework.util.PropertyPlaceholderHelper;
  * Batch helper.
  */
 @Component
+@ConditionalOnProperty(
+		name = "org.coldis.configuration.persistence-batch-enabled",
+		havingValue = "true",
+		matchIfMissing = true
+)
 public class BatchService {
 
 	/**
