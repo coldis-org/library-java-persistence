@@ -24,13 +24,14 @@ public class JsonMapperAutoConfiguration {
 	 */
 	@Primary
 	@Bean(name = { "objectMapper", "jsonMapper" })
-	public ObjectMapper jsonObjectMapper(final Jackson2ObjectMapperBuilder builder) {
+	public ObjectMapper jsonObjectMapper(
+			final Jackson2ObjectMapperBuilder builder) {
 		// Creates the object mapper.
 		ObjectMapper objectMapper = builder.createXmlMapper(false).build();
 		// Registers the date/time module.
 		objectMapper.registerModule(ObjectMapperHelper.getDateTimeModule());
 		// Registers the subtypes from the base packages.
-		objectMapper = ObjectMapperHelper.addSubtypesFromPackage(objectMapper, "org.coldis.library.test.persistence");
+		objectMapper = ObjectMapperHelper.addSubtypesFromPackage(objectMapper, "org.coldis");
 		// Returns the configured object mapper.
 		return objectMapper;
 	}
