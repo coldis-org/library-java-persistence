@@ -165,7 +165,7 @@ public class BatchService {
 				// Gets the message from the template.
 				final String message = BatchService.PLACEHOLDER_HELPER.replacePlaceholders(template, messageProperties);
 				// If there is a message.
-				if (StringUtils.isNoneBlank(message)) {
+				if (StringUtils.isNotBlank(message)) {
 					BatchService.LOGGER.info(message);
 					// If there is a channel to use, sends the message.
 					if (StringUtils.isNotBlank(slackChannel)) {

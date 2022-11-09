@@ -5,9 +5,12 @@ import java.util.Objects;
 
 import org.coldis.library.model.Typable;
 import org.coldis.library.model.view.ModelView;
+import org.coldis.library.serialization.ObjectMapperHelper;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonView;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Batch record.
@@ -24,6 +27,11 @@ public class BatchRecord<Type> implements Typable {
 	 * Type name.
 	 */
 	public static final String TYPE_NAME = "org.coldis.library.persistence.batch.BatchRecord";
+
+	/**
+	 * Object mapper.
+	 */
+	private static final ObjectMapper OBJECT_MAPPER = ObjectMapperHelper.createMapper();
 
 	/**
 	 * Last started at.
@@ -72,6 +80,8 @@ public class BatchRecord<Type> implements Typable {
 	 */
 	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public Type getLastProcessed() {
+		this.lastProcessed = (this.lastProcessed instanceof Type ? this.lastProcessed
+				: ObjectMapperHelper.convert(BatchRecord.OBJECT_MAPPER, this.lastProcessed, new TypeReference<Type>() {}, false));
 		return this.lastProcessed;
 	}
 
