@@ -108,7 +108,7 @@ public class BatchService {
 	 * @return            The last id processed.
 	 */
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
-	public String getLastProcessedId(
+	public <Type> Type getLastProcessed(
 			final String keySuffix,
 			final LocalDateTime expiration) {
 
@@ -116,22 +116,22 @@ public class BatchService {
 		final String key = this.getKey(keySuffix);
 		KeyValue<Typable> batchRecord = this.keyValueService.lock(key).get();
 		if (batchRecord.getValue() == null) {
-			batchRecord.setValue(new BatchRecord());
+			batchRecord.setValue(new BatchRecord<>());
 		}
 
 		// Gets the last processed id.
-		final BatchRecord batchRecordValue = (BatchRecord) batchRecord.getValue();
-		String lastProcessedId = batchRecordValue.getLastProcessedId();
+		final BatchRecord<Type> batchRecordValue = (BatchRecord<Type>) batchRecord.getValue();
+		Type lastProcessed = batchRecordValue.getLastProcessed();
 
 		// Clears the last processed id, if data has expired.
 		if ((batchRecordValue.getLastStartedAt() == null) || (expiration == null) || batchRecordValue.getLastStartedAt().isBefore(expiration)) {
 			batchRecordValue.reset();
-			lastProcessedId = null;
+			lastProcessed = null;
 		}
 
 		// Returns the last processed id.
 		batchRecord = this.keyValueService.getRepository().save(batchRecord);
-		return lastProcessedId;
+		return lastProcessed;
 	}
 
 	/**
@@ -142,8 +142,8 @@ public class BatchService {
 	 * @throws BusinessException Exception.
 	 */
 	@Transactional(propagation = Propagation.NOT_SUPPORTED)
-	private void log(
-			final BatchExecutor executor,
+	private <Type> void log(
+			final BatchExecutor<Type> executor,
 			final BatchAction action) throws BusinessException {
 		try {
 			// Gets the template and Slack channel.
@@ -153,14 +153,14 @@ public class BatchService {
 			if (StringUtils.isNotBlank(template)) {
 				// Gets the message properties.
 				final String key = this.getKey(executor.getKeySuffix());
-				final String id = executor.getLastProcessedId();
+				final Type lastProcessed = executor.getLastProcessed();
 				final KeyValue<Typable> batchRecord = this.keyValueService.findById(key, false);
-				final BatchRecord batchRecordValue = (BatchRecord) batchRecord.getValue();
+				final BatchRecord<Type> batchRecordValue = (BatchRecord<Type>) batchRecord.getValue();
 				final Long duration = (batchRecordValue.getLastStartedAt() == null ? 0
 						: batchRecordValue.getLastStartedAt().until(DateTimeHelper.getCurrentLocalDateTime(), ChronoUnit.MINUTES));
 				final Properties messageProperties = new Properties();
 				messageProperties.put("key", key);
-				messageProperties.put("id", id);
+				messageProperties.put("lastProcessed", lastProcessed);
 				messageProperties.put("duration", duration);
 				// Gets the message from the template.
 				final String message = BatchService.PLACEHOLDER_HELPER.replacePlaceholders(template, messageProperties);
@@ -193,16 +193,16 @@ public class BatchService {
 			propagation = Propagation.REQUIRES_NEW,
 			timeout = 173
 	)
-	protected String executePartialBatch(
-			final BatchExecutor executor) throws BusinessException {
+	protected <Type> Type executePartialBatch(
+			final BatchExecutor<Type> executor) throws BusinessException {
 
 		// Gets the batch record.
 		final KeyValue<Typable> batchRecord = this.keyValueService.findById(this.getKey(executor.getKeySuffix()), true);
-		final BatchRecord batchRecordValue = (BatchRecord) batchRecord.getValue();
-		String actualLastProcessedId = executor.getLastProcessedId();
+		final BatchRecord<Type> batchRecordValue = (BatchRecord<Type>) batchRecord.getValue();
+		Type actualLastProcessed = executor.getLastProcessed();
 
 		// Updates the last processed start.
-		if ((executor.getLastProcessedId() == null) || (batchRecordValue.getLastStartedAt() == null)) {
+		if ((executor.getLastProcessed() == null) || (batchRecordValue.getLastStartedAt() == null)) {
 			batchRecordValue.setLastStartedAt(DateTimeHelper.getCurrentLocalDateTime());
 		}
 
@@ -211,22 +211,22 @@ public class BatchService {
 
 			// For each item in the next batch.
 			this.log(executor, BatchAction.GET);
-			final List<String> nextBatchToProcess = executor.get();
-			for (final String nextId : nextBatchToProcess) {
-				executor.execute(nextId);
+			final List<Type> nextBatchToProcess = executor.get();
+			for (final Type next : nextBatchToProcess) {
+				executor.execute(next);
 				this.log(executor, BatchAction.EXECUTE);
-				actualLastProcessedId = nextId;
+				actualLastProcessed = next;
 				batchRecordValue.setLastProcessedCount(batchRecordValue.getLastProcessedCount() + 1);
 			}
 
 		}
 
 		// Updates the last processed id.
-		batchRecordValue.setLastProcessedId(actualLastProcessedId);
+		batchRecordValue.setLastProcessed(actualLastProcessed);
 		this.keyValueService.getRepository().save(batchRecord);
 
 		// Returns the last processed. id.
-		return actualLastProcessedId;
+		return actualLastProcessed;
 	}
 
 	/**
@@ -244,20 +244,20 @@ public class BatchService {
 			noRollbackFor = Throwable.class,
 			timeout = 1237
 	)
-	public void executeCompleteBatch(
-			final BatchExecutor executor) throws BusinessException {
+	public <Type> void executeCompleteBatch(
+			final BatchExecutor<Type> executor) throws BusinessException {
 		// Synchronizes the batch (preventing to happen in parallel).
 		final String lockKey = this.getLockKey(executor.getKeySuffix());
 		this.keyValueService.lock(lockKey);
 		try {
 			// Gets the next id to be processed.
-			final String initialProcessedId = this.getLastProcessedId(executor.getKeySuffix(), executor.getExpiration());
-			String previousLastProcessedId = initialProcessedId;
-			String currentLastProcessedId = initialProcessedId;
+			final Type initialProcessed = this.getLastProcessed(executor.getKeySuffix(), executor.getExpiration());
+			Type previousLastProcessed = initialProcessed;
+			Type currentLastProcessed = initialProcessed;
 			boolean justStarted = true;
 
 			// Starts or resumes the batch.
-			if (initialProcessedId == null) {
+			if (initialProcessed == null) {
 				executor.start();
 				this.log(executor, BatchAction.START);
 			}
@@ -267,20 +267,20 @@ public class BatchService {
 			}
 
 			// Runs the batch until the next id does not change.
-			while (justStarted || !Objects.equals(previousLastProcessedId, currentLastProcessedId)) {
+			while (justStarted || !Objects.equals(previousLastProcessed, currentLastProcessed)) {
 				justStarted = false;
-				executor.setLastProcessedId(currentLastProcessedId);
-				final String nextLastProcessedId = this.executePartialBatch(executor);
-				previousLastProcessedId = currentLastProcessedId;
-				currentLastProcessedId = nextLastProcessedId;
+				executor.setLastProcessed(currentLastProcessed);
+				final Type nextLastProcessed = this.executePartialBatch(executor);
+				previousLastProcessed = currentLastProcessed;
+				currentLastProcessed = nextLastProcessed;
 			}
 
 			// Finishes the batch.
-			if (!Objects.equals(initialProcessedId, currentLastProcessedId)) {
+			if (!Objects.equals(initialProcessed, currentLastProcessed)) {
 				executor.finish();
 				this.log(executor, BatchAction.FINISH);
 				final KeyValue<Typable> batchRecord = this.keyValueService.findById(this.getKey(executor.getKeySuffix()), true);
-				final BatchRecord batchRecordValue = (BatchRecord) batchRecord.getValue();
+				final BatchRecord<Type> batchRecordValue = (BatchRecord<Type>) batchRecord.getValue();
 				batchRecordValue.setLastFinishedAt(DateTimeHelper.getCurrentLocalDateTime());
 				this.keyValueService.getRepository().save(batchRecord);
 			}

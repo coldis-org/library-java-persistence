@@ -72,7 +72,8 @@ public class BatchRecordTest {
 	public void testBatch() throws Exception {
 
 		// Makes sure the batch is not started.
-		final BatchExecutor testBatchExecutor = new BatchExecutor("test", 10L, null, Duration.ofSeconds(60), "batchRecordTestService", null, null, null);
+		final BatchExecutor<String> testBatchExecutor = new BatchExecutor<>("test", 10L, null, Duration.ofSeconds(60), "batchRecordTestService", null, null,
+				null);
 		BatchRecordTestService.processDelay = 3;
 		final String batchKey = this.batchService.getKey(testBatchExecutor.getKeySuffix());
 		try {
@@ -89,31 +90,31 @@ public class BatchRecordTest {
 		}
 		catch (final Exception exception) {
 		}
-		BatchRecord batchRecord = (BatchRecord) this.keyValueService.findById(batchKey, false).getValue();
+		BatchRecord<String> batchRecord = (BatchRecord<String>) this.keyValueService.findById(batchKey, false).getValue();
 		Assertions.assertTrue(batchRecord.getLastProcessedCount() > 0);
 		Assertions.assertNotNull(batchRecord.getLastStartedAt());
-		Assertions.assertNotNull(batchRecord.getLastProcessedId());
+		Assertions.assertNotNull(batchRecord.getLastProcessed());
 		Assertions.assertNull(batchRecord.getLastFinishedAt());
 
 		// Waits until batch is finished.
 		TestHelper.waitUntilValid(() -> {
 			try {
-				return (BatchRecord) this.keyValueService.findById(batchKey, false).getValue();
+				return (BatchRecord<String>) this.keyValueService.findById(batchKey, false).getValue();
 			}
 			catch (final BusinessException e) {
 				return null;
 			}
 		}, record -> record.getLastFinishedAt() != null, TestHelper.VERY_LONG_WAIT, TestHelper.SHORT_WAIT);
-		batchRecord = (BatchRecord) this.keyValueService.findById(batchKey, false).getValue();
+		batchRecord = (BatchRecord<String>) this.keyValueService.findById(batchKey, false).getValue();
 		Assertions.assertEquals(100, BatchRecordTestService.processedAlways);
 		Assertions.assertEquals(100, batchRecord.getLastProcessedCount());
 		Assertions.assertNotNull(batchRecord.getLastStartedAt());
-		Assertions.assertNotNull(batchRecord.getLastProcessedId());
+		Assertions.assertNotNull(batchRecord.getLastProcessed());
 		Assertions.assertNotNull(batchRecord.getLastFinishedAt());
 
 		// Tries executing the batch again, and nothing should change.
 		this.batchService.executeCompleteBatch(testBatchExecutor);
-		batchRecord = (BatchRecord) this.keyValueService.findById(batchKey, false).getValue();
+		batchRecord = (BatchRecord<String>) this.keyValueService.findById(batchKey, false).getValue();
 		Assertions.assertEquals(100, batchRecord.getLastProcessedCount());
 		Assertions.assertEquals(100, BatchRecordTestService.processedAlways);
 
@@ -121,7 +122,7 @@ public class BatchRecordTest {
 		DateTimeHelper.setClock(
 				Clock.fixed(DateTimeHelper.getCurrentLocalDateTime().plusHours(1).atZone(ZoneId.systemDefault()).toInstant(), ZoneId.systemDefault()));
 		LocalDateTime lastStartedAt = batchRecord.getLastStartedAt();
-		String lastProcessedId = batchRecord.getLastProcessedId();
+		String lastProcessed = batchRecord.getLastProcessed();
 		LocalDateTime lastFinishedAt = batchRecord.getLastFinishedAt();
 		try {
 			this.batchService.executeCompleteBatch(testBatchExecutor);
@@ -143,7 +144,7 @@ public class BatchRecordTest {
 		Assertions.assertEquals(200, BatchRecordTestService.processedAlways);
 		Assertions.assertEquals(100, batchRecord.getLastProcessedCount());
 		Assertions.assertNotEquals(lastStartedAt, batchRecord.getLastStartedAt());
-		Assertions.assertNotEquals(lastProcessedId, batchRecord.getLastProcessedId());
+		Assertions.assertNotEquals(lastProcessed, batchRecord.getLastProcessed());
 		Assertions.assertNotEquals(lastFinishedAt, batchRecord.getLastFinishedAt());
 		Assertions.assertNotNull(batchRecord.getLastFinishedAt());
 
@@ -152,7 +153,7 @@ public class BatchRecordTest {
 		DateTimeHelper.setClock(
 				Clock.fixed(DateTimeHelper.getCurrentLocalDateTime().plusHours(1).atZone(ZoneId.systemDefault()).toInstant(), ZoneId.systemDefault()));
 		lastStartedAt = batchRecord.getLastStartedAt();
-		lastProcessedId = batchRecord.getLastProcessedId();
+		lastProcessed = batchRecord.getLastProcessed();
 		lastFinishedAt = batchRecord.getLastFinishedAt();
 		BatchRecordTestService.processDelay = 1000;
 		try {
@@ -177,7 +178,7 @@ public class BatchRecordTest {
 		Assertions.assertTrue(batchRecord.getLastProcessedCount() > 0);
 		Assertions.assertTrue(batchRecord.getLastProcessedCount() < 100);
 		Assertions.assertNotEquals(lastStartedAt, batchRecord.getLastStartedAt());
-		Assertions.assertNotEquals(lastProcessedId, batchRecord.getLastProcessedId());
+		Assertions.assertNotEquals(lastProcessed, batchRecord.getLastProcessed());
 		Assertions.assertNotEquals(lastFinishedAt, batchRecord.getLastFinishedAt());
 		Assertions.assertNull(batchRecord.getLastFinishedAt());
 

@@ -23,7 +23,7 @@ import com.fasterxml.jackson.annotation.JsonView;
  * Batch executor.
  */
 @JsonTypeName(value = BatchExecutor.TYPE_NAME)
-public class BatchExecutor implements Typable {
+public class BatchExecutor<Type> implements Typable {
 
 	/**
 	 * Serial.
@@ -46,9 +46,9 @@ public class BatchExecutor implements Typable {
 	private Long size = 13000L;
 
 	/**
-	 * Last processed id.
+	 * Last processed.
 	 */
-	private String lastProcessedId;
+	private Type lastProcessed;
 
 	/**
 	 * Maximum interval to finish the batch.
@@ -90,16 +90,16 @@ public class BatchExecutor implements Typable {
 	/**
 	 * Default constructor.
 	 *
-	 * @param keySuffix       Key suffix.
-	 * @param size            Size.
-	 * @param lastProcessedId Last processed id.
-	 * @param finishWithin    Maximum interval to finish the batch.
+	 * @param keySuffix     Key suffix.
+	 * @param size          Size.
+	 * @param lastProcessed Last processed.
+	 * @param finishWithin  Maximum interval to finish the batch.
 	 */
-	public BatchExecutor(final String keySuffix, final Long size, final String lastProcessedId, final Duration finishWithin) {
+	public BatchExecutor(final String keySuffix, final Long size, final Type lastProcessed, final Duration finishWithin) {
 		super();
 		this.keySuffix = keySuffix;
 		this.size = size;
-		this.lastProcessedId = lastProcessedId;
+		this.lastProcessed = lastProcessed;
 		this.finishWithin = finishWithin;
 	}
 
@@ -108,7 +108,7 @@ public class BatchExecutor implements Typable {
 	 *
 	 * @param keySuffix             Key suffix.
 	 * @param size                  Size.
-	 * @param lastProcessedId       Last processed id.
+	 * @param lastProcessed         Last processed.
 	 * @param finishWithin          Maximum interval to finish the batch.
 	 * @param actionBeanName        Action bean name.
 	 * @param actionDelegateMethods Action delegate methods.
@@ -118,7 +118,7 @@ public class BatchExecutor implements Typable {
 	public BatchExecutor(
 			final String keySuffix,
 			final Long size,
-			final String lastProcessedId,
+			final Type lastProcessed,
 			final Duration finishWithin,
 			final String actionBeanName,
 			final Map<BatchAction, String> actionDelegateMethods,
@@ -127,7 +127,7 @@ public class BatchExecutor implements Typable {
 		super();
 		this.keySuffix = keySuffix;
 		this.size = size;
-		this.lastProcessedId = lastProcessedId;
+		this.lastProcessed = lastProcessed;
 		this.finishWithin = finishWithin;
 		this.actionBeanName = actionBeanName;
 		this.actionDelegateMethods = actionDelegateMethods;
@@ -174,22 +174,22 @@ public class BatchExecutor implements Typable {
 	}
 
 	/**
-	 * Gets the lastProcessedId.
+	 * Gets the lastProcessed.
 	 *
-	 * @return The lastProcessedId.
+	 * @return The lastProcessed.
 	 */
-	public String getLastProcessedId() {
-		return this.lastProcessedId;
+	public Type getLastProcessed() {
+		return this.lastProcessed;
 	}
 
 	/**
-	 * Sets the lastProcessedId.
+	 * Sets the lastProcessed.
 	 *
-	 * @param lastProcessedId New lastProcessedId.
+	 * @param lastProcessed New lastProcessed.
 	 */
-	public void setLastProcessedId(
-			final String lastProcessedId) {
-		this.lastProcessedId = lastProcessedId;
+	public void setLastProcessed(
+			final Type lastProcessed) {
+		this.lastProcessed = lastProcessed;
 	}
 
 	/**
@@ -317,8 +317,10 @@ public class BatchExecutor implements Typable {
 	 * @return The messagesTemplates.
 	 */
 	public Map<BatchAction, String> getMessagesTemplates() {
-		this.messagesTemplates = (this.messagesTemplates == null ? new HashMap<>(Map.of(BatchAction.START, "Starting batch for '${key}'.", BatchAction.RESUME,
-				"Resuming batch for '${key}' from id '${id}'.", BatchAction.FINISH, "Finishing batch for '${key}' at id '${id}' in '${duration}' minutes."))
+		this.messagesTemplates = (this.messagesTemplates == null
+				? new HashMap<>(Map.of(BatchAction.START, "Starting batch for '${key}'.", BatchAction.RESUME,
+						"Resuming batch for '${key}' from object '${lastProcessed}'.", BatchAction.FINISH,
+						"Finishing batch for '${key}' at object '${lastProcessed}' in '${duration}' minutes."))
 				: this.messagesTemplates);
 		return this.messagesTemplates;
 	}
@@ -367,7 +369,8 @@ public class BatchExecutor implements Typable {
 	 */
 	@Override
 	public int hashCode() {
-		return Objects.hash(actionBeanName, actionDelegateMethods, arguments, finishWithin, keySuffix, lastProcessedId, messagesTemplates, size, slackChannels);
+		return Objects.hash(this.actionBeanName, this.actionDelegateMethods, this.arguments, this.finishWithin, this.keySuffix, this.lastProcessed,
+				this.messagesTemplates, this.size, this.slackChannels);
 	}
 
 	/**
@@ -375,18 +378,19 @@ public class BatchExecutor implements Typable {
 	 */
 	@Override
 	public boolean equals(
-			Object obj) {
+			final Object obj) {
 		if (this == obj) {
 			return true;
 		}
 		if (!(obj instanceof BatchExecutor)) {
 			return false;
 		}
-		BatchExecutor other = (BatchExecutor) obj;
-		return Objects.equals(actionBeanName, other.actionBeanName) && Objects.equals(actionDelegateMethods, other.actionDelegateMethods)
-				&& Objects.equals(arguments, other.arguments) && Objects.equals(finishWithin, other.finishWithin) && Objects.equals(keySuffix, other.keySuffix)
-				&& Objects.equals(lastProcessedId, other.lastProcessedId) && Objects.equals(messagesTemplates, other.messagesTemplates)
-				&& Objects.equals(size, other.size) && Objects.equals(slackChannels, other.slackChannels);
+		final BatchExecutor other = (BatchExecutor) obj;
+		return Objects.equals(this.actionBeanName, other.actionBeanName) && Objects.equals(this.actionDelegateMethods, other.actionDelegateMethods)
+				&& Objects.equals(this.arguments, other.arguments) && Objects.equals(this.finishWithin, other.finishWithin)
+				&& Objects.equals(this.keySuffix, other.keySuffix) && Objects.equals(this.lastProcessed, other.lastProcessed)
+				&& Objects.equals(this.messagesTemplates, other.messagesTemplates) && Objects.equals(this.size, other.size)
+				&& Objects.equals(this.slackChannels, other.slackChannels);
 	}
 
 	/**
@@ -414,8 +418,8 @@ public class BatchExecutor implements Typable {
 	 * @throws BusinessException If the next to process cannot be retrieved.
 	 */
 	@SuppressWarnings("unchecked")
-	public List<String> get() throws BusinessException {
-		return (List<String>) this.executeActionDelegateMethod(BatchAction.GET, this.getLastProcessedId(), this.getSize(), this.getArguments());
+	public List<Type> get() throws BusinessException {
+		return (List<Type>) this.executeActionDelegateMethod(BatchAction.GET, this.getLastProcessed(), this.getSize(), this.getArguments());
 	}
 
 	/**
@@ -430,12 +434,12 @@ public class BatchExecutor implements Typable {
 	/**
 	 * Executes the batch for one item.
 	 *
-	 * @param  id                Item id.
+	 * @param  object            Object.
 	 * @throws BusinessException If execution fails.
 	 */
 	public void execute(
-			final String id) throws BusinessException {
-		this.executeActionDelegateMethod(BatchAction.EXECUTE, id);
+			final Type object) throws BusinessException {
+		this.executeActionDelegateMethod(BatchAction.EXECUTE, object);
 	}
 
 }
