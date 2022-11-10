@@ -80,8 +80,9 @@ public class BatchRecord<Type> implements Typable {
 	 */
 	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public Type getLastProcessed() {
-		this.lastProcessed = (this.lastProcessed instanceof Type ? this.lastProcessed
-				: ObjectMapperHelper.convert(BatchRecord.OBJECT_MAPPER, this.lastProcessed, new TypeReference<Type>() {}, false));
+		this.lastProcessed = (
+		// this.lastProcessed instanceof Type ? this.lastProcessed:
+		ObjectMapperHelper.convert(BatchRecord.OBJECT_MAPPER, this.lastProcessed, new TypeReference<Type>() {}, false));
 		return this.lastProcessed;
 	}
 

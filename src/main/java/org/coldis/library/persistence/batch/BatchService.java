@@ -307,8 +307,8 @@ public class BatchService {
 	 * @throws BusinessException If the batch fails.
 	 */
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
-	public void processExecuteCompleteBatchAsync(
-			final BatchExecutor executor) throws BusinessException {
+	public <Type> void processExecuteCompleteBatchAsync(
+			final BatchExecutor<Type> executor) throws BusinessException {
 		this.jmsTemplate.convertAndSend(BatchService.BATCH_RECORD_EXECUTE_QUEUE, executor);
 	}
 
