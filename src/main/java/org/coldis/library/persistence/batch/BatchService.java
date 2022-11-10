@@ -1,6 +1,5 @@
 package org.coldis.library.persistence.batch;
 
-import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Objects;
@@ -109,22 +108,23 @@ public class BatchService {
 	 */
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public <Type> Type getLastProcessed(
-			final String keySuffix,
-			final LocalDateTime expiration) {
+			final BatchExecutor<Type> executor) {
 
 		// Gets the batch record (and initiates it if necessary).
-		final String key = this.getKey(keySuffix);
+		final String key = this.getKey(executor.getKeySuffix());
 		KeyValue<Typable> batchRecord = this.keyValueService.lock(key).get();
 		if (batchRecord.getValue() == null) {
-			batchRecord.setValue(new BatchRecord<>());
+			batchRecord.setValue(new BatchRecord<>(executor.getType()));
 		}
 
 		// Gets the last processed id.
+		@SuppressWarnings("unchecked")
 		final BatchRecord<Type> batchRecordValue = (BatchRecord<Type>) batchRecord.getValue();
 		Type lastProcessed = batchRecordValue.getLastProcessed();
 
 		// Clears the last processed id, if data has expired.
-		if ((batchRecordValue.getLastStartedAt() == null) || (expiration == null) || batchRecordValue.getLastStartedAt().isBefore(expiration)) {
+		if ((batchRecordValue.getLastStartedAt() == null) || (executor.getExpiration() == null)
+				|| batchRecordValue.getLastStartedAt().isBefore(executor.getExpiration())) {
 			batchRecordValue.reset();
 			lastProcessed = null;
 		}
@@ -155,12 +155,13 @@ public class BatchService {
 				final String key = this.getKey(executor.getKeySuffix());
 				final Type lastProcessed = executor.getLastProcessed();
 				final KeyValue<Typable> batchRecord = this.keyValueService.findById(key, false);
+				@SuppressWarnings("unchecked")
 				final BatchRecord<Type> batchRecordValue = (BatchRecord<Type>) batchRecord.getValue();
 				final Long duration = (batchRecordValue.getLastStartedAt() == null ? 0
 						: batchRecordValue.getLastStartedAt().until(DateTimeHelper.getCurrentLocalDateTime(), ChronoUnit.MINUTES));
 				final Properties messageProperties = new Properties();
 				messageProperties.put("key", key);
-				messageProperties.put("lastProcessed", lastProcessed);
+				messageProperties.put("lastProcessed", Objects.toString(lastProcessed));
 				messageProperties.put("duration", duration);
 				// Gets the message from the template.
 				final String message = BatchService.PLACEHOLDER_HELPER.replacePlaceholders(template, messageProperties);
@@ -198,6 +199,7 @@ public class BatchService {
 
 		// Gets the batch record.
 		final KeyValue<Typable> batchRecord = this.keyValueService.findById(this.getKey(executor.getKeySuffix()), true);
+		@SuppressWarnings("unchecked")
 		final BatchRecord<Type> batchRecordValue = (BatchRecord<Type>) batchRecord.getValue();
 		Type actualLastProcessed = executor.getLastProcessed();
 
@@ -251,7 +253,7 @@ public class BatchService {
 		this.keyValueService.lock(lockKey);
 		try {
 			// Gets the next id to be processed.
-			final Type initialProcessed = this.getLastProcessed(executor.getKeySuffix(), executor.getExpiration());
+			final Type initialProcessed = this.getLastProcessed(executor);
 			Type previousLastProcessed = initialProcessed;
 			Type currentLastProcessed = initialProcessed;
 			boolean justStarted = true;
@@ -280,6 +282,7 @@ public class BatchService {
 				executor.finish();
 				this.log(executor, BatchAction.FINISH);
 				final KeyValue<Typable> batchRecord = this.keyValueService.findById(this.getKey(executor.getKeySuffix()), true);
+				@SuppressWarnings("unchecked")
 				final BatchRecord<Type> batchRecordValue = (BatchRecord<Type>) batchRecord.getValue();
 				batchRecordValue.setLastFinishedAt(DateTimeHelper.getCurrentLocalDateTime());
 				this.keyValueService.getRepository().save(batchRecord);

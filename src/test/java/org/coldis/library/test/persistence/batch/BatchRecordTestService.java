@@ -38,17 +38,20 @@ public class BatchRecordTestService {
 	/**
 	 * @see org.coldis.library.persistence.batch.BatchExecutor#get()
 	 */
-	public List<String> get(
-			final String id,
+	public List<BatchObject> get(
+			final BatchObject object,
 			final Long size,
 			final Map<String, String> arguments) {
-		return BatchRecordTestService.processedLatestCompleteBatch < 100
-				? List.of(Objects.toString(BatchRecordTestService.RANDOM.nextInt()), Objects.toString(BatchRecordTestService.RANDOM.nextInt()),
-						Objects.toString(BatchRecordTestService.RANDOM.nextInt()), Objects.toString(BatchRecordTestService.RANDOM.nextInt()),
-						Objects.toString(BatchRecordTestService.RANDOM.nextInt()), Objects.toString(BatchRecordTestService.RANDOM.nextInt()),
-						Objects.toString(BatchRecordTestService.RANDOM.nextInt()), Objects.toString(BatchRecordTestService.RANDOM.nextInt()),
-						Objects.toString(BatchRecordTestService.RANDOM.nextInt()), Objects.toString(BatchRecordTestService.RANDOM.nextInt()))
-				: List.of();
+		return BatchRecordTestService.processedLatestCompleteBatch < 100 ? List.of(new BatchObject(Objects.toString(BatchRecordTestService.RANDOM.nextInt())),
+				new BatchObject(Objects.toString(BatchRecordTestService.RANDOM.nextInt())),
+				new BatchObject(Objects.toString(BatchRecordTestService.RANDOM.nextInt())),
+				new BatchObject(Objects.toString(BatchRecordTestService.RANDOM.nextInt())),
+				new BatchObject(Objects.toString(BatchRecordTestService.RANDOM.nextInt())),
+				new BatchObject(Objects.toString(BatchRecordTestService.RANDOM.nextInt())),
+				new BatchObject(Objects.toString(BatchRecordTestService.RANDOM.nextInt())),
+				new BatchObject(Objects.toString(BatchRecordTestService.RANDOM.nextInt())),
+				new BatchObject(Objects.toString(BatchRecordTestService.RANDOM.nextInt())),
+				new BatchObject(Objects.toString(BatchRecordTestService.RANDOM.nextInt()))) : List.of();
 	}
 
 	/**
@@ -61,7 +64,7 @@ public class BatchRecordTestService {
 	 * @see org.coldis.library.persistence.batch.BatchExecutor#execute(java.lang.String)
 	 */
 	public synchronized void execute(
-			final String id) {
+			final BatchObject object) {
 		if (BatchRecordTestService.processedLatestPartialBatch >= 10) {
 			throw new IntegrationException();
 		}

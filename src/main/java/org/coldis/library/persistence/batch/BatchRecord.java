@@ -3,14 +3,15 @@ package org.coldis.library.persistence.batch;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
+import org.coldis.library.exception.IntegrationException;
+import org.coldis.library.model.SimpleMessage;
 import org.coldis.library.model.Typable;
 import org.coldis.library.model.view.ModelView;
 import org.coldis.library.serialization.ObjectMapperHelper;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonView;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Batch record.
@@ -29,9 +30,9 @@ public class BatchRecord<Type> implements Typable {
 	public static final String TYPE_NAME = "org.coldis.library.persistence.batch.BatchRecord";
 
 	/**
-	 * Object mapper.
+	 * Batch item iitemType name.
 	 */
-	private static final ObjectMapper OBJECT_MAPPER = ObjectMapperHelper.createMapper();
+	private String itemTypeName;
 
 	/**
 	 * Last started at.
@@ -52,6 +53,57 @@ public class BatchRecord<Type> implements Typable {
 	 * Last finished at.
 	 */
 	private LocalDateTime lastFinishedAt;
+
+	/**
+	 * No arguments constructor.
+	 */
+	protected BatchRecord() {
+		super();
+	}
+
+	/**
+	 * No arguments constructor.
+	 */
+	public BatchRecord(final Class<Type> itemType) {
+		super();
+		this.itemTypeName = itemType.getName();
+	}
+
+	/**
+	 * Gets the itemTypeName.
+	 *
+	 * @return The itemTypeName.
+	 */
+	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
+	public String getItemTypeName() {
+		return this.itemTypeName;
+	}
+
+	/**
+	 * Sets the itemTypeName.
+	 *
+	 * @param itemTypeName New itemTypeName.
+	 */
+	public void setItemTypeName(
+			final String itemTypeName) {
+		this.itemTypeName = itemTypeName;
+	}
+
+	/**
+	 * Gets the itemType.
+	 *
+	 * @return The itemType.
+	 */
+	@JsonIgnore
+	@SuppressWarnings("unchecked")
+	public Class<Type> getType() {
+		try {
+			return (this.getItemTypeName() == null ? null : (Class<Type>) Class.forName(this.getItemTypeName()));
+		}
+		catch (final Exception exception) {
+			throw new IntegrationException(new SimpleMessage("type.ivalid"));
+		}
+	}
 
 	/**
 	 * Gets the lastStartedAt.
@@ -80,9 +132,8 @@ public class BatchRecord<Type> implements Typable {
 	 */
 	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public Type getLastProcessed() {
-		this.lastProcessed = (
-		// this.lastProcessed instanceof Type ? this.lastProcessed:
-		ObjectMapperHelper.convert(BatchRecord.OBJECT_MAPPER, this.lastProcessed, new TypeReference<Type>() {}, false));
+		this.lastProcessed = (((this.getType() == null) || this.getType().isInstance(this.lastProcessed)) ? this.lastProcessed
+				: ObjectMapperHelper.convert(BatchExecutor.OBJECT_MAPPER, this.lastProcessed, this.getType(), false));
 		return this.lastProcessed;
 	}
 
@@ -161,7 +212,7 @@ public class BatchRecord<Type> implements Typable {
 	 */
 	@Override
 	public int hashCode() {
-		return Objects.hash(this.lastFinishedAt, this.lastProcessed, this.lastProcessedCount, this.lastStartedAt);
+		return Objects.hash(this.itemTypeName, this.lastFinishedAt, this.lastProcessed, this.lastProcessedCount, this.lastStartedAt);
 	}
 
 	/**
@@ -177,8 +228,9 @@ public class BatchRecord<Type> implements Typable {
 			return false;
 		}
 		final BatchRecord other = (BatchRecord) obj;
-		return Objects.equals(this.lastFinishedAt, other.lastFinishedAt) && Objects.equals(this.lastProcessed, other.lastProcessed)
-				&& Objects.equals(this.lastProcessedCount, other.lastProcessedCount) && Objects.equals(this.lastStartedAt, other.lastStartedAt);
+		return Objects.equals(this.itemTypeName, other.itemTypeName) && Objects.equals(this.lastFinishedAt, other.lastFinishedAt)
+				&& Objects.equals(this.lastProcessed, other.lastProcessed) && Objects.equals(this.lastProcessedCount, other.lastProcessedCount)
+				&& Objects.equals(this.lastStartedAt, other.lastStartedAt);
 	}
 
 }

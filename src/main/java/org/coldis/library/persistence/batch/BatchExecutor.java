@@ -17,9 +17,10 @@ import org.coldis.library.model.view.ModelView;
 import org.coldis.library.persistence.bean.StaticContextAccessor;
 import org.coldis.library.serialization.ObjectMapperHelper;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonView;
-import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -41,7 +42,11 @@ public class BatchExecutor<Type> implements Typable {
 	/**
 	 * Object mapper.
 	 */
-	private static final ObjectMapper OBJECT_MAPPER = ObjectMapperHelper.createMapper();
+	public static final ObjectMapper OBJECT_MAPPER;
+	static {
+		OBJECT_MAPPER = ObjectMapperHelper.createMapper();
+		BatchExecutor.OBJECT_MAPPER.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+	}
 
 	/**
 	 * Key suffix.
@@ -52,6 +57,11 @@ public class BatchExecutor<Type> implements Typable {
 	 * Batch size.
 	 */
 	private Long size = 13000L;
+
+	/**
+	 * Batch item iitemType name.
+	 */
+	private String itemTypeName;
 
 	/**
 	 * Last processed.
@@ -91,8 +101,16 @@ public class BatchExecutor<Type> implements Typable {
 	/**
 	 * No arguments constructor.
 	 */
-	public BatchExecutor() {
+	protected BatchExecutor() {
 		super();
+	}
+
+	/**
+	 * No arguments constructor.
+	 */
+	public BatchExecutor(final Class<Type> itemType) {
+		super();
+		this.itemTypeName = itemType.getName();
 	}
 
 	/**
@@ -103,8 +121,9 @@ public class BatchExecutor<Type> implements Typable {
 	 * @param lastProcessed Last processed.
 	 * @param finishWithin  Maximum interval to finish the batch.
 	 */
-	public BatchExecutor(final String keySuffix, final Long size, final Type lastProcessed, final Duration finishWithin) {
+	public BatchExecutor(final Class<Type> itemType, final String keySuffix, final Long size, final Type lastProcessed, final Duration finishWithin) {
 		super();
+		this.itemTypeName = itemType.getName();
 		this.keySuffix = keySuffix;
 		this.size = size;
 		this.lastProcessed = lastProcessed;
@@ -124,6 +143,7 @@ public class BatchExecutor<Type> implements Typable {
 	 * @param slackChannels         Slack channels.
 	 */
 	public BatchExecutor(
+			final Class<Type> itemType,
 			final String keySuffix,
 			final Long size,
 			final Type lastProcessed,
@@ -133,6 +153,7 @@ public class BatchExecutor<Type> implements Typable {
 			final Map<BatchAction, String> messagesTemplates,
 			final Map<BatchAction, String> slackChannels) {
 		super();
+		this.itemTypeName = itemType.getName();
 		this.keySuffix = keySuffix;
 		this.size = size;
 		this.lastProcessed = lastProcessed;
@@ -141,6 +162,41 @@ public class BatchExecutor<Type> implements Typable {
 		this.actionDelegateMethods = actionDelegateMethods;
 		this.messagesTemplates = messagesTemplates;
 		this.slackChannels = slackChannels;
+	}
+
+	/**
+	 * Gets the itemTypeName.
+	 *
+	 * @return The itemTypeName.
+	 */
+	public String getItemTypeName() {
+		return this.itemTypeName;
+	}
+
+	/**
+	 * Sets the itemTypeName.
+	 *
+	 * @param itemTypeName New itemTypeName.
+	 */
+	public void setItemTypeName(
+			final String itemTypeName) {
+		this.itemTypeName = itemTypeName;
+	}
+
+	/**
+	 * Gets the itemType.
+	 *
+	 * @return The itemType.
+	 */
+	@JsonIgnore
+	@SuppressWarnings("unchecked")
+	public Class<Type> getType() {
+		try {
+			return (this.getItemTypeName() == null ? null : (Class<Type>) Class.forName(this.getItemTypeName()));
+		}
+		catch (final Exception exception) {
+			throw new IntegrationException(new SimpleMessage("type.ivalid"));
+		}
 	}
 
 	/**
@@ -187,9 +243,8 @@ public class BatchExecutor<Type> implements Typable {
 	 * @return The lastProcessed.
 	 */
 	public Type getLastProcessed() {
-		this.lastProcessed = (
-		// this.lastProcessed instanceof Type ? this.lastProcessed:
-		ObjectMapperHelper.convert(BatchExecutor.OBJECT_MAPPER, this.lastProcessed, new TypeReference<Type>() {}, false));
+		this.lastProcessed = (((this.getType() == null) || this.getType().isInstance(this.lastProcessed)) ? this.lastProcessed
+				: ObjectMapperHelper.convert(BatchExecutor.OBJECT_MAPPER, this.lastProcessed, this.getType(), false));
 		return this.lastProcessed;
 	}
 

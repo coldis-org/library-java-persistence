@@ -72,8 +72,8 @@ public class BatchRecordTest {
 	public void testBatch() throws Exception {
 
 		// Makes sure the batch is not started.
-		final BatchExecutor<String> testBatchExecutor = new BatchExecutor<>("test", 10L, null, Duration.ofSeconds(60), "batchRecordTestService", null, null,
-				null);
+		final BatchExecutor<BatchObject> testBatchExecutor = new BatchExecutor<>(BatchObject.class, "test", 10L, null, Duration.ofSeconds(60),
+				"batchRecordTestService", null, null, null);
 		BatchRecordTestService.processDelay = 3;
 		final String batchKey = this.batchService.getKey(testBatchExecutor.getKeySuffix());
 		try {
@@ -90,7 +90,7 @@ public class BatchRecordTest {
 		}
 		catch (final Exception exception) {
 		}
-		BatchRecord<String> batchRecord = (BatchRecord<String>) this.keyValueService.findById(batchKey, false).getValue();
+		BatchRecord<BatchObject> batchRecord = (BatchRecord<BatchObject>) this.keyValueService.findById(batchKey, false).getValue();
 		Assertions.assertTrue(batchRecord.getLastProcessedCount() > 0);
 		Assertions.assertNotNull(batchRecord.getLastStartedAt());
 		Assertions.assertNotNull(batchRecord.getLastProcessed());
@@ -99,13 +99,13 @@ public class BatchRecordTest {
 		// Waits until batch is finished.
 		TestHelper.waitUntilValid(() -> {
 			try {
-				return (BatchRecord<String>) this.keyValueService.findById(batchKey, false).getValue();
+				return (BatchRecord<BatchObject>) this.keyValueService.findById(batchKey, false).getValue();
 			}
 			catch (final BusinessException e) {
 				return null;
 			}
 		}, record -> record.getLastFinishedAt() != null, TestHelper.VERY_LONG_WAIT, TestHelper.SHORT_WAIT);
-		batchRecord = (BatchRecord<String>) this.keyValueService.findById(batchKey, false).getValue();
+		batchRecord = (BatchRecord<BatchObject>) this.keyValueService.findById(batchKey, false).getValue();
 		Assertions.assertEquals(100, BatchRecordTestService.processedAlways);
 		Assertions.assertEquals(100, batchRecord.getLastProcessedCount());
 		Assertions.assertNotNull(batchRecord.getLastStartedAt());
@@ -114,7 +114,7 @@ public class BatchRecordTest {
 
 		// Tries executing the batch again, and nothing should change.
 		this.batchService.executeCompleteBatch(testBatchExecutor);
-		batchRecord = (BatchRecord<String>) this.keyValueService.findById(batchKey, false).getValue();
+		batchRecord = (BatchRecord<BatchObject>) this.keyValueService.findById(batchKey, false).getValue();
 		Assertions.assertEquals(100, batchRecord.getLastProcessedCount());
 		Assertions.assertEquals(100, BatchRecordTestService.processedAlways);
 
@@ -122,7 +122,7 @@ public class BatchRecordTest {
 		DateTimeHelper.setClock(
 				Clock.fixed(DateTimeHelper.getCurrentLocalDateTime().plusHours(1).atZone(ZoneId.systemDefault()).toInstant(), ZoneId.systemDefault()));
 		LocalDateTime lastStartedAt = batchRecord.getLastStartedAt();
-		String lastProcessed = batchRecord.getLastProcessed();
+		BatchObject lastProcessed = batchRecord.getLastProcessed();
 		LocalDateTime lastFinishedAt = batchRecord.getLastFinishedAt();
 		try {
 			this.batchService.executeCompleteBatch(testBatchExecutor);
@@ -134,13 +134,13 @@ public class BatchRecordTest {
 		// Waits until batch is finished.
 		TestHelper.waitUntilValid(() -> {
 			try {
-				return (BatchRecord) this.keyValueService.findById(batchKey, false).getValue();
+				return (BatchRecord<BatchObject>) this.keyValueService.findById(batchKey, false).getValue();
 			}
 			catch (final BusinessException e) {
 				return null;
 			}
 		}, record -> record.getLastFinishedAt() != null, TestHelper.VERY_LONG_WAIT, TestHelper.SHORT_WAIT);
-		batchRecord = (BatchRecord) this.keyValueService.findById(batchKey, false).getValue();
+		batchRecord = (BatchRecord<BatchObject>) this.keyValueService.findById(batchKey, false).getValue();
 		Assertions.assertEquals(200, BatchRecordTestService.processedAlways);
 		Assertions.assertEquals(100, batchRecord.getLastProcessedCount());
 		Assertions.assertNotEquals(lastStartedAt, batchRecord.getLastStartedAt());
@@ -166,13 +166,13 @@ public class BatchRecordTest {
 		// Waits for a while (this batch should not reach the end).
 		TestHelper.waitUntilValid(() -> {
 			try {
-				return (BatchRecord) this.keyValueService.findById(batchKey, false).getValue();
+				return (BatchRecord<BatchObject>) this.keyValueService.findById(batchKey, false).getValue();
 			}
 			catch (final BusinessException e) {
 				return null;
 			}
 		}, record -> record.getLastFinishedAt() != null, TestHelper.VERY_LONG_WAIT * 2, TestHelper.SHORT_WAIT);
-		batchRecord = (BatchRecord) this.keyValueService.findById(batchKey, false).getValue();
+		batchRecord = (BatchRecord<BatchObject>) this.keyValueService.findById(batchKey, false).getValue();
 		Assertions.assertTrue(BatchRecordTestService.processedAlways > 200);
 		Assertions.assertTrue(BatchRecordTestService.processedAlways < 300);
 		Assertions.assertTrue(batchRecord.getLastProcessedCount() > 0);
