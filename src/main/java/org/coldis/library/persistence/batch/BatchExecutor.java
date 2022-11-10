@@ -15,9 +15,12 @@ import org.coldis.library.model.SimpleMessage;
 import org.coldis.library.model.Typable;
 import org.coldis.library.model.view.ModelView;
 import org.coldis.library.persistence.bean.StaticContextAccessor;
+import org.coldis.library.serialization.ObjectMapperHelper;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonView;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Batch executor.
@@ -34,6 +37,11 @@ public class BatchExecutor<Type> implements Typable {
 	 * Type name.
 	 */
 	public static final String TYPE_NAME = "org.coldis.library.persistence.batch.BatchExecutor";
+
+	/**
+	 * Object mapper.
+	 */
+	private static final ObjectMapper OBJECT_MAPPER = ObjectMapperHelper.createMapper();
 
 	/**
 	 * Key suffix.
@@ -179,6 +187,9 @@ public class BatchExecutor<Type> implements Typable {
 	 * @return The lastProcessed.
 	 */
 	public Type getLastProcessed() {
+		this.lastProcessed = (
+		// this.lastProcessed instanceof Type ? this.lastProcessed:
+		ObjectMapperHelper.convert(BatchExecutor.OBJECT_MAPPER, this.lastProcessed, new TypeReference<Type>() {}, false));
 		return this.lastProcessed;
 	}
 
