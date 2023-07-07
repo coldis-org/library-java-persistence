@@ -2,7 +2,6 @@ package org.coldis.library.test.persistence.batch;
 
 import java.time.Clock;
 import java.time.Duration;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Random;
 
@@ -16,6 +15,7 @@ import org.coldis.library.test.TestHelper;
 import org.coldis.library.test.persistence.TestApplication;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -56,40 +56,68 @@ public class BatchRecordTest {
 
 	/**
 	 * Cleans after each test.
+	 *
+	 * @throws BusinessException
+	 */
+	public void cleanBeforeEachTest(
+			final Integer iteraction) throws BusinessException {
+		try {
+			this.batchService.cleanAll();
+		}
+		catch (final Exception exception) {
+			if (iteraction < 20) {
+				this.cleanBeforeEachTest(iteraction + 1);
+			}
+		}
+	}
+
+	/**
+	 * Cleans after each test.
+	 *
+	 * @throws BusinessException
+	 */
+	@BeforeEach
+	public void cleanBeforeEachTest() throws BusinessException {
+		this.cleanBeforeEachTest(0);
+		BatchRecordTestService.processedAlways = 0L;
+		BatchRecordTestService.processedLatestPartialBatch = 0L;
+		BatchRecordTestService.processedLatestCompleteBatch = 0L;
+	}
+
+	/**
+	 * Cleans after each test.
+	 *
+	 * @throws BusinessException
 	 */
 	@AfterEach
-	public void cleanAfterEachTest() {
+	public void cleanAfterEachTest() throws BusinessException {
 		// Sets back to the regular clock.
 		DateTimeHelper.setClock(BatchRecordTest.REGULAR_CLOCK);
 	}
 
 	/**
-	 * Tests a batch.
+	 * Tests a batch execution.
 	 *
-	 * @throws Exception If the test fails.
+	 * @param  testBatchExecutor Executor.
+	 * @throws Exception         If the test fails.
 	 */
-	@Test
-	public void testBatch() throws Exception {
+	private void testBatch(
+			final BatchExecutor<BatchObject> testBatchExecutor,
+			final Long processedNow,
+			final Long processedTotal) throws BusinessException, Exception {
 
-		// Makes sure the batch is not started.
-		final BatchExecutor<BatchObject> testBatchExecutor = new BatchExecutor<>(BatchObject.class, "test", 10L, null, Duration.ofSeconds(60),
-				"batchRecordTestService", null, null, null);
-		BatchRecordTestService.processDelay = 3;
 		final String batchKey = this.batchService.getKey(testBatchExecutor.getKeySuffix());
-		try {
-			this.keyValueService.findById(batchKey, false).getValue();
-			Assertions.fail("Record should not exist.");
-		}
-		catch (final Exception exception) {
-		}
 
 		// Starts the batch and makes sure it has started.
+		BatchRecordTestService.processDelay = 3L;
 		try {
+			this.batchService.cleanOld();
 			this.batchService.executeCompleteBatch(testBatchExecutor);
 			Assertions.fail("Batch should have failed.");
 		}
 		catch (final Exception exception) {
 		}
+		this.batchService.cleanOld();
 		BatchRecord<BatchObject> batchRecord = (BatchRecord<BatchObject>) this.keyValueService.findById(batchKey, false).getValue();
 		Assertions.assertTrue(batchRecord.getLastProcessedCount() > 0);
 		Assertions.assertNotNull(batchRecord.getLastStartedAt());
@@ -106,62 +134,95 @@ public class BatchRecordTest {
 			}
 		}, record -> record.getLastFinishedAt() != null, TestHelper.VERY_LONG_WAIT, TestHelper.SHORT_WAIT);
 		batchRecord = (BatchRecord<BatchObject>) this.keyValueService.findById(batchKey, false).getValue();
-		Assertions.assertEquals(100, BatchRecordTestService.processedAlways);
-		Assertions.assertEquals(100, batchRecord.getLastProcessedCount());
+		Assertions.assertEquals(processedNow, batchRecord.getLastProcessedCount());
+		Assertions.assertEquals(processedTotal, BatchRecordTestService.processedAlways);
 		Assertions.assertNotNull(batchRecord.getLastStartedAt());
 		Assertions.assertNotNull(batchRecord.getLastProcessed());
 		Assertions.assertNotNull(batchRecord.getLastFinishedAt());
 
 		// Tries executing the batch again, and nothing should change.
+		this.batchService.cleanOld();
 		this.batchService.executeCompleteBatch(testBatchExecutor);
+		this.batchService.cleanOld();
 		batchRecord = (BatchRecord<BatchObject>) this.keyValueService.findById(batchKey, false).getValue();
-		Assertions.assertEquals(100, batchRecord.getLastProcessedCount());
-		Assertions.assertEquals(100, BatchRecordTestService.processedAlways);
+		Assertions.assertEquals(processedNow, batchRecord.getLastProcessedCount());
+		Assertions.assertEquals(processedTotal, BatchRecordTestService.processedAlways);
+	}
 
-		// Runs the clock forward and executes the batch again.
-		DateTimeHelper.setClock(
-				Clock.fixed(DateTimeHelper.getCurrentLocalDateTime().plusHours(1).atZone(ZoneId.systemDefault()).toInstant(), ZoneId.systemDefault()));
-		LocalDateTime lastStartedAt = batchRecord.getLastStartedAt();
-		BatchObject lastProcessed = batchRecord.getLastProcessed();
-		LocalDateTime lastFinishedAt = batchRecord.getLastFinishedAt();
+	/**
+	 * Tests a batch.
+	 *
+	 * @throws Exception If the test fails.
+	 */
+	@Test
+	public void testBatchInTime() throws Exception {
+
+		// Makes sure the batch is not started.
+		final BatchExecutor<BatchObject> testBatchExecutor = new BatchExecutor<>(BatchObject.class, "test", 10L, null, Duration.ofSeconds(60),
+				"batchRecordTestService", null, null, null);
+		final String batchKey = this.batchService.getKey(testBatchExecutor.getKeySuffix());
+
+		// Record should not exist.
 		try {
-			this.batchService.executeCompleteBatch(testBatchExecutor);
-			Assertions.fail("Batch should have failed.");
+			this.keyValueService.findById(batchKey, false).getValue();
+			Assertions.fail("Record should not exist.");
 		}
 		catch (final Exception exception) {
 		}
 
-		// Waits until batch is finished.
-		TestHelper.waitUntilValid(() -> {
-			try {
-				return (BatchRecord<BatchObject>) this.keyValueService.findById(batchKey, false).getValue();
-			}
-			catch (final BusinessException e) {
-				return null;
-			}
-		}, record -> record.getLastFinishedAt() != null, TestHelper.VERY_LONG_WAIT, TestHelper.SHORT_WAIT);
-		batchRecord = (BatchRecord<BatchObject>) this.keyValueService.findById(batchKey, false).getValue();
-		Assertions.assertEquals(200, BatchRecordTestService.processedAlways);
-		Assertions.assertEquals(100, batchRecord.getLastProcessedCount());
-		Assertions.assertNotEquals(lastStartedAt, batchRecord.getLastStartedAt());
-		Assertions.assertNotEquals(lastProcessed, batchRecord.getLastProcessed());
-		Assertions.assertNotEquals(lastFinishedAt, batchRecord.getLastFinishedAt());
-		Assertions.assertNotNull(batchRecord.getLastFinishedAt());
+		// Tests the batch twice.
+		this.testBatch(testBatchExecutor, 100L, 100L);
+		DateTimeHelper.setClock(
+				Clock.fixed(DateTimeHelper.getCurrentLocalDateTime().plusHours(1).atZone(ZoneId.systemDefault()).toInstant(), ZoneId.systemDefault()));
+		this.testBatch(testBatchExecutor, 100L, 200L);
+
+		// Advances the clock and make sure the record is deleted.
+		DateTimeHelper.setClock(
+				Clock.fixed(DateTimeHelper.getCurrentLocalDateTime().plusHours(6).atZone(ZoneId.systemDefault()).toInstant(), ZoneId.systemDefault()));
+		this.batchService.cleanOld();
+		try {
+			this.keyValueService.findById(batchKey, false);
+			Assertions.fail("Batch should no longer exist.");
+		}
+		catch (final Exception exception) {
+		}
+
+	}
+
+	/**
+	 * Tests a batch.
+	 *
+	 * @throws Exception If the test fails.
+	 */
+	@Test
+	public void testBatchNotInTime() throws Exception {
+
+		// Makes sure the batch is not started.
+		final BatchExecutor<BatchObject> testBatchExecutor = new BatchExecutor<>(BatchObject.class, "test", 10L, null, Duration.ofSeconds(60),
+				"batchRecordTestService", null, null, null);
+		final String batchKey = this.batchService.getKey(testBatchExecutor.getKeySuffix());
+
+		// Record should not exist.
+		try {
+			this.keyValueService.findById(batchKey, false).getValue();
+			Assertions.fail("Record should not exist.");
+		}
+		catch (final Exception exception) {
+		}
 
 		// Runs the clock forward and executes the batch again (now with a bigger delay
 		// so it should not finish in time).
-		DateTimeHelper.setClock(
-				Clock.fixed(DateTimeHelper.getCurrentLocalDateTime().plusHours(1).atZone(ZoneId.systemDefault()).toInstant(), ZoneId.systemDefault()));
-		lastStartedAt = batchRecord.getLastStartedAt();
-		lastProcessed = batchRecord.getLastProcessed();
-		lastFinishedAt = batchRecord.getLastFinishedAt();
-		BatchRecordTestService.processDelay = 1000;
+		BatchRecordTestService.processDelay = 1000L;
 		try {
+			this.batchService.cleanOld();
 			this.batchService.executeCompleteBatch(testBatchExecutor);
 			Assertions.fail("Batch should have failed.");
 		}
 		catch (final Exception exception) {
 		}
+		this.batchService.cleanOld();
+
+		BatchRecord<BatchObject> batchRecord = (BatchRecord<BatchObject>) this.keyValueService.findById(batchKey, false).getValue();
 
 		// Waits for a while (this batch should not reach the end).
 		TestHelper.waitUntilValid(() -> {
@@ -173,14 +234,22 @@ public class BatchRecordTest {
 			}
 		}, record -> record.getLastFinishedAt() != null, TestHelper.VERY_LONG_WAIT * 2, TestHelper.SHORT_WAIT);
 		batchRecord = (BatchRecord<BatchObject>) this.keyValueService.findById(batchKey, false).getValue();
-		Assertions.assertTrue(BatchRecordTestService.processedAlways > 200);
-		Assertions.assertTrue(BatchRecordTestService.processedAlways < 300);
+		Assertions.assertTrue(BatchRecordTestService.processedAlways > 0);
+		Assertions.assertTrue(BatchRecordTestService.processedAlways < 100);
 		Assertions.assertTrue(batchRecord.getLastProcessedCount() > 0);
 		Assertions.assertTrue(batchRecord.getLastProcessedCount() < 100);
-		Assertions.assertNotEquals(lastStartedAt, batchRecord.getLastStartedAt());
-		Assertions.assertNotEquals(lastProcessed, batchRecord.getLastProcessed());
-		Assertions.assertNotEquals(lastFinishedAt, batchRecord.getLastFinishedAt());
 		Assertions.assertNull(batchRecord.getLastFinishedAt());
+
+		// Advances the clock and make sure the record is deleted.
+		DateTimeHelper.setClock(
+				Clock.fixed(DateTimeHelper.getCurrentLocalDateTime().plusHours(6).atZone(ZoneId.systemDefault()).toInstant(), ZoneId.systemDefault()));
+		this.batchService.cleanOld();
+		try {
+			this.keyValueService.findById(batchKey, false);
+			Assertions.fail("Batch should no longer exist.");
+		}
+		catch (final Exception exception) {
+		}
 
 	}
 

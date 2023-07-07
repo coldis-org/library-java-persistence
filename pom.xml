@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.coldis</groupId>
 		<artifactId>configuration</artifactId>
-		<version>1.0.17</version>
+		<version>1.0.18</version>
 	</parent>
 
 	<groupId>org.coldis.library</groupId>
@@ -43,7 +43,7 @@
 		<dependency>
 			<groupId>org.coldis.library</groupId>
 			<artifactId>core</artifactId>
-			<version>1.0.13</version>
+			<version>1.0.20</version>
 		</dependency>
 		<dependency>
 			<groupId>org.coldis.library</groupId>
@@ -53,12 +53,12 @@
 		<dependency>
 			<groupId>org.coldis.library</groupId>
 			<artifactId>serialization</artifactId>
-			<version>1.0.1</version>
+			<version>1.0.2</version>
 		</dependency>
 		<dependency>
 			<groupId>org.coldis.library</groupId>
 			<artifactId>service-client</artifactId>
-			<version>1.0.8</version>
+			<version>1.0.11</version>
 		</dependency>
 		<dependency>
 			<groupId>org.coldis.library</groupId>

@@ -1,5 +1,6 @@
 package org.coldis.library.persistence.keyvalue;
 
+import java.util.List;
 import java.util.Optional;
 
 import javax.persistence.LockModeType;
@@ -55,6 +56,15 @@ public interface KeyValueRepository<ValueType extends Typable> extends JpaReposi
 	@Query("SELECT keyValue FROM KeyValue keyValue WHERE keyValue.key = :key")
 	Optional<KeyValue<ValueType>> findByIdForUpdate(
 			@Param("key")
+			String key);
+
+	/**
+	 * Finds values for key starting with.
+	 *
+	 * @param  key Key.
+	 * @return     Values for key starting with.
+	 */
+	List<KeyValue<ValueType>> findByKeyStartsWith(
 			String key);
 
 }

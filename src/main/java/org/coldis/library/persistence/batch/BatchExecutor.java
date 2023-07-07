@@ -1,16 +1,15 @@
 package org.coldis.library.persistence.batch;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.reflect.MethodUtils;
 import org.coldis.library.exception.BusinessException;
 import org.coldis.library.exception.IntegrationException;
-import org.coldis.library.helper.DateTimeHelper;
 import org.coldis.library.model.SimpleMessage;
 import org.coldis.library.model.Typable;
 import org.coldis.library.model.view.ModelView;
@@ -49,6 +48,11 @@ public class BatchExecutor<Type> implements Typable {
 	}
 
 	/**
+	 * Batch item itemType name.
+	 */
+	private String itemTypeName;
+
+	/**
 	 * Key suffix.
 	 */
 	private String keySuffix;
@@ -59,11 +63,6 @@ public class BatchExecutor<Type> implements Typable {
 	private Long size = 13000L;
 
 	/**
-	 * Batch item iitemType name.
-	 */
-	private String itemTypeName;
-
-	/**
 	 * Last processed.
 	 */
 	private Type lastProcessed;
@@ -72,6 +71,11 @@ public class BatchExecutor<Type> implements Typable {
 	 * Maximum interval to finish the batch.
 	 */
 	private Duration finishWithin = Duration.ofDays(1);
+
+	/**
+	 * Maximum interval to keep the batch persisted.
+	 */
+	private Duration cleansWithin;
 
 	/**
 	 * Arguments used to get next batch.
@@ -278,12 +282,12 @@ public class BatchExecutor<Type> implements Typable {
 	}
 
 	/**
-	 * Gets the finishWithin.
+	 * Gets the cleansWithin.
 	 *
-	 * @return The finishWithin.
+	 * @return The cleansWithin.
 	 */
-	public LocalDateTime getExpiration() {
-		return (this.finishWithin == null ? null : DateTimeHelper.getCurrentLocalDateTime().minus(this.getFinishWithin()));
+	public Duration getCleansWithin() {
+		return this.cleansWithin == null ? this.getFinishWithin() == null ? null : this.getFinishWithin().multipliedBy(5) : this.cleansWithin;
 	}
 
 	/**
@@ -360,18 +364,23 @@ public class BatchExecutor<Type> implements Typable {
 			final BatchAction action,
 			final Object... arguments) throws BusinessException {
 		Object returnObject = null;
-		if (this.getActionBeanName() != null) {
-			if (this.getActionDelegateMethods().containsKey(action)) {
-				try {
-					final Object bean = StaticContextAccessor.getBean(this.getActionBeanName());
-					returnObject = MethodUtils.invokeMethod(bean, this.getActionDelegateMethods().get(action), arguments);
-				}
-				catch (final IntegrationException exception) {
-					throw exception;
-				}
-				catch (final Exception exception) {
-					throw new IntegrationException(new SimpleMessage("batch.action.error"), exception);
-				}
+		String beanName = this.getActionBeanName();
+		String methodName = this.getActionDelegateMethods().get(action);
+		if (StringUtils.isNotBlank(methodName)) {
+			final String[] methodPath = methodName.split(".");
+			if (methodPath.length > 1) {
+				beanName = methodPath[0];
+				methodName = methodPath[1];
+			}
+			try {
+				final Object bean = StaticContextAccessor.getBean(beanName);
+				returnObject = MethodUtils.invokeMethod(bean, methodName, arguments);
+			}
+			catch (final IntegrationException exception) {
+				throw exception;
+			}
+			catch (final Exception exception) {
+				throw new IntegrationException(new SimpleMessage("batch.action.error"), exception);
 			}
 		}
 		return returnObject;
@@ -435,8 +444,8 @@ public class BatchExecutor<Type> implements Typable {
 	 */
 	@Override
 	public int hashCode() {
-		return Objects.hash(this.actionBeanName, this.actionDelegateMethods, this.arguments, this.finishWithin, this.keySuffix, this.lastProcessed,
-				this.messagesTemplates, this.size, this.slackChannels);
+		return Objects.hash(this.actionBeanName, this.actionDelegateMethods, this.arguments, this.cleansWithin, this.finishWithin, this.itemTypeName,
+				this.keySuffix, this.lastProcessed, this.messagesTemplates, this.size, this.slackChannels);
 	}
 
 	/**
@@ -448,12 +457,13 @@ public class BatchExecutor<Type> implements Typable {
 		if (this == obj) {
 			return true;
 		}
-		if (!(obj instanceof BatchExecutor)) {
+		if ((obj == null) || (this.getClass() != obj.getClass())) {
 			return false;
 		}
 		final BatchExecutor other = (BatchExecutor) obj;
 		return Objects.equals(this.actionBeanName, other.actionBeanName) && Objects.equals(this.actionDelegateMethods, other.actionDelegateMethods)
-				&& Objects.equals(this.arguments, other.arguments) && Objects.equals(this.finishWithin, other.finishWithin)
+				&& Objects.equals(this.arguments, other.arguments) && Objects.equals(this.cleansWithin, other.cleansWithin)
+				&& Objects.equals(this.finishWithin, other.finishWithin) && Objects.equals(this.itemTypeName, other.itemTypeName)
 				&& Objects.equals(this.keySuffix, other.keySuffix) && Objects.equals(this.lastProcessed, other.lastProcessed)
 				&& Objects.equals(this.messagesTemplates, other.messagesTemplates) && Objects.equals(this.size, other.size)
 				&& Objects.equals(this.slackChannels, other.slackChannels);

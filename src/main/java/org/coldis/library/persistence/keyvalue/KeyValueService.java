@@ -1,5 +1,6 @@
 package org.coldis.library.persistence.keyvalue;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.coldis.library.exception.BusinessException;
@@ -72,6 +73,19 @@ public class KeyValueService {
 	public KeyValue<Typable> findById(
 			final String key) throws BusinessException {
 		return this.findById(key, false);
+	}
+
+	/**
+	 * Finds a key entry.
+	 *
+	 * @param  key               The key.
+	 * @return                   The entry.
+	 * @throws BusinessException If the entry is not found.
+	 */
+	@Transactional(propagation = Propagation.NOT_SUPPORTED)
+	public List<KeyValue<Typable>> findByKeyStart(
+			final String keyStart) throws BusinessException {
+		return this.repository.findByKeyStartsWith(keyStart);
 	}
 
 	/**

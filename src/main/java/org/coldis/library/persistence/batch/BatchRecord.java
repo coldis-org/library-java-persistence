@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 
 import org.coldis.library.exception.IntegrationException;
+import org.coldis.library.helper.DateTimeHelper;
 import org.coldis.library.model.SimpleMessage;
 import org.coldis.library.model.Typable;
 import org.coldis.library.model.view.ModelView;
@@ -53,6 +54,16 @@ public class BatchRecord<Type> implements Typable {
 	 * Last finished at.
 	 */
 	private LocalDateTime lastFinishedAt;
+
+	/**
+	 * When the record is expired.
+	 */
+	private LocalDateTime expiredAt;
+
+	/**
+	 * Until when record is kept.
+	 */
+	private LocalDateTime keptUntil;
 
 	/**
 	 * No arguments constructor.
@@ -189,6 +200,64 @@ public class BatchRecord<Type> implements Typable {
 	}
 
 	/**
+	 * Gets the expiredAt.
+	 *
+	 * @return The expiredAt.
+	 */
+	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
+	public LocalDateTime getExpiredAt() {
+		return this.expiredAt;
+	}
+
+	/**
+	 * Sets the expiredAt.
+	 *
+	 * @param expiredAt New expiredAt.
+	 */
+	public void setExpiredAt(
+			final LocalDateTime expiredAt) {
+		this.expiredAt = expiredAt;
+	}
+
+	/**
+	 * If the record is expired.
+	 *
+	 * @return If the record is expired.
+	 */
+	public Boolean isExpired() {
+		return (this.getExpiredAt() != null) && DateTimeHelper.getCurrentLocalDateTime().isAfter(this.getExpiredAt());
+	}
+
+	/**
+	 * Gets the keptUntil.
+	 *
+	 * @return The keptUntil.
+	 */
+	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
+	public LocalDateTime getKeptUntil() {
+		return this.keptUntil;
+	}
+
+	/**
+	 * Sets the keptUntil.
+	 *
+	 * @param keptUntil New keptUntil.
+	 */
+	public void setKeptUntil(
+			final LocalDateTime keptUntil) {
+		this.keptUntil = keptUntil;
+	}
+
+	/**
+	 * If the record should be cleaned.
+	 *
+	 * @return If the record should be cleaned.
+	 */
+	public Boolean shouldBeCleaned() {
+		return (this.getKeptUntil() != null) && DateTimeHelper.getCurrentLocalDateTime().isAfter(this.getKeptUntil());
+	}
+
+	/**
 	 * Resets the batch record.
 	 */
 	public void reset() {
@@ -212,7 +281,8 @@ public class BatchRecord<Type> implements Typable {
 	 */
 	@Override
 	public int hashCode() {
-		return Objects.hash(this.itemTypeName, this.lastFinishedAt, this.lastProcessed, this.lastProcessedCount, this.lastStartedAt);
+		return Objects.hash(this.expiredAt, this.itemTypeName, this.keptUntil, this.lastFinishedAt, this.lastProcessed, this.lastProcessedCount,
+				this.lastStartedAt);
 	}
 
 	/**
@@ -228,7 +298,8 @@ public class BatchRecord<Type> implements Typable {
 			return false;
 		}
 		final BatchRecord other = (BatchRecord) obj;
-		return Objects.equals(this.itemTypeName, other.itemTypeName) && Objects.equals(this.lastFinishedAt, other.lastFinishedAt)
+		return Objects.equals(this.expiredAt, other.expiredAt) && Objects.equals(this.itemTypeName, other.itemTypeName)
+				&& Objects.equals(this.keptUntil, other.keptUntil) && Objects.equals(this.lastFinishedAt, other.lastFinishedAt)
 				&& Objects.equals(this.lastProcessed, other.lastProcessed) && Objects.equals(this.lastProcessedCount, other.lastProcessedCount)
 				&& Objects.equals(this.lastStartedAt, other.lastStartedAt);
 	}

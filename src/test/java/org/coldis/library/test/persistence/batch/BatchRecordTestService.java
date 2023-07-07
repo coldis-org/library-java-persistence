@@ -15,24 +15,24 @@ import org.springframework.stereotype.Component;
 public class BatchRecordTestService {
 
 	private static Random RANDOM = new Random();
-	public static Integer processDelay = 3;
-	public static Integer processedAlways = 0;
-	public static Integer processedLatestCompleteBatch = 0;
-	public static Integer processedLatestPartialBatch = 0;
+	public static Long processDelay = 3L;
+	public static Long processedAlways = 0L;
+	public static Long processedLatestCompleteBatch = 0L;
+	public static Long processedLatestPartialBatch = 0L;
 
 	/**
 	 * @see org.coldis.library.persistence.batch.BatchExecutor#start()
 	 */
 	public void start() {
-		BatchRecordTestService.processedLatestCompleteBatch = 0;
-		BatchRecordTestService.processedLatestPartialBatch = 0;
+		BatchRecordTestService.processedLatestCompleteBatch = 0L;
+		BatchRecordTestService.processedLatestPartialBatch = 0L;
 	}
 
 	/**
 	 * @see org.coldis.library.persistence.batch.BatchExecutor#resume()
 	 */
 	public void resume() {
-		BatchRecordTestService.processedLatestPartialBatch = 0;
+		BatchRecordTestService.processedLatestPartialBatch = 0L;
 	}
 
 	/**
