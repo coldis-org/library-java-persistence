@@ -1,6 +1,7 @@
 package org.coldis.library.persistence.batch;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,6 +11,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.reflect.MethodUtils;
 import org.coldis.library.exception.BusinessException;
 import org.coldis.library.exception.IntegrationException;
+import org.coldis.library.helper.DateTimeHelper;
 import org.coldis.library.model.SimpleMessage;
 import org.coldis.library.model.Typable;
 import org.coldis.library.model.view.ModelView;
@@ -103,6 +105,31 @@ public class BatchExecutor<Type> implements Typable {
 	private Map<BatchAction, String> slackChannels;
 
 	/**
+	 * Last started at.
+	 */
+	private LocalDateTime lastStartedAt;
+
+	/**
+	 * Last processed count.
+	 */
+	private Long lastProcessedCount;
+
+	/**
+	 * Last finished at.
+	 */
+	private LocalDateTime lastFinishedAt;
+
+	/**
+	 * When the record is expired.
+	 */
+	private LocalDateTime expiredAt;
+
+	/**
+	 * Until when record is kept.
+	 */
+	private LocalDateTime keptUntil;
+
+	/**
 	 * No arguments constructor.
 	 */
 	protected BatchExecutor() {
@@ -173,6 +200,7 @@ public class BatchExecutor<Type> implements Typable {
 	 *
 	 * @return The itemTypeName.
 	 */
+	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public String getItemTypeName() {
 		return this.itemTypeName;
 	}
@@ -208,6 +236,7 @@ public class BatchExecutor<Type> implements Typable {
 	 *
 	 * @return The keySuffix.
 	 */
+	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public String getKeySuffix() {
 		return this.keySuffix;
 	}
@@ -227,6 +256,7 @@ public class BatchExecutor<Type> implements Typable {
 	 *
 	 * @return The size.
 	 */
+	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public Long getSize() {
 		return this.size;
 	}
@@ -246,6 +276,7 @@ public class BatchExecutor<Type> implements Typable {
 	 *
 	 * @return The lastProcessed.
 	 */
+	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public Type getLastProcessed() {
 		this.lastProcessed = (((this.getType() == null) || this.getType().isInstance(this.lastProcessed)) ? this.lastProcessed
 				: ObjectMapperHelper.convert(BatchExecutor.OBJECT_MAPPER, this.lastProcessed, this.getType(), false));
@@ -267,6 +298,7 @@ public class BatchExecutor<Type> implements Typable {
 	 *
 	 * @return The finishWithin.
 	 */
+	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public Duration getFinishWithin() {
 		return this.finishWithin;
 	}
@@ -286,6 +318,7 @@ public class BatchExecutor<Type> implements Typable {
 	 *
 	 * @return The cleansWithin.
 	 */
+	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public Duration getCleansWithin() {
 		return this.cleansWithin == null ? this.getFinishWithin() == null ? null : this.getFinishWithin().multipliedBy(5) : this.cleansWithin;
 	}
@@ -295,6 +328,7 @@ public class BatchExecutor<Type> implements Typable {
 	 *
 	 * @return The arguments.
 	 */
+	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public Map<String, String> getArguments() {
 		this.arguments = (this.arguments == null ? new HashMap<>() : this.arguments);
 		return this.arguments;
@@ -315,6 +349,7 @@ public class BatchExecutor<Type> implements Typable {
 	 *
 	 * @return The actionBeanName.
 	 */
+	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public String getActionBeanName() {
 		return this.actionBeanName;
 	}
@@ -334,6 +369,7 @@ public class BatchExecutor<Type> implements Typable {
 	 *
 	 * @return The actionDelegateMethods.
 	 */
+	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public Map<BatchAction, String> getActionDelegateMethods() {
 		this.actionDelegateMethods = (this.actionDelegateMethods == null
 				? new HashMap<>(Map.of(BatchAction.START, "start", BatchAction.RESUME, "resume", BatchAction.GET, "get", BatchAction.EXECUTE, "execute",
@@ -391,6 +427,7 @@ public class BatchExecutor<Type> implements Typable {
 	 *
 	 * @return The messagesTemplates.
 	 */
+	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public Map<BatchAction, String> getMessagesTemplates() {
 		this.messagesTemplates = (this.messagesTemplates == null
 				? new HashMap<>(Map.of(BatchAction.START, "Starting batch for '${key}'.", BatchAction.RESUME,
@@ -415,6 +452,7 @@ public class BatchExecutor<Type> implements Typable {
 	 *
 	 * @return The slackChannels.
 	 */
+	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public Map<BatchAction, String> getSlackChannels() {
 		this.slackChannels = (this.slackChannels == null ? new HashMap<>() : this.slackChannels);
 		return this.slackChannels;
@@ -431,6 +469,144 @@ public class BatchExecutor<Type> implements Typable {
 	}
 
 	/**
+	 * Gets the lastStartedAt.
+	 *
+	 * @return The lastStartedAt.
+	 */
+	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
+	public LocalDateTime getLastStartedAt() {
+		return this.lastStartedAt;
+	}
+
+	/**
+	 * Sets the lastStartedAt.
+	 *
+	 * @param lastStartedAt New lastStartedAt.
+	 */
+	public void setLastStartedAt(
+			final LocalDateTime lastStartedAt) {
+		this.lastStartedAt = lastStartedAt;
+	}
+
+	/**
+	 * Gets the lastProcessedCount.
+	 *
+	 * @return The lastProcessedCount.
+	 */
+	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
+	public Long getLastProcessedCount() {
+		this.lastProcessedCount = (this.lastProcessedCount == null ? 0 : this.lastProcessedCount);
+		return this.lastProcessedCount;
+	}
+
+	/**
+	 * Sets the lastProcessedCount.
+	 *
+	 * @param lastProcessedCount New lastProcessedCount.
+	 */
+	public void setLastProcessedCount(
+			final Long lastProcessedCount) {
+		this.lastProcessedCount = lastProcessedCount;
+	}
+
+	/**
+	 * Gets the lastFinishedAt.
+	 *
+	 * @return The lastFinishedAt.
+	 */
+	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
+	public LocalDateTime getLastFinishedAt() {
+		return this.lastFinishedAt;
+	}
+
+	/**
+	 * If the batch is finished.
+	 *
+	 * @return If the batch is finished.
+	 */
+	public Boolean isFinished() {
+		return this.getLastFinishedAt() != null;
+	}
+
+	/**
+	 * Sets the lastFinishedAt.
+	 *
+	 * @param lastFinishedAt New lastFinishedAt.
+	 */
+	public void setLastFinishedAt(
+			final LocalDateTime lastFinishedAt) {
+		this.lastFinishedAt = lastFinishedAt;
+	}
+
+	/**
+	 * Gets the expiredAt.
+	 *
+	 * @return The expiredAt.
+	 */
+	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
+	public LocalDateTime getExpiredAt() {
+		return this.expiredAt;
+	}
+
+	/**
+	 * Sets the expiredAt.
+	 *
+	 * @param expiredAt New expiredAt.
+	 */
+	public void setExpiredAt(
+			final LocalDateTime expiredAt) {
+		this.expiredAt = expiredAt;
+	}
+
+	/**
+	 * If the record is expired.
+	 *
+	 * @return If the record is expired.
+	 */
+	public Boolean isExpired() {
+		return (this.getExpiredAt() != null) && DateTimeHelper.getCurrentLocalDateTime().isAfter(this.getExpiredAt());
+	}
+
+	/**
+	 * Gets the keptUntil.
+	 *
+	 * @return The keptUntil.
+	 */
+	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
+	public LocalDateTime getKeptUntil() {
+		return this.keptUntil;
+	}
+
+	/**
+	 * Sets the keptUntil.
+	 *
+	 * @param keptUntil New keptUntil.
+	 */
+	public void setKeptUntil(
+			final LocalDateTime keptUntil) {
+		this.keptUntil = keptUntil;
+	}
+
+	/**
+	 * If the record should be cleaned.
+	 *
+	 * @return If the record should be cleaned.
+	 */
+	public Boolean shouldBeCleaned() {
+		return (this.getKeptUntil() != null) && DateTimeHelper.getCurrentLocalDateTime().isAfter(this.getKeptUntil());
+	}
+
+	/**
+	 * Resets the batch record.
+	 */
+	public void reset() {
+		this.setLastStartedAt(null);
+		this.setLastProcessed(null);
+		this.setLastProcessedCount(null);
+		this.setLastFinishedAt(null);
+	}
+
+	/**
 	 * @see org.coldis.library.model.Typable#getTypeName()
 	 */
 	@Override
@@ -444,8 +620,9 @@ public class BatchExecutor<Type> implements Typable {
 	 */
 	@Override
 	public int hashCode() {
-		return Objects.hash(this.actionBeanName, this.actionDelegateMethods, this.arguments, this.cleansWithin, this.finishWithin, this.itemTypeName,
-				this.keySuffix, this.lastProcessed, this.messagesTemplates, this.size, this.slackChannels);
+		return Objects.hash(this.actionBeanName, this.actionDelegateMethods, this.arguments, this.cleansWithin, this.expiredAt, this.finishWithin,
+				this.itemTypeName, this.keptUntil, this.keySuffix, this.lastFinishedAt, this.lastProcessed, this.lastProcessedCount, this.lastStartedAt,
+				this.messagesTemplates, this.size, this.slackChannels);
 	}
 
 	/**
@@ -463,10 +640,12 @@ public class BatchExecutor<Type> implements Typable {
 		final BatchExecutor other = (BatchExecutor) obj;
 		return Objects.equals(this.actionBeanName, other.actionBeanName) && Objects.equals(this.actionDelegateMethods, other.actionDelegateMethods)
 				&& Objects.equals(this.arguments, other.arguments) && Objects.equals(this.cleansWithin, other.cleansWithin)
-				&& Objects.equals(this.finishWithin, other.finishWithin) && Objects.equals(this.itemTypeName, other.itemTypeName)
-				&& Objects.equals(this.keySuffix, other.keySuffix) && Objects.equals(this.lastProcessed, other.lastProcessed)
-				&& Objects.equals(this.messagesTemplates, other.messagesTemplates) && Objects.equals(this.size, other.size)
-				&& Objects.equals(this.slackChannels, other.slackChannels);
+				&& Objects.equals(this.expiredAt, other.expiredAt) && Objects.equals(this.finishWithin, other.finishWithin)
+				&& Objects.equals(this.itemTypeName, other.itemTypeName) && Objects.equals(this.keptUntil, other.keptUntil)
+				&& Objects.equals(this.keySuffix, other.keySuffix) && Objects.equals(this.lastFinishedAt, other.lastFinishedAt)
+				&& Objects.equals(this.lastProcessed, other.lastProcessed) && Objects.equals(this.lastProcessedCount, other.lastProcessedCount)
+				&& Objects.equals(this.lastStartedAt, other.lastStartedAt) && Objects.equals(this.messagesTemplates, other.messagesTemplates)
+				&& Objects.equals(this.size, other.size) && Objects.equals(this.slackChannels, other.slackChannels);
 	}
 
 	/**
