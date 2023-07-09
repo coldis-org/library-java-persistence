@@ -251,6 +251,33 @@ public class BatchService {
 	}
 
 	/**
+	 * Deletes a batch record.
+	 *
+	 * @param key Key.
+	 */
+	@Transactional(propagation = Propagation.REQUIRED)
+	@JmsListener(
+			destination = BatchService.BATCH_RECORD_DELETE_QUEUE,
+			concurrency = "1-3"
+	)
+	private void delete(
+			final String key) {
+		this.keyValueService.lock(key);
+		this.keyValueService.delete(key);
+	}
+
+	/**
+	 * Deletes a batch record.
+	 *
+	 * @param key Key.
+	 */
+	private void queueDelete(
+			final String key) {
+		this.jmsTemplateHelper.send(this.jmsTemplate,
+				new JmsMessage<>().withDestination(BatchService.BATCH_RECORD_DELETE_QUEUE).withLastValueKey(key).withMessage(key));
+	}
+
+	/**
 	 * Processes a complete batch.
 	 *
 	 * @param  executor          Executor.
@@ -315,7 +342,7 @@ public class BatchService {
 		}
 		// Releases the lock.
 		finally {
-			this.keyValueService.delete(lockKey);
+			this.queueDelete(lockKey);
 		}
 
 	}
@@ -349,33 +376,6 @@ public class BatchService {
 	}
 
 	/**
-	 * Deletes a batch record.
-	 *
-	 * @param key Key.
-	 */
-	@Transactional(propagation = Propagation.REQUIRED)
-	@JmsListener(
-			destination = BatchService.BATCH_RECORD_DELETE_QUEUE,
-			concurrency = "1-3"
-	)
-	private void delete(
-			final String key) {
-		this.keyValueService.lock(key);
-		this.keyValueService.delete(key);
-	}
-
-	/**
-	 * Deletes a batch record.
-	 *
-	 * @param key Key.
-	 */
-	private void queueDelete(
-			final String key) {
-		this.jmsTemplateHelper.send(this.jmsTemplate,
-				new JmsMessage<>().withDestination(BatchService.BATCH_RECORD_DELETE_QUEUE).withLastValueKey(key).withMessage(key));
-	}
-
-	/**
 	 * Cleans old batches.
 	 *
 	 * @throws BusinessException If the batches cannot be cleaned.
@@ -388,7 +388,9 @@ public class BatchService {
 	public void cleanAll() throws BusinessException {
 		final List<KeyValue<Typable>> batchRecords = this.keyValueService.findByKeyStart(BatchService.BATCH_KEY_PREFIX);
 		for (final KeyValue<Typable> batchRecord : batchRecords) {
-			this.queueDelete(batchRecord.getKey());
+			final BatchExecutor<?> batchRecordValue = (BatchExecutor<?>) batchRecord.getValue();
+			this.queueDelete(this.getLockKey(batchRecordValue.getKeySuffix()));
+			this.queueDelete(this.getKey(batchRecordValue.getKeySuffix()));
 		}
 	}
 
@@ -410,7 +412,8 @@ public class BatchService {
 			if ((batchRecordValue != null)) {
 				// Deletes old batches.
 				if (batchRecordValue.shouldBeCleaned()) {
-					this.queueDelete(batchRecord.getKey());
+					this.queueDelete(this.getLockKey(batchRecordValue.getKeySuffix()));
+					this.queueDelete(this.getKey(batchRecordValue.getKeySuffix()));
 				}
 				// Makes sure non-expired are still running.
 				else if (!batchRecordValue.isFinished() && !batchRecordValue.isExpired()) {

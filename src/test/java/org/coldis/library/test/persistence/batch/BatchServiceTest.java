@@ -114,7 +114,6 @@ public class BatchServiceTest {
 		// Waits until batch is finished.
 		TestHelper.waitUntilValid(() -> {
 			try {
-				this.batchService.checkAll();
 				return (BatchExecutor<BatchObject>) this.keyValueService.findById(batchKey, false).getValue();
 			}
 			catch (final BusinessException e) {
@@ -218,7 +217,6 @@ public class BatchServiceTest {
 		// Waits for a while (this batch should not reach the end).
 		TestHelper.waitUntilValid(() -> {
 			try {
-				this.batchService.checkAll();
 				return (BatchExecutor<BatchObject>) this.keyValueService.findById(batchKey, false).getValue();
 			}
 			catch (final BusinessException e) {

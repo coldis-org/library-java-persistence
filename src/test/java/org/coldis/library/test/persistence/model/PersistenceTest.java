@@ -13,8 +13,11 @@ import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 /**
  * Persistence model test.
  */
-@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = "test.properties",
-classes = TestApplication.class)
+@SpringBootTest(
+		webEnvironment = WebEnvironment.RANDOM_PORT,
+		properties = "test.properties",
+		classes = TestApplication.class
+)
 public class PersistenceTest {
 
 	/**
