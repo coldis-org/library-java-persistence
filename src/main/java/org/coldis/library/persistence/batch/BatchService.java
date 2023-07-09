@@ -1,6 +1,5 @@
 package org.coldis.library.persistence.batch;
 
-import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Objects;
@@ -58,6 +57,11 @@ public class BatchService {
 	 * Batch record execute queue.
 	 */
 	private static final String BATCH_RECORD_EXECUTE_QUEUE = "batch/record/execute";
+
+	/**
+	 * Batch record delete queue.
+	 */
+	private static final String BATCH_RECORD_DELETE_QUEUE = "batch/record/delete";
 
 	/**
 	 * Placeholder resolver.
@@ -125,37 +129,27 @@ public class BatchService {
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public <Type> Type getLastProcessed(
 			final BatchExecutor<Type> executor,
-			final Boolean cleanExpiration) {
-		final LocalDateTime now = DateTimeHelper.getCurrentLocalDateTime();
+			final Boolean restart) {
 
 		// Gets the batch record (and initiates it if necessary).
 		final String key = this.getKey(executor.getKeySuffix());
-		KeyValue<Typable> batchRecord = this.keyValueService.lock(key).get();
+		final KeyValue<Typable> batchRecord = this.keyValueService.lock(key).get();
 		if (batchRecord.getValue() == null) {
-			final BatchExecutor<Type> batchRecordValue = executor;
-			batchRecordValue.setExpiredAt(executor.getFinishWithin() == null ? null : now.plus(executor.getFinishWithin()));
-			batchRecordValue.setKeptUntil(executor.getCleansWithin() == null ? null : now.plus(executor.getCleansWithin()));
-			batchRecord.setValue(batchRecordValue);
+			batchRecord.setValue(executor);
 		}
 
 		// Gets the last processed id.
 		@SuppressWarnings("unchecked")
 		final BatchExecutor<Type> batchRecordValue = (BatchExecutor<Type>) batchRecord.getValue();
-		Type lastProcessed = batchRecordValue.getLastProcessed();
 
 		// Clears the last processed id, if data has expired.
-		if ((batchRecordValue.getLastStartedAt() == null) || batchRecordValue.isExpired()) {
-			if (cleanExpiration) {
-				batchRecordValue.reset();
-				batchRecordValue.setExpiredAt(executor.getFinishWithin() == null ? null : now.plus(executor.getFinishWithin()));
-				batchRecordValue.setKeptUntil(executor.getCleansWithin() == null ? null : now.plus(executor.getCleansWithin()));
-			}
-			lastProcessed = null;
+		if (restart) {
+			batchRecordValue.reset();
 		}
 
 		// Returns the last processed id.
-		batchRecord = this.keyValueService.getRepository().save(batchRecord);
-		return lastProcessed;
+		this.keyValueService.getRepository().save(batchRecord);
+		return batchRecordValue.getLastProcessed();
 	}
 
 	/**
@@ -227,11 +221,6 @@ public class BatchService {
 		final BatchExecutor<Type> batchRecordValue = (BatchExecutor<Type>) batchRecord.getValue();
 		Type actualLastProcessed = executor.getLastProcessed();
 
-		// Updates the last processed start.
-		if ((executor.getLastProcessed() == null) || (batchRecordValue.getLastStartedAt() == null)) {
-			batchRecordValue.setLastStartedAt(DateTimeHelper.getCurrentLocalDateTime());
-		}
-
 		// Throws an exception if the batch has expired.
 		if (batchRecordValue.isExpired()) {
 			throw new BusinessException(new SimpleMessage(BatchService.BATCH_EXPIRED_MESSAGE_CODE));
@@ -266,16 +255,16 @@ public class BatchService {
 			noRollbackFor = Throwable.class,
 			timeout = 3600
 	)
-	private <Type> void executeCompleteBatch(
+	public <Type> void executeCompleteBatch(
 			final BatchExecutor<Type> executor,
-			final Boolean cleanExpiration) throws BusinessException {
+			final Boolean restart) throws BusinessException {
 		// Synchronizes the batch (preventing to happen in parallel).
 		final String lockKey = this.getLockKey(executor.getKeySuffix());
 		this.keyValueService.lock(lockKey);
 		try {
 			// Gets the next id to be processed.
 			Type previousLastProcessed = null;
-			Type currentLastProcessed = this.getLastProcessed(executor, cleanExpiration);
+			Type currentLastProcessed = this.getLastProcessed(executor, restart);
 
 			// Starts or resumes the batch.
 			if (currentLastProcessed == null) {
@@ -292,7 +281,7 @@ public class BatchService {
 			final Type nextLastProcessed = this.executePartialBatch(executor);
 			previousLastProcessed = currentLastProcessed;
 			currentLastProcessed = nextLastProcessed;
-			
+
 			// If there is no new data, finishes the batch.
 			if (Objects.equals(previousLastProcessed, currentLastProcessed)) {
 				executor.finish();
@@ -331,17 +320,6 @@ public class BatchService {
 	 * @param  executor          Executor.
 	 * @throws BusinessException If the batch fails.
 	 */
-	public <Type> void executeCompleteBatch(
-			final BatchExecutor<Type> executor) throws BusinessException {
-		this.executeCompleteBatch(executor, true);
-	}
-
-	/**
-	 * Processes a complete batch.
-	 *
-	 * @param  executor          Executor.
-	 * @throws BusinessException If the batch fails.
-	 */
 	@JmsListener(
 			destination = BatchService.BATCH_RECORD_EXECUTE_QUEUE,
 			concurrency = "1-7"
@@ -365,15 +343,44 @@ public class BatchService {
 	}
 
 	/**
+	 * Deletes a batch record.
+	 *
+	 * @param key Key.
+	 */
+	@JmsListener(
+			destination = BatchService.BATCH_RECORD_DELETE_QUEUE,
+			concurrency = "1-3"
+	)
+	private void delete(
+			final String key) {
+		this.keyValueService.delete(key);
+	}
+
+	/**
+	 * Deletes a batch record.
+	 *
+	 * @param key Key.
+	 */
+	private void queueDelete(
+			final String key) {
+		this.jmsTemplateHelper.send(this.jmsTemplate,
+				new JmsMessage<>().withDestination(BatchService.BATCH_RECORD_DELETE_QUEUE).withLastValueKey(key).withMessage(key));
+	}
+
+	/**
 	 * Cleans old batches.
 	 *
 	 * @throws BusinessException If the batches cannot be cleaned.
 	 */
-	@Transactional(propagation = Propagation.NOT_SUPPORTED)
+	@Transactional(
+			propagation = Propagation.NOT_SUPPORTED,
+			readOnly = true,
+			timeout = 23
+	)
 	public void cleanAll() throws BusinessException {
 		final List<KeyValue<Typable>> batchRecords = this.keyValueService.findByKeyStart(BatchService.BATCH_KEY_PREFIX);
 		for (final KeyValue<Typable> batchRecord : batchRecords) {
-			this.keyValueService.delete(batchRecord.getKey());
+			this.queueDelete(batchRecord.getKey());
 		}
 	}
 
@@ -383,7 +390,11 @@ public class BatchService {
 	 * @throws BusinessException If the batches cannot be cleaned.
 	 */
 	@Scheduled(cron = "0 */3 * * * *")
-	@Transactional(propagation = Propagation.NOT_SUPPORTED)
+	@Transactional(
+			propagation = Propagation.NOT_SUPPORTED,
+			readOnly = true,
+			timeout = 23
+	)
 	public void checkAll() throws BusinessException {
 		final List<KeyValue<Typable>> batchRecords = this.keyValueService.findByKeyStart(BatchService.BATCH_KEY_PREFIX);
 		for (final KeyValue<Typable> batchRecord : batchRecords) {
@@ -391,7 +402,7 @@ public class BatchService {
 			if ((batchRecordValue != null)) {
 				// Deletes old batches.
 				if (batchRecordValue.shouldBeCleaned()) {
-					this.keyValueService.delete(batchRecord.getKey());
+					this.queueDelete(batchRecord.getKey());
 				}
 				// Makes sure non-expired are still running.
 				else if (!batchRecordValue.isFinished() && !batchRecordValue.isExpired()) {

@@ -2,7 +2,7 @@ package org.coldis.library.test.persistence.batch;
 
 import java.time.Clock;
 import java.time.Duration;
-import java.time.ZoneId;
+import java.util.List;
 import java.util.Random;
 
 import org.coldis.library.exception.BusinessException;
@@ -56,28 +56,19 @@ public class BatchServiceTest {
 	/**
 	 * Cleans after each test.
 	 *
-	 * @throws BusinessException
-	 */
-	public void cleanBeforeEachTest(
-			final Integer iteraction) throws BusinessException {
-		try {
-			this.batchService.cleanAll();
-		}
-		catch (final Exception exception) {
-			if (iteraction < 20) {
-				this.cleanBeforeEachTest(iteraction + 1);
-			}
-		}
-	}
-
-	/**
-	 * Cleans after each test.
-	 *
-	 * @throws BusinessException
+	 * @throws Exception If the test fails.
 	 */
 	@BeforeEach
-	public void cleanBeforeEachTest() throws BusinessException {
-		this.cleanBeforeEachTest(0);
+	public void cleanBeforeEachTest() throws Exception {
+		TestHelper.waitUntilValid(() -> {
+			try {
+				this.batchService.cleanAll();
+				return this.keyValueService.findByKeyStart("batch-record");
+			}
+			catch (final BusinessException e) {
+				return List.of();
+			}
+		}, List::isEmpty, TestHelper.VERY_LONG_WAIT * 3, TestHelper.SHORT_WAIT);
 		BatchTestService.processedAlways = 0L;
 		BatchTestService.processedLatestPartialBatch = 0L;
 		BatchTestService.processedLatestCompleteBatch = 0L;
@@ -100,6 +91,7 @@ public class BatchServiceTest {
 	 * @param  testBatchExecutor Executor.
 	 * @throws Exception         If the test fails.
 	 */
+	@SuppressWarnings("unchecked")
 	private void testBatch(
 			final BatchExecutor<BatchObject> testBatchExecutor,
 			final Long processedNow,
@@ -110,9 +102,9 @@ public class BatchServiceTest {
 		// Starts the batch and makes sure it has started.
 		BatchTestService.processDelay = 3L;
 		this.batchService.checkAll();
-		this.batchService.executeCompleteBatch(testBatchExecutor);
+		this.batchService.executeCompleteBatch(testBatchExecutor, true);
 		this.batchService.checkAll();
-		
+
 		BatchExecutor<BatchObject> batchRecord = (BatchExecutor<BatchObject>) this.keyValueService.findById(batchKey, false).getValue();
 		Assertions.assertTrue(batchRecord.getLastProcessedCount() > 0);
 		Assertions.assertNotNull(batchRecord.getLastStartedAt());
@@ -134,10 +126,11 @@ public class BatchServiceTest {
 		Assertions.assertNotNull(batchRecord.getLastStartedAt());
 		Assertions.assertNotNull(batchRecord.getLastProcessed());
 		Assertions.assertNotNull(batchRecord.getLastFinishedAt());
+		Assertions.assertTrue(batchRecord.isFinished());
 
 		// Tries executing the batch again, and nothing should change.
 		this.batchService.checkAll();
-		this.batchService.executeCompleteBatch(testBatchExecutor);
+		this.batchService.executeCompleteBatch(testBatchExecutor, false);
 		this.batchService.checkAll();
 		batchRecord = (BatchExecutor<BatchObject>) this.keyValueService.findById(batchKey, false).getValue();
 		Assertions.assertEquals(processedNow, batchRecord.getLastProcessedCount());
@@ -167,14 +160,20 @@ public class BatchServiceTest {
 
 		// Tests the batch twice.
 		this.testBatch(testBatchExecutor, 100L, 100L);
-		DateTimeHelper.setClock(
-				Clock.fixed(DateTimeHelper.getCurrentLocalDateTime().plusHours(1).atZone(ZoneId.systemDefault()).toInstant(), ZoneId.systemDefault()));
+		DateTimeHelper.setClock(Clock.offset(DateTimeHelper.getClock(), Duration.ofHours(1)));
 		this.testBatch(testBatchExecutor, 100L, 200L);
 
 		// Advances the clock and make sure the record is deleted.
-		DateTimeHelper.setClock(
-				Clock.fixed(DateTimeHelper.getCurrentLocalDateTime().plusHours(6).atZone(ZoneId.systemDefault()).toInstant(), ZoneId.systemDefault()));
+		DateTimeHelper.setClock(Clock.offset(DateTimeHelper.getClock(), Duration.ofHours(6)));
 		this.batchService.checkAll();
+		TestHelper.waitUntilValid(() -> {
+			try {
+				return this.keyValueService.findByKeyStart("batch-record");
+			}
+			catch (final BusinessException e) {
+				return List.of();
+			}
+		}, List::isEmpty, TestHelper.VERY_LONG_WAIT * 3, TestHelper.SHORT_WAIT);
 		try {
 			this.keyValueService.findById(batchKey, false);
 			Assertions.fail("Batch should no longer exist.");
@@ -190,6 +189,7 @@ public class BatchServiceTest {
 	 * @throws Exception If the test fails.
 	 */
 	@Test
+	@SuppressWarnings("unchecked")
 	public void testBatchNotInTime() throws Exception {
 
 		// Makes sure the batch is not started.
@@ -209,7 +209,7 @@ public class BatchServiceTest {
 		// so it should not finish in time).
 		BatchTestService.processDelay = 1000L;
 		this.batchService.checkAll();
-		this.batchService.executeCompleteBatch(testBatchExecutor);
+		this.batchService.executeCompleteBatch(testBatchExecutor, true);
 		this.batchService.checkAll();
 
 		BatchExecutor<BatchObject> batchRecord = (BatchExecutor<BatchObject>) this.keyValueService.findById(batchKey, false).getValue();
@@ -229,11 +229,19 @@ public class BatchServiceTest {
 		Assertions.assertTrue(batchRecord.getLastProcessedCount() > 0);
 		Assertions.assertTrue(batchRecord.getLastProcessedCount() < 100);
 		Assertions.assertNull(batchRecord.getLastFinishedAt());
+		Assertions.assertFalse(batchRecord.isFinished());
 
 		// Advances the clock and make sure the record is deleted.
-		DateTimeHelper.setClock(
-				Clock.fixed(DateTimeHelper.getCurrentLocalDateTime().plusHours(6).atZone(ZoneId.systemDefault()).toInstant(), ZoneId.systemDefault()));
+		DateTimeHelper.setClock(Clock.offset(DateTimeHelper.getClock(), Duration.ofHours(6)));
 		this.batchService.checkAll();
+		TestHelper.waitUntilValid(() -> {
+			try {
+				return this.keyValueService.findByKeyStart("batch-record");
+			}
+			catch (final BusinessException e) {
+				return List.of();
+			}
+		}, List::isEmpty, TestHelper.VERY_LONG_WAIT * 3, TestHelper.SHORT_WAIT);
 		try {
 			this.keyValueService.findById(batchKey, false);
 			Assertions.fail("Batch should no longer exist.");

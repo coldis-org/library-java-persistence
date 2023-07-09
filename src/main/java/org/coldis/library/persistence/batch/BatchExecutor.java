@@ -72,7 +72,7 @@ public class BatchExecutor<Type> implements Typable {
 	/**
 	 * Maximum interval to finish the batch.
 	 */
-	private Duration finishWithin = Duration.ofDays(1);
+	private Duration finishWithin;
 
 	/**
 	 * Maximum interval to keep the batch persisted.
@@ -118,11 +118,6 @@ public class BatchExecutor<Type> implements Typable {
 	 * Last finished at.
 	 */
 	private LocalDateTime lastFinishedAt;
-
-	/**
-	 * When the record is expired.
-	 */
-	private LocalDateTime expiredAt;
 
 	/**
 	 * Until when record is kept.
@@ -300,6 +295,7 @@ public class BatchExecutor<Type> implements Typable {
 	 */
 	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public Duration getFinishWithin() {
+		this.finishWithin = (this.finishWithin == null ? Duration.ofDays(1) : this.finishWithin);
 		return this.finishWithin;
 	}
 
@@ -320,7 +316,8 @@ public class BatchExecutor<Type> implements Typable {
 	 */
 	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public Duration getCleansWithin() {
-		return this.cleansWithin == null ? this.getFinishWithin() == null ? null : this.getFinishWithin().multipliedBy(5) : this.cleansWithin;
+		this.cleansWithin = (this.cleansWithin == null ? this.getFinishWithin().multipliedBy(5) : this.cleansWithin);
+		return this.cleansWithin;
 	}
 
 	/**
@@ -475,6 +472,7 @@ public class BatchExecutor<Type> implements Typable {
 	 */
 	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public LocalDateTime getLastStartedAt() {
+		this.lastStartedAt = (this.lastStartedAt == null ? DateTimeHelper.getCurrentLocalDateTime() : this.lastStartedAt);
 		return this.lastStartedAt;
 	}
 
@@ -525,7 +523,7 @@ public class BatchExecutor<Type> implements Typable {
 	 * @return If the batch is finished.
 	 */
 	public Boolean isFinished() {
-		return this.getLastFinishedAt() != null;
+		return (this.getLastFinishedAt() != null) && (this.getLastStartedAt() != null) && this.getLastFinishedAt().isAfter(this.getLastStartedAt());
 	}
 
 	/**
@@ -545,17 +543,7 @@ public class BatchExecutor<Type> implements Typable {
 	 */
 	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public LocalDateTime getExpiredAt() {
-		return this.expiredAt;
-	}
-
-	/**
-	 * Sets the expiredAt.
-	 *
-	 * @param expiredAt New expiredAt.
-	 */
-	public void setExpiredAt(
-			final LocalDateTime expiredAt) {
-		this.expiredAt = expiredAt;
+		return this.getLastStartedAt().plus(this.getFinishWithin());
 	}
 
 	/**
@@ -564,7 +552,7 @@ public class BatchExecutor<Type> implements Typable {
 	 * @return If the record is expired.
 	 */
 	public Boolean isExpired() {
-		return (this.getExpiredAt() != null) && DateTimeHelper.getCurrentLocalDateTime().isAfter(this.getExpiredAt());
+		return DateTimeHelper.getCurrentLocalDateTime().isAfter(this.getExpiredAt());
 	}
 
 	/**
@@ -574,17 +562,7 @@ public class BatchExecutor<Type> implements Typable {
 	 */
 	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public LocalDateTime getKeptUntil() {
-		return this.keptUntil;
-	}
-
-	/**
-	 * Sets the keptUntil.
-	 *
-	 * @param keptUntil New keptUntil.
-	 */
-	public void setKeptUntil(
-			final LocalDateTime keptUntil) {
-		this.keptUntil = keptUntil;
+		return this.getLastStartedAt().plus(this.getCleansWithin());
 	}
 
 	/**
@@ -593,7 +571,7 @@ public class BatchExecutor<Type> implements Typable {
 	 * @return If the record should be cleaned.
 	 */
 	public Boolean shouldBeCleaned() {
-		return (this.getKeptUntil() != null) && DateTimeHelper.getCurrentLocalDateTime().isAfter(this.getKeptUntil());
+		return DateTimeHelper.getCurrentLocalDateTime().isAfter(this.getKeptUntil());
 	}
 
 	/**
@@ -603,7 +581,8 @@ public class BatchExecutor<Type> implements Typable {
 		this.setLastStartedAt(null);
 		this.setLastProcessed(null);
 		this.setLastProcessedCount(null);
-		this.setLastFinishedAt(null);
+		this.getLastStartedAt();
+		this.getLastProcessedCount();
 	}
 
 	/**
@@ -620,9 +599,9 @@ public class BatchExecutor<Type> implements Typable {
 	 */
 	@Override
 	public int hashCode() {
-		return Objects.hash(this.actionBeanName, this.actionDelegateMethods, this.arguments, this.cleansWithin, this.expiredAt, this.finishWithin,
-				this.itemTypeName, this.keptUntil, this.keySuffix, this.lastFinishedAt, this.lastProcessed, this.lastProcessedCount, this.lastStartedAt,
-				this.messagesTemplates, this.size, this.slackChannels);
+		return Objects.hash(this.actionBeanName, this.actionDelegateMethods, this.arguments, this.cleansWithin, this.finishWithin, this.itemTypeName,
+				this.keptUntil, this.keySuffix, this.lastFinishedAt, this.lastProcessed, this.lastProcessedCount, this.lastStartedAt, this.messagesTemplates,
+				this.size, this.slackChannels);
 	}
 
 	/**
@@ -640,12 +619,12 @@ public class BatchExecutor<Type> implements Typable {
 		final BatchExecutor other = (BatchExecutor) obj;
 		return Objects.equals(this.actionBeanName, other.actionBeanName) && Objects.equals(this.actionDelegateMethods, other.actionDelegateMethods)
 				&& Objects.equals(this.arguments, other.arguments) && Objects.equals(this.cleansWithin, other.cleansWithin)
-				&& Objects.equals(this.expiredAt, other.expiredAt) && Objects.equals(this.finishWithin, other.finishWithin)
-				&& Objects.equals(this.itemTypeName, other.itemTypeName) && Objects.equals(this.keptUntil, other.keptUntil)
-				&& Objects.equals(this.keySuffix, other.keySuffix) && Objects.equals(this.lastFinishedAt, other.lastFinishedAt)
-				&& Objects.equals(this.lastProcessed, other.lastProcessed) && Objects.equals(this.lastProcessedCount, other.lastProcessedCount)
-				&& Objects.equals(this.lastStartedAt, other.lastStartedAt) && Objects.equals(this.messagesTemplates, other.messagesTemplates)
-				&& Objects.equals(this.size, other.size) && Objects.equals(this.slackChannels, other.slackChannels);
+				&& Objects.equals(this.finishWithin, other.finishWithin) && Objects.equals(this.itemTypeName, other.itemTypeName)
+				&& Objects.equals(this.keptUntil, other.keptUntil) && Objects.equals(this.keySuffix, other.keySuffix)
+				&& Objects.equals(this.lastFinishedAt, other.lastFinishedAt) && Objects.equals(this.lastProcessed, other.lastProcessed)
+				&& Objects.equals(this.lastProcessedCount, other.lastProcessedCount) && Objects.equals(this.lastStartedAt, other.lastStartedAt)
+				&& Objects.equals(this.messagesTemplates, other.messagesTemplates) && Objects.equals(this.size, other.size)
+				&& Objects.equals(this.slackChannels, other.slackChannels);
 	}
 
 	/**
