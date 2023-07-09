@@ -37,6 +37,7 @@ public interface KeyValueRepository<ValueType extends Typable> extends JpaReposi
 	@Override
 	@Transactional(
 			propagation = Propagation.NOT_SUPPORTED,
+			readOnly = true,
 			timeout = 3
 	)
 	Optional<KeyValue<ValueType>> findById(
@@ -51,7 +52,7 @@ public interface KeyValueRepository<ValueType extends Typable> extends JpaReposi
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	@Transactional(
 			propagation = Propagation.REQUIRED,
-			timeout = 31
+			timeout = 1237
 	)
 	@Query("SELECT keyValue FROM KeyValue keyValue WHERE keyValue.key = :key")
 	Optional<KeyValue<ValueType>> findByIdForUpdate(
@@ -64,6 +65,11 @@ public interface KeyValueRepository<ValueType extends Typable> extends JpaReposi
 	 * @param  key Key.
 	 * @return     Values for key starting with.
 	 */
+	@Transactional(
+			propagation = Propagation.NOT_SUPPORTED,
+			readOnly = true,
+			timeout = 7
+	)
 	List<KeyValue<ValueType>> findByKeyStartsWith(
 			String key);
 

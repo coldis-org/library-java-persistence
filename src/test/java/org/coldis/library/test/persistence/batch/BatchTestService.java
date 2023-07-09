@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 public class BatchTestService {
 
 	private static Random RANDOM = new Random();
-	public static Long processDelay = 3L;
+	public static Long processDelay = 1L;
 	public static Long processedAlways = 0L;
 	public static Long processedLatestCompleteBatch = 0L;
 	public static Long processedLatestPartialBatch = 0L;

@@ -100,7 +100,7 @@ public class BatchServiceTest {
 		final String batchKey = this.batchService.getKey(testBatchExecutor.getKeySuffix());
 
 		// Starts the batch and makes sure it has started.
-		BatchTestService.processDelay = 3L;
+		BatchTestService.processDelay = 1L;
 		this.batchService.checkAll();
 		this.batchService.executeCompleteBatch(testBatchExecutor, true);
 		this.batchService.checkAll();
@@ -147,7 +147,7 @@ public class BatchServiceTest {
 	public void testBatchInTime() throws Exception {
 
 		// Makes sure the batch is not started.
-		final BatchExecutor<BatchObject> testBatchExecutor = new BatchExecutor<>(BatchObject.class, "test", 10L, null, Duration.ofSeconds(60),
+		final BatchExecutor<BatchObject> testBatchExecutor = new BatchExecutor<>(BatchObject.class, "test", 10L, null, Duration.ofSeconds(30),
 				"batchTestService", null, null, null);
 		final String batchKey = this.batchService.getKey(testBatchExecutor.getKeySuffix());
 
@@ -194,7 +194,7 @@ public class BatchServiceTest {
 	public void testBatchNotInTime() throws Exception {
 
 		// Makes sure the batch is not started.
-		final BatchExecutor<BatchObject> testBatchExecutor = new BatchExecutor<>(BatchObject.class, "test", 10L, null, Duration.ofSeconds(60),
+		final BatchExecutor<BatchObject> testBatchExecutor = new BatchExecutor<>(BatchObject.class, "test", 10L, null, Duration.ofSeconds(30),
 				"batchTestService", null, null, null);
 		final String batchKey = this.batchService.getKey(testBatchExecutor.getKeySuffix());
 

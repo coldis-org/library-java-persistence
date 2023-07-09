@@ -126,7 +126,10 @@ public class BatchService {
 	 * @param  expiration Maximum interval to finish the batch.
 	 * @return            The last id processed.
 	 */
-	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	@Transactional(
+			propagation = Propagation.REQUIRES_NEW,
+			timeout = 13
+	)
 	public <Type> Type getLastProcessed(
 			final BatchExecutor<Type> executor,
 			final Boolean restart) {
@@ -159,7 +162,11 @@ public class BatchService {
 	 * @param  action            Action.
 	 * @throws BusinessException Exception.
 	 */
-	@Transactional(propagation = Propagation.NOT_SUPPORTED)
+	@Transactional(
+			propagation = Propagation.NOT_SUPPORTED,
+			readOnly = true,
+			timeout = 23
+	)
 	private <Type> void log(
 			final BatchExecutor<Type> executor,
 			final BatchAction action) throws BusinessException {
@@ -175,8 +182,7 @@ public class BatchService {
 				final KeyValue<Typable> batchRecord = this.keyValueService.findById(key, false);
 				@SuppressWarnings("unchecked")
 				final BatchExecutor<Type> batchRecordValue = (BatchExecutor<Type>) batchRecord.getValue();
-				final Long duration = (batchRecordValue.getLastStartedAt() == null ? 0
-						: batchRecordValue.getLastStartedAt().until(DateTimeHelper.getCurrentLocalDateTime(), ChronoUnit.MINUTES));
+				final Long duration = (batchRecordValue.getLastStartedAt().until(DateTimeHelper.getCurrentLocalDateTime(), ChronoUnit.MINUTES));
 				final Properties messageProperties = new Properties();
 				messageProperties.put("key", key);
 				messageProperties.put("lastProcessed", Objects.toString(lastProcessed));
@@ -291,7 +297,7 @@ public class BatchService {
 				@SuppressWarnings("unchecked")
 				final BatchExecutor<Type> batchRecordValue = (BatchExecutor<Type>) batchRecord.getValue();
 				batchRecordValue.setLastFinishedAt(DateTimeHelper.getCurrentLocalDateTime());
-				this.keyValueService.getRepository().save(batchRecord);
+				this.keyValueService.update(batchKey, batchRecordValue);
 			}
 			else {
 				this.queueExecuteCompleteBatchAsync(executor);
@@ -347,12 +353,14 @@ public class BatchService {
 	 *
 	 * @param key Key.
 	 */
+	@Transactional(propagation = Propagation.REQUIRED)
 	@JmsListener(
 			destination = BatchService.BATCH_RECORD_DELETE_QUEUE,
 			concurrency = "1-3"
 	)
 	private void delete(
 			final String key) {
+		this.keyValueService.lock(key);
 		this.keyValueService.delete(key);
 	}
 
@@ -375,7 +383,7 @@ public class BatchService {
 	@Transactional(
 			propagation = Propagation.NOT_SUPPORTED,
 			readOnly = true,
-			timeout = 23
+			timeout = 67
 	)
 	public void cleanAll() throws BusinessException {
 		final List<KeyValue<Typable>> batchRecords = this.keyValueService.findByKeyStart(BatchService.BATCH_KEY_PREFIX);
@@ -389,11 +397,11 @@ public class BatchService {
 	 *
 	 * @throws BusinessException If the batches cannot be cleaned.
 	 */
-	@Scheduled(cron = "0 */3 * * * *")
+	@Scheduled(cron = "0 */5 * * * *")
 	@Transactional(
 			propagation = Propagation.NOT_SUPPORTED,
 			readOnly = true,
-			timeout = 23
+			timeout = 67
 	)
 	public void checkAll() throws BusinessException {
 		final List<KeyValue<Typable>> batchRecords = this.keyValueService.findByKeyStart(BatchService.BATCH_KEY_PREFIX);

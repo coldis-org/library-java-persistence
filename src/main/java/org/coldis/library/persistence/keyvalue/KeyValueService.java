@@ -69,7 +69,11 @@ public class KeyValueService {
 	 * @return                   The entry.
 	 * @throws BusinessException If the entry is not found.
 	 */
-	@Transactional(propagation = Propagation.NOT_SUPPORTED)
+	@Transactional(
+			propagation = Propagation.NOT_SUPPORTED,
+			readOnly = true,
+			timeout = 11
+	)
 	public KeyValue<Typable> findById(
 			final String key) throws BusinessException {
 		return this.findById(key, false);
@@ -82,7 +86,11 @@ public class KeyValueService {
 	 * @return                   The entry.
 	 * @throws BusinessException If the entry is not found.
 	 */
-	@Transactional(propagation = Propagation.NOT_SUPPORTED)
+	@Transactional(
+			propagation = Propagation.NOT_SUPPORTED,
+			readOnly = true,
+			timeout = 11
+	)
 	public List<KeyValue<Typable>> findByKeyStart(
 			final String keyStart) throws BusinessException {
 		return this.repository.findByKeyStartsWith(keyStart);
@@ -140,6 +148,7 @@ public class KeyValueService {
 	 */
 	@Transactional(
 			propagation = Propagation.REQUIRED,
+			timeout = 1237,
 			noRollbackFor = DataIntegrityViolationException.class
 	)
 	public Optional<KeyValue<Typable>> lock(
