@@ -18,8 +18,10 @@ import org.coldis.library.service.slack.SlackIntegration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.jms.annotation.JmsListener;
+import org.springframework.jms.config.JmsListenerContainerFactory;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -31,6 +33,7 @@ import org.springframework.util.PropertyPlaceholderHelper;
  * Batch helper.
  */
 @Component
+@ConditionalOnBean(value = JmsListenerContainerFactory.class)
 @ConditionalOnProperty(
 		name = "org.coldis.configuration.persistence-batch-enabled",
 		havingValue = "true",
@@ -52,6 +55,11 @@ public class BatchService {
 	 * Batch lock key prefix.
 	 */
 	public static final String BATCH_LOCK_KEY_PREFIX = BatchService.BATCH_KEY_PREFIX + "lock-";
+
+	/**
+	 * Delete queue.
+	 */
+	private static final String DELETE_QUEUE = "key-value/delete";
 
 	/**
 	 * Batch record execute queue.
@@ -151,12 +159,9 @@ public class BatchService {
 	}
 
 	/**
-	 * Logs the action.
-	 *
-	 * @param  executor          Executor.
-	 * @param  action            Action.
-	 * @throws BusinessException Exception.
-	 */
+	 * @param executor Executor.
+	 * @param action   Action.*@throws BusinessException Exception.
+	 **/
 	@Transactional(
 			propagation = Propagation.NOT_SUPPORTED,
 			readOnly = true,
@@ -246,6 +251,32 @@ public class BatchService {
 	}
 
 	/**
+	 * Deletes a key entry.
+	 *
+	 * @param key The key.
+	 */
+	@Transactional(propagation = Propagation.REQUIRED)
+	@JmsListener(
+			destination = BatchService.DELETE_QUEUE,
+			concurrency = "1-3"
+	)
+	private void deleteAsync(
+			final String key) {
+		this.keyValueService.lock(key);
+		this.keyValueService.delete(key);
+	}
+
+	/**
+	 * Deletes a batch record.
+	 *
+	 * @param key Key.
+	 */
+	public void queueDeleteAsync(
+			final String key) {
+		this.jmsTemplateHelper.send(this.jmsTemplate, new JmsMessage<>().withDestination(BatchService.DELETE_QUEUE).withLastValueKey(key).withMessage(key));
+	}
+
+	/**
 	 * Processes a complete batch.
 	 *
 	 * @param  executor          Executor.
@@ -310,7 +341,7 @@ public class BatchService {
 		}
 		// Releases the lock.
 		finally {
-			this.keyValueService.queueDeleteAsync(lockKey);
+			this.queueDeleteAsync(lockKey);
 		}
 
 	}
@@ -357,8 +388,8 @@ public class BatchService {
 		final List<KeyValue<Typable>> batchRecords = this.keyValueService.findByKeyStart(BatchService.BATCH_KEY_PREFIX);
 		for (final KeyValue<Typable> batchRecord : batchRecords) {
 			final BatchExecutor<?> batchRecordValue = (BatchExecutor<?>) batchRecord.getValue();
-			this.keyValueService.queueDeleteAsync(this.getLockKey(batchRecordValue.getKeySuffix()));
-			this.keyValueService.queueDeleteAsync(this.getKey(batchRecordValue.getKeySuffix()));
+			this.queueDeleteAsync(this.getLockKey(batchRecordValue.getKeySuffix()));
+			this.queueDeleteAsync(this.getKey(batchRecordValue.getKeySuffix()));
 		}
 	}
 
@@ -380,8 +411,8 @@ public class BatchService {
 			if ((batchRecordValue != null)) {
 				// Deletes old batches.
 				if (batchRecordValue.shouldBeCleaned()) {
-					this.keyValueService.queueDeleteAsync(this.getLockKey(batchRecordValue.getKeySuffix()));
-					this.keyValueService.queueDeleteAsync(this.getKey(batchRecordValue.getKeySuffix()));
+					this.queueDeleteAsync(this.getLockKey(batchRecordValue.getKeySuffix()));
+					this.queueDeleteAsync(this.getKey(batchRecordValue.getKeySuffix()));
 				}
 				// Makes sure non-expired are still running.
 				else if (!batchRecordValue.isFinished() && !batchRecordValue.isExpired()) {

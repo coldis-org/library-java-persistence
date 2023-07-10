@@ -29,22 +29,6 @@ public class KeyValueService {
 	 */
 	private static final Logger LOGGER = LoggerFactory.getLogger(KeyValueService.class);
 
-	/**
-	 * Delete queue.
-	 */
-	private static final String DELETE_QUEUE = "key-value/delete";
-
-	/**
-	 * JMS template.
-	 */
-	@Autowired(required = false)
-	private JmsTemplate jmsTemplate;
-
-	/**
-	 * JMS template helper.
-	 */
-	@Autowired(required = false)
-	private JmsTemplateHelper jmsTemplateHelper;
 
 	/**
 	 * Repository.
@@ -159,32 +143,6 @@ public class KeyValueService {
 		if (this.repository.existsById(key)) {
 			this.repository.deleteById(key);
 		}
-	}
-
-	/**
-	 * Deletes a key entry.
-	 *
-	 * @param key The key.
-	 */
-	@Transactional(propagation = Propagation.REQUIRED)
-	@JmsListener(
-			destination = KeyValueService.DELETE_QUEUE,
-			concurrency = "1-3"
-	)
-	private void deleteAsync(
-			final String key) {
-		this.lock(key);
-		this.delete(key);
-	}
-
-	/**
-	 * Deletes a batch record.
-	 *
-	 * @param key Key.
-	 */
-	public void queueDeleteAsync(
-			final String key) {
-		this.jmsTemplateHelper.send(this.jmsTemplate, new JmsMessage<>().withDestination(KeyValueService.DELETE_QUEUE).withLastValueKey(key).withMessage(key));
 	}
 
 	/**
