@@ -2,7 +2,6 @@ package org.coldis.library.test.persistence.batch;
 
 import java.util.Objects;
 
-import org.coldis.library.dto.DtoAttribute;
 import org.coldis.library.model.Typable;
 import org.coldis.library.model.view.ModelView;
 

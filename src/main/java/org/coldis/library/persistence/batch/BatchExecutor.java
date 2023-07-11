@@ -102,7 +102,7 @@ public class BatchExecutor<Type> implements Typable {
 	/**
 	 * Slack channels to communicate.
 	 */
-	private Map<BatchAction, String> slackChannels;
+	private Map<BatchAction, String> slackChannels;Factory
 
 	/**
 	 * Last started at.
@@ -159,7 +159,7 @@ public class BatchExecutor<Type> implements Typable {
 	/**
 	 * Complete constructor.
 	 *
-	 * @param keySuffix             Key suffix.
+	 * @param keySuffix             Key suffix.Factory
 	 * @param size                  Size.
 	 * @param lastProcessed         Last processed.
 	 * @param finishWithin          Maximum interval to finish the batch.

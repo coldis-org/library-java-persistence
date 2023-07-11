@@ -6,14 +6,10 @@ import java.util.Optional;
 import org.coldis.library.exception.BusinessException;
 import org.coldis.library.model.SimpleMessage;
 import org.coldis.library.model.Typable;
-import org.coldis.library.service.jms.JmsMessage;
-import org.coldis.library.service.jms.JmsTemplateHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.jms.annotation.JmsListener;
-import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,7 +24,6 @@ public class KeyValueService {
 	 * Logger.
 	 */
 	private static final Logger LOGGER = LoggerFactory.getLogger(KeyValueService.class);
-
 
 	/**
 	 * Repository.
