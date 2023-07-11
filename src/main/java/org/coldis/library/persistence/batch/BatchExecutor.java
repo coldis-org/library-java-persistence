@@ -102,7 +102,7 @@ public class BatchExecutor<Type> implements Typable {
 	/**
 	 * Slack channels to communicate.
 	 */
-	private Map<BatchAction, String> slackChannels;Factory
+	private Map<BatchAction, String> slackChannels;
 
 	/**
 	 * Last started at.
