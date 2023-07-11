@@ -21,7 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.jms.annotation.JmsListener;
-import org.springframework.jms.config.DefaultJmsListenerContainerFactory;
+import org.springframework.jms.config.JmsListenerContainerFactory;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -33,7 +33,6 @@ import org.springframework.util.PropertyPlaceholderHelper;
  * Batch helper.
  */
 @Component
-@ConditionalOnBean(value = DefaultJmsListenerContainerFactory.class)
 @ConditionalOnProperty(
 		name = "org.coldis.configuration.persistence-batch-enabled",
 		havingValue = "true",
@@ -260,6 +259,7 @@ public class BatchService {
 			destination = BatchService.DELETE_QUEUE,
 			concurrency = "1-3"
 	)
+	@ConditionalOnBean(value = JmsListenerContainerFactory.class)
 	private void deleteAsync(
 			final String key) {
 		this.keyValueService.lock(key);
@@ -352,6 +352,7 @@ public class BatchService {
 	 * @param  executor          Executor.
 	 * @throws BusinessException If the batch fails.
 	 */
+	@ConditionalOnBean(value = JmsListenerContainerFactory.class)
 	@JmsListener(
 			destination = BatchService.BATCH_RECORD_EXECUTE_QUEUE,
 			concurrency = "1-7"
