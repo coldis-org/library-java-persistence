@@ -5,7 +5,6 @@ import javax.persistence.AttributeConverter;
 import org.coldis.library.model.view.ModelView;
 import org.coldis.library.persistence.configuration.JpaAutoConfiguration;
 import org.coldis.library.serialization.ObjectMapperHelper;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -22,29 +21,20 @@ public abstract class AbstractJsonConverter<ObjectType> implements AttributeConv
 	private static final Class<?> SERIALIZATION_VIEW = ModelView.Persistent.class;
 
 	/**
-	 * Object mapper.
-	 */
-	@Autowired(required = false)
-	private ObjectMapper objectMapper;
-
-	/**
 	 * Returns the object mapper.
 	 *
 	 * @return The object mapper.
 	 */
 	protected ObjectMapper getObjectMapper() {
-		// Makes sure the object mapper is initialized.
-		this.objectMapper = (this.objectMapper == null ? (JpaAutoConfiguration.OBJECT_MAPPER == null ? new ObjectMapper() : JpaAutoConfiguration.OBJECT_MAPPER)
-				: this.objectMapper);
-		// Returns the object mapper.
-		return this.objectMapper;
+		return (JpaAutoConfiguration.OBJECT_MAPPER == null ? ObjectMapperHelper.createMapper() : JpaAutoConfiguration.OBJECT_MAPPER);
 	}
 
 	/**
 	 * @see javax.persistence.AttributeConverter#convertToDatabaseColumn(java.lang.Object)
 	 */
 	@Override
-	public String convertToDatabaseColumn(final ObjectType originalObject) {
+	public String convertToDatabaseColumn(
+			final ObjectType originalObject) {
 		// Returns the JSON object.
 		return ObjectMapperHelper.serialize(this.getObjectMapper(), originalObject, AbstractJsonConverter.SERIALIZATION_VIEW, false);
 	}
@@ -56,13 +46,16 @@ public abstract class AbstractJsonConverter<ObjectType> implements AttributeConv
 	 * @param  jsonObject JSON object.
 	 * @return            Converted JSON object.
 	 */
-	protected abstract ObjectType convertToEntityAttribute(final ObjectMapper jsonMapper, final String jsonObject);
+	protected abstract ObjectType convertToEntityAttribute(
+			final ObjectMapper jsonMapper,
+			final String jsonObject);
 
 	/**
 	 * @see javax.persistence.AttributeConverter#convertToEntityAttribute(java.lang.Object)
 	 */
 	@Override
-	public ObjectType convertToEntityAttribute(final String jsonObject) {
+	public ObjectType convertToEntityAttribute(
+			final String jsonObject) {
 		return jsonObject == null ? null : this.convertToEntityAttribute(this.getObjectMapper(), jsonObject);
 	}
 

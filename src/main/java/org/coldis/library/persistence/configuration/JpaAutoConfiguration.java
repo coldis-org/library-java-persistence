@@ -1,9 +1,16 @@
 package org.coldis.library.persistence.configuration;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.apache.commons.lang3.ArrayUtils;
+import org.coldis.library.Configuration;
+import org.coldis.library.serialization.ObjectMapperHelper;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.context.annotation.Bean;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -17,19 +24,36 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class JpaAutoConfiguration {
 
 	/**
-	 * Object mapper used in JPA converters..
+	 * Object mapper used in JPA converters.
 	 */
 	public static ObjectMapper OBJECT_MAPPER;
 
 	/**
-	 * Sets the object mapper.
-	 *
-	 * @param objectMapper Object mapper.
+	 * JSON type packages.
 	 */
-	@Autowired
-	public void setObjectMapper(
-			final ObjectMapper objectMapper) {
-		JpaAutoConfiguration.OBJECT_MAPPER = objectMapper;
+	@Value(value = "#{'${org.coldis.configuration.base-package}'.split(',')}")
+	private String[] jsonTypePackages;
+
+	/**
+	 * Creates the JSON object mapper.
+	 *
+	 * @param  builder JSON object mapper builder.
+	 * @return         The JSON object mapper.
+	 */
+	@Qualifier(value = "persistenceJsonMapper")
+	@Bean(name = { "persistenceJsonMapper" })
+	public ObjectMapper createJsonMapper(
+			final Jackson2ObjectMapperBuilder builder) {
+		// Creates the object mapper.
+		if (JpaAutoConfiguration.OBJECT_MAPPER == null) {
+			JpaAutoConfiguration.OBJECT_MAPPER = builder.build();
+			JpaAutoConfiguration.OBJECT_MAPPER.registerModule(ObjectMapperHelper.getDateTimeModule());
+			JpaAutoConfiguration.OBJECT_MAPPER = ObjectMapperHelper.addSubtypesFromPackage(JpaAutoConfiguration.OBJECT_MAPPER,
+					ArrayUtils.add(this.jsonTypePackages, Configuration.BASE_PACKAGE));
+			JpaAutoConfiguration.OBJECT_MAPPER.setSerializationInclusion(Include.NON_NULL);
+		}
+		// Returns the configured object mapper.
+		return JpaAutoConfiguration.OBJECT_MAPPER;
 	}
 
 }

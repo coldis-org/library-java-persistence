@@ -6,6 +6,7 @@ import org.coldis.library.serialization.ObjectMapperHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Controller;
 
@@ -34,6 +35,7 @@ public class ${historicalEntity.getProducerServiceTypeName()} implements EntityH
 	 * Object mapper.
 	 */
 	@Autowired
+	@Qualifier(value = "persistenceJsonMapper")
 	private ObjectMapper objectMapper;
 
 	/**
