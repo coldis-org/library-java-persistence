@@ -1,12 +1,12 @@
 package org.coldis.library.persistence.configuration;
 
 import org.apache.commons.lang3.ArrayUtils;
-import org.coldis.library.Configuration;
 import org.coldis.library.serialization.ObjectMapperHelper;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 
@@ -16,6 +16,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 /**
  * JPA auto configuration.
  */
+@Configuration
 @EntityScan(basePackages = { PersistenceAutoConfiguration.PERSISTENCE_PACKAGE, "${org.coldis.configuration.persistence.jpa.base-package}" })
 @EnableJpaRepositories(
 		enableDefaultTransactions = false,
@@ -49,7 +50,7 @@ public class JpaAutoConfiguration {
 			JpaAutoConfiguration.OBJECT_MAPPER = builder.build();
 			JpaAutoConfiguration.OBJECT_MAPPER.registerModule(ObjectMapperHelper.getDateTimeModule());
 			JpaAutoConfiguration.OBJECT_MAPPER = ObjectMapperHelper.addSubtypesFromPackage(JpaAutoConfiguration.OBJECT_MAPPER,
-					ArrayUtils.add(this.jsonTypePackages, Configuration.BASE_PACKAGE));
+					ArrayUtils.add(this.jsonTypePackages, org.coldis.library.Configuration.BASE_PACKAGE));
 			JpaAutoConfiguration.OBJECT_MAPPER.setSerializationInclusion(Include.NON_NULL);
 		}
 		// Returns the configured object mapper.
