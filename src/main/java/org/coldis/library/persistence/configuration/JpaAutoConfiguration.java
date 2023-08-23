@@ -31,7 +31,7 @@ public class JpaAutoConfiguration {
 	/**
 	 * JSON type packages.
 	 */
-	@Value(value = "#{'${org.coldis.configuration.base-package}'.split(',')}")
+	@Value(value = "#{'${org.coldis.configuration.base-package:}'.split(',')}")
 	private String[] jsonTypePackages;
 
 	/**
