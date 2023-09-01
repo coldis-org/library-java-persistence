@@ -13,6 +13,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 /**
  * Key/value service.
@@ -88,8 +89,7 @@ public class KeyValueService {
 	 */
 	@Transactional(
 			propagation = Propagation.NOT_SUPPORTED,
-			readOnly = true,
-			timeout = 11
+			readOnly = true
 	)
 	public List<KeyValue<Typable>> findByKeyStart(
 			final String keyStart) throws BusinessException {
