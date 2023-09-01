@@ -4,12 +4,14 @@ import java.util.List;
 import java.util.Optional;
 
 import javax.persistence.LockModeType;
+import javax.persistence.QueryHint;
 
 import org.coldis.library.model.Typable;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -45,6 +47,42 @@ public interface KeyValueRepository<ValueType extends Typable> extends JpaReposi
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	@Query("SELECT keyValue FROM KeyValue keyValue WHERE keyValue.key = :key")
 	Optional<KeyValue<ValueType>> findByIdForUpdate(
+			@Param("key")
+			String key);
+
+	/**
+	 * Finds a key/value for update.
+	 *
+	 * @param  key The key for the value.
+	 * @return     A key/value for update.
+	 */
+	@Lock(LockModeType.PESSIMISTIC_WRITE)
+	@QueryHints(
+			value = { @QueryHint(
+					name = "javax.persistence.lock.timeout",
+					value = "-2"
+			) }
+	)
+	@Query("SELECT keyValue FROM KeyValue keyValue WHERE keyValue.key = :key")
+	Optional<KeyValue<ValueType>> findByIdForUpdateSkipLocked(
+			@Param("key")
+			String key);
+
+	/**
+	 * Finds a key/value for update.
+	 *
+	 * @param  key The key for the value.
+	 * @return     A key/value for update.
+	 */
+	@Lock(LockModeType.PESSIMISTIC_WRITE)
+	@QueryHints(
+			value = { @QueryHint(
+					name = "javax.persistence.lock.timeout",
+					value = "0"
+			) }
+	)
+	@Query("SELECT keyValue FROM KeyValue keyValue WHERE keyValue.key = :key")
+	Optional<KeyValue<ValueType>> findByIdForUpdateFailFast(
 			@Param("key")
 			String key);
 

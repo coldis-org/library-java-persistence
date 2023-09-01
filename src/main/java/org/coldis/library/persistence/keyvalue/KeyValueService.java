@@ -1,11 +1,11 @@
 package org.coldis.library.persistence.keyvalue;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.coldis.library.exception.BusinessException;
 import org.coldis.library.model.SimpleMessage;
 import org.coldis.library.model.Typable;
+import org.coldis.library.persistence.LockBehavior;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +13,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.event.TransactionalEventListener;
 
 /**
  * Key/value service.
@@ -51,11 +50,15 @@ public class KeyValueService {
 	 */
 	public KeyValue<Typable> findById(
 			final String key,
-			final Boolean lock) throws BusinessException {
+			final LockBehavior lock,
+			final Boolean ignoreNotFound) throws BusinessException {
 		// Tries to find the keyValue.
-		final KeyValue<Typable> keyValue = (lock ? this.repository.findByIdForUpdate(key).orElse(null) : this.repository.findById(key).orElse(null));
+		final KeyValue<Typable> keyValue = (LockBehavior.WAIT_AND_LOCK.equals(lock) ? this.repository.findByIdForUpdate(key).orElse(null)
+				: LockBehavior.LOCK_FAIL_FAST.equals(lock) ? this.repository.findByIdForUpdateFailFast(key).orElse(null)
+						: LockBehavior.LOCK_SKIP.equals(lock) ? this.repository.findByIdForUpdateSkipLocked(key).orElse(null)
+								: this.repository.findById(key).orElse(null));
 		// If no keyValue is found.
-		if (keyValue == null) {
+		if (!ignoreNotFound && (keyValue == null)) {
 			// Throws a not found exception.
 			throw new BusinessException(new SimpleMessage("keyValue.notfound"));
 		}
@@ -72,12 +75,11 @@ public class KeyValueService {
 	 */
 	@Transactional(
 			propagation = Propagation.NOT_SUPPORTED,
-			readOnly = true,
-			timeout = 11
+			readOnly = true
 	)
 	public KeyValue<Typable> findById(
 			final String key) throws BusinessException {
-		return this.findById(key, false);
+		return this.findById(key, LockBehavior.NO_LOCK, false);
 	}
 
 	/**
@@ -122,7 +124,7 @@ public class KeyValueService {
 	public KeyValue<Typable> update(
 			final String key,
 			final Typable value) throws BusinessException {
-		final KeyValue<Typable> keyValue = this.findById(key, true);
+		final KeyValue<Typable> keyValue = this.findById(key, LockBehavior.WAIT_AND_LOCK, false);
 		keyValue.setValue(value);
 		return this.repository.save(keyValue);
 	}
@@ -143,20 +145,21 @@ public class KeyValueService {
 	/**
 	 * Locks a key.
 	 *
-	 * @param  key Key.
-	 * @return     Returns the locked object.
+	 * @param  key               Key.
+	 * @return                   Returns the locked object.
+	 * @throws BusinessException If the key cannot be locked.
 	 */
 	@Transactional(
 			propagation = Propagation.REQUIRED,
-			timeout = 1237,
 			noRollbackFor = DataIntegrityViolationException.class
 	)
-	public Optional<KeyValue<Typable>> lock(
-			final String key) {
+	public KeyValue<Typable> lock(
+			final String key,
+			final LockBehavior lock) throws BusinessException {
 		// Tries to lock the entry.
-		Optional<KeyValue<Typable>> entry = this.repository.findByIdForUpdate(key);
+		KeyValue<Typable> entry = this.findById(key, lock, true);
 		// If there is no entry.
-		if (entry.isEmpty()) {
+		if (entry == null) {
 			// Tries creating the entry.
 			try {
 				this.create(key, null);
@@ -166,7 +169,7 @@ public class KeyValueService {
 				KeyValueService.LOGGER.debug("Could not create key.", exception);
 			}
 			// Locks the entry.
-			entry = this.repository.findByIdForUpdate(key);
+			entry = this.findById(key, lock, true);
 		}
 		// Returns the object.
 		return entry;
