@@ -53,15 +53,10 @@ public class HistoricalEntityListener implements ApplicationContextAware {
 	private <EntityType> EntityHistoryProducerService<EntityType> getEntityHistoryService(
 			final Object entity,
 			final HistoricalEntity historicalEntityMetadata) throws IntegrationException {
-		// Service name is retrieved from the annotation.
-		String serviceName = historicalEntityMetadata.producerServiceBeanName();
-		// If the service name is not defined in the annotation.
-		if (StringUtils.isEmpty(serviceName)) {
-			// The service name pattern is used.
-			serviceName = (entity.getClass().getSimpleName() + HistoricalEntityMetadata.PRODUCER_SERVICE_TYPE_SUFFIX);
-			serviceName = serviceName.substring(0, 1).toLowerCase() + serviceName.substring(1);
-		}
+
 		// Tries to get the entity history service.
+		String serviceName = (entity.getClass().getSimpleName() + HistoricalEntityMetadata.PRODUCER_SERVICE_TYPE_SUFFIX);
+		serviceName = serviceName.substring(0, 1).toLowerCase() + serviceName.substring(1);
 		try {
 			return HistoricalEntityListener.appContext.getBean(serviceName, EntityHistoryProducerService.class);
 		}

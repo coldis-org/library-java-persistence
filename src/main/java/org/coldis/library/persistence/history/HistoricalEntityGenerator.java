@@ -104,12 +104,20 @@ public class HistoricalEntityGenerator extends AbstractProcessor {
 		// Gets the historical entity metadata.
 		final HistoricalEntity historicalEntity = entityType.getAnnotation(HistoricalEntity.class);
 		// Creates the default metadata.
-		final HistoricalEntityMetadata historicalEntityMetadata = new HistoricalEntityMetadata(historicalEntity.producerTargetPath(),
-				historicalEntity.consumerTargetPath(), historicalEntity.entityTemplatePath(), historicalEntity.repositoryTemplatePath(),
-				historicalEntity.producerServiceTemplatePath(), historicalEntity.consumerServiceTemplatePath(), historicalEntity.repositoryBeanName(),
-				historicalEntity.producerServiceBeanName(), historicalEntity.consumerServiceBeanName(), historicalEntity.basePackageName(),
-				((PackageElement) entityType.getEnclosingElement()).getQualifiedName().toString(), entityType.getSimpleName().toString(),
-				historicalEntity.stateColumnDefinition(), historicalEntity.consumerConcurrency());
+		final HistoricalEntityMetadata historicalEntityMetadata = new HistoricalEntityMetadata(
+				historicalEntity.basePackageName(),
+				historicalEntity.entityTemplatePath(), 
+				((PackageElement) entityType.getEnclosingElement()).getQualifiedName().toString(),
+				entityType.getSimpleName().toString(), 
+				historicalEntity.stateColumnDefinition(),
+				historicalEntity.repositoryTemplatePath(),
+				historicalEntity.repositoryBeanName(),
+				historicalEntity.producerServiceTemplatePath(),
+				historicalEntity.producerTargetPath(), 
+				historicalEntity.producerJmsTemplateQualifier(),
+				historicalEntity.consumerServiceTemplatePath(), 
+				historicalEntity.consumerTargetPath(), 
+				historicalEntity.consumerJmsContainerFactory());
 		// Returns the historical entity metadata.
 		return historicalEntityMetadata;
 	}

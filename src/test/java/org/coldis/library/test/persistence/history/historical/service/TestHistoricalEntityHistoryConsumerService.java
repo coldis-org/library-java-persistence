@@ -29,7 +29,7 @@ import org.coldis.library.test.persistence.history.historical.repository.TestHis
 /**
  * JPA entity history consumer service for {@link org.coldis.library.test.persistence.history.TestHistoricalEntity}.
  */
-@Controller(value = "")
+@Controller
 public class TestHistoricalEntityHistoryConsumerService {
 
 	/**
@@ -40,7 +40,7 @@ public class TestHistoricalEntityHistoryConsumerService {
 	/**
 	 * Historical entity queue.
 	 */
-	private static final String HISTORICAL_ENTITY_QUEUE = "TestHistoricalEntityHistory.queue";
+	private static final String HISTORICAL_ENTITY_QUEUE = "TestHistoricalEntityHistory/history";
 	
 	/**
 	 * Object mapper.
@@ -60,8 +60,11 @@ public class TestHistoricalEntityHistoryConsumerService {
 	 * @param state	Current entity state.
 	 */
 	@Transactional
-	@JmsListener(destination = TestHistoricalEntityHistoryConsumerService.HISTORICAL_ENTITY_QUEUE,
-		concurrency = "1-7")
+	@JmsListener(
+			containerFactory = "${org.coldis.library.test.persistence.history.historical.model.testhistoricalentityhistory.history-consumer-jms-container-factory:historicalJmsContainerFactory}",
+			destination = TestHistoricalEntityHistoryProducerService.QUEUE,
+			concurrency = "${org.coldis.library.test.persistence.history.historical.model.testhistoricalentityhistory.history-concurrency:1-7}"
+	)
 	public void handleUpdate(final Message message) {
 		TestHistoricalEntityHistoryConsumerService.LOGGER.debug("Processing 'org.coldis.library.test.persistence.history.historical.model.TestHistoricalEntityHistory' history update."); 
 		// Tries to process the entity history update.

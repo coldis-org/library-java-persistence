@@ -18,9 +18,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 @SpringBootTest(
 		webEnvironment = WebEnvironment.RANDOM_PORT,
-		classes = TestApplication.class
+		classes = TestApplication.class,
+		properties = "org.coldis.library.test.persistence.history.historical.model.testhistoricalentityhistory.history-producer-pool-core-size="
 )
-public class HistoricalEntityTest {
+public class HistoricalEntityTest2 {
 
 	/**
 	 * Object mapper.

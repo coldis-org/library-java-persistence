@@ -29,7 +29,7 @@ import ${historicalEntity.getRepositoryQualifiedTypeName()};
 /**
  * JPA entity history consumer service for {@link ${historicalEntity.getOriginalEntityQualifiedTypeName()}}.
  */
-@Controller(value = "${historicalEntity.getConsumerServiceBeanName()}")
+@Controller
 public class ${historicalEntity.getConsumerServiceTypeName()} {
 
 	/**
@@ -60,8 +60,11 @@ public class ${historicalEntity.getConsumerServiceTypeName()} {
 	 * @param state	Current entity state.
 	 */
 	@Transactional
-	@JmsListener(destination = ${historicalEntity.getConsumerServiceTypeName()}.HISTORICAL_ENTITY_QUEUE,
-		concurrency = "${historicalEntity.getConsumerConcurrency()}")
+	@JmsListener(
+			containerFactory = "${${historicalEntity.getEntityQualifiedTypeName().toLowerCase()}.history-consumer-jms-container-factory:historicalJmsContainerFactory}",
+			destination = ${historicalEntity.getProducerServiceTypeName()}.QUEUE,
+			concurrency = "${${historicalEntity.getEntityQualifiedTypeName().toLowerCase()}.history-concurrency:1-7}"
+	)
 	public void handleUpdate(final Message message) {
 		${historicalEntity.getConsumerServiceTypeName()}.LOGGER.debug("Processing '${historicalEntity.getEntityQualifiedTypeName()}' history update."); 
 		// Tries to process the entity history update.

@@ -24,8 +24,11 @@ import com.fasterxml.jackson.annotation.JsonView;
 @Entity
 @EntityListeners(HistoricalEntityListener.class)
 @JsonTypeName(value = TestHistoricalEntity.TYPE_NAME)
-@HistoricalEntity(basePackageName = "org.coldis.library.test.persistence.history.historical",
-producerTargetPath = "src/test/java", consumerTargetPath = "src/test/java")
+@HistoricalEntity(
+		basePackageName = "org.coldis.library.test.persistence.history.historical",
+		producerTargetPath = "src/test/java",
+		consumerTargetPath = "src/test/java"
+)
 public class TestHistoricalEntity implements Typable, Identifiable {
 
 	/**
@@ -70,7 +73,10 @@ public class TestHistoricalEntity implements Typable, Identifiable {
 	@Id
 	@Override
 	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
-	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "TestHistoricalEntitySequence")
+	@GeneratedValue(
+			strategy = GenerationType.SEQUENCE,
+			generator = "TestHistoricalEntitySequence"
+	)
 	public Long getId() {
 		return this.id;
 	}
@@ -80,7 +86,8 @@ public class TestHistoricalEntity implements Typable, Identifiable {
 	 *
 	 * @param id New identifier.
 	 */
-	public void setId(final Long id) {
+	public void setId(
+			final Long id) {
 		this.id = id;
 	}
 
@@ -99,7 +106,8 @@ public class TestHistoricalEntity implements Typable, Identifiable {
 	 *
 	 * @param test New test.
 	 */
-	public void setTest(final String test) {
+	public void setTest(
+			final String test) {
 		this.test = test;
 	}
 
@@ -125,7 +133,8 @@ public class TestHistoricalEntity implements Typable, Identifiable {
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
-	public boolean equals(final Object obj) {
+	public boolean equals(
+			final Object obj) {
 		if (this == obj) {
 			return true;
 		}

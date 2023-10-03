@@ -16,14 +16,9 @@ import java.lang.annotation.Target;
 public @interface HistoricalEntity {
 
 	/**
-	 * Producer classes target path. Default is "src/main/java".
+	 * Name of the base package for entity history classes.
 	 */
-	public String producerTargetPath() default "src/main/java";
-
-	/**
-	 * Consumer classes target path. Default is "src/main/java".
-	 */
-	public String consumerTargetPath() default "src/main/java";
+	public String basePackageName();
 
 	/**
 	 * Entity history template relative path (from resources).
@@ -31,19 +26,14 @@ public @interface HistoricalEntity {
 	public String entityTemplatePath() default "persistence/history/template/EntityHistory.java";
 
 	/**
+	 * Entity state column definition.
+	 */
+	public String stateColumnDefinition() default "JSONB";
+
+	/**
 	 * Entity history repository template relative path (from resources).
 	 */
 	public String repositoryTemplatePath() default "persistence/history/template/EntityHistoryRepository.java";
-
-	/**
-	 * Entity history producer service template relative path (from resources).
-	 */
-	public String producerServiceTemplatePath() default "persistence/history/template/EntityHistoryProducerService.java";
-
-	/**
-	 * Entity history consumer service template relative path (from resources).
-	 */
-	public String consumerServiceTemplatePath() default "persistence/history/template/EntityHistoryConsumerService.java";
 
 	/**
 	 * Entity history repository bean name.
@@ -51,28 +41,33 @@ public @interface HistoricalEntity {
 	public String repositoryBeanName() default "";
 
 	/**
-	 * Entity history producer service bean name.
+	 * Entity history producer service template relative path (from resources).
 	 */
-	public String producerServiceBeanName() default "";
+	public String producerServiceTemplatePath() default "persistence/history/template/EntityHistoryProducerService.java";
 
 	/**
-	 * Entity history consumer service bean name.
+	 * Producer classes target path. Default is "src/main/java".
 	 */
-	public String consumerServiceBeanName() default "";
+	public String producerTargetPath() default "src/main/java";
 
 	/**
-	 * Name of the base package for entity history classes.
+	 * JMS template qualifier.
 	 */
-	public String basePackageName();
+	public String producerJmsTemplateQualifier() default "historicalJmsTemplate";
 
 	/**
-	 * Entity state column definition.
+	 * Entity history consumer service template relative path (from resources).
 	 */
-	public String stateColumnDefinition() default "JSONB";
+	public String consumerServiceTemplatePath() default "persistence/history/template/EntityHistoryConsumerService.java";
 
 	/**
-	 * Consumer concurrency.
+	 * Consumer classes target path. Default is "src/main/java".
 	 */
-	public String consumerConcurrency() default "1-7";
+	public String consumerTargetPath() default "src/main/java";
+
+	/**
+	 * Consumer container factory.
+	 */
+	public String consumerJmsContainerFactory() default "historicalJmsContainerFactory";
 
 }
