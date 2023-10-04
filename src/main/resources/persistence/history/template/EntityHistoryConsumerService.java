@@ -38,9 +38,9 @@ public class ${historicalEntity.getConsumerServiceTypeName()} {
 	private static final Logger LOGGER = LoggerFactory.getLogger(${historicalEntity.getConsumerServiceTypeName()}.class);
 	
 	/**
-	 * Historical entity queue.
+	 * Entity queue.
 	 */
-	private static final String HISTORICAL_ENTITY_QUEUE = "${historicalEntity.getQueueName()}";
+	public static final String QUEUE = "${historicalEntity.getQueueName()}";
 	
 	/**
 	 * Object mapper.
@@ -62,7 +62,7 @@ public class ${historicalEntity.getConsumerServiceTypeName()} {
 	@Transactional
 	@JmsListener(
 			containerFactory = "${${historicalEntity.getEntityQualifiedTypeName().toLowerCase()}.history-consumer-jms-container-factory:entityHistoryJmsContainerFactory}",
-			destination = ${historicalEntity.getProducerServiceTypeName()}.QUEUE,
+			destination = ${historicalEntity.getConsumerServiceTypeName()}.QUEUE,
 			concurrency = "${${historicalEntity.getEntityQualifiedTypeName().toLowerCase()}.history-concurrency:1-7}"
 	)
 	public void handleUpdate(final Message message) {
