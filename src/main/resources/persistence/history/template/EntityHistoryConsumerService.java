@@ -61,7 +61,7 @@ public class ${historicalEntity.getConsumerServiceTypeName()} {
 	 */
 	@Transactional
 	@JmsListener(
-			containerFactory = "${${historicalEntity.getEntityQualifiedTypeName().toLowerCase()}.history-consumer-jms-container-factory:entityHistoryJmsContainerFactory}",
+			containerFactory = "entityHistoryJmsContainerFactory",
 			destination = ${historicalEntity.getConsumerServiceTypeName()}.QUEUE,
 			concurrency = "${${historicalEntity.getEntityQualifiedTypeName().toLowerCase()}.history-concurrency:1-7}"
 	)

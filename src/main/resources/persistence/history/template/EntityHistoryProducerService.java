@@ -54,7 +54,7 @@ public class ${historicalEntity.getProducerServiceTypeName()} implements EntityH
 	 * JMS template for processing original entity updates.
 	 */
 	@Autowired
-	@Qualifier(value = "${${historicalEntity.getEntityQualifiedTypeName().toLowerCase()}.history-producer-jms-template-qualifier:entityHistoryJmsTemplate}")
+	@Qualifier(value = "entityHistoryJmsTemplate")
 	private JmsTemplate jmsTemplate;
 
 	/**
