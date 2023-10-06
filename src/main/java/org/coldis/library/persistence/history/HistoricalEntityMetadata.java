@@ -384,9 +384,9 @@ public class HistoricalEntityMetadata {
 	 * @return The queue name.
 	 */
 	public String getQueueName() {
-		return this.getEntityTypeName() + "/history";
+		return this.getOriginalEntityTypeName().replaceAll("([A-Z])", "-$1").toLowerCase() + "/history";
 	}
-
+	
 	/**
 	 * Sets the repositoryBeanName.
 	 *
