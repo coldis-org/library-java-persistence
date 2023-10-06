@@ -38,9 +38,9 @@ public class TestHistoricalEntityHistoryConsumerService {
 	private static final Logger LOGGER = LoggerFactory.getLogger(TestHistoricalEntityHistoryConsumerService.class);
 	
 	/**
-	 * Historical entity queue.
+	 * Entity queue.
 	 */
-	private static final String HISTORICAL_ENTITY_QUEUE = "TestHistoricalEntityHistory/history";
+	public static final String QUEUE = "TestHistoricalEntityHistory/history";
 	
 	/**
 	 * Object mapper.
@@ -61,8 +61,8 @@ public class TestHistoricalEntityHistoryConsumerService {
 	 */
 	@Transactional
 	@JmsListener(
-			containerFactory = "${org.coldis.library.test.persistence.history.historical.model.testhistoricalentityhistory.history-consumer-jms-container-factory:historicalJmsContainerFactory}",
-			destination = TestHistoricalEntityHistoryProducerService.QUEUE,
+			containerFactory = "entityHistoryJmsContainerFactory",
+			destination = TestHistoricalEntityHistoryConsumerService.QUEUE,
 			concurrency = "${org.coldis.library.test.persistence.history.historical.model.testhistoricalentityhistory.history-concurrency:1-7}"
 	)
 	public void handleUpdate(final Message message) {
@@ -76,6 +76,7 @@ public class TestHistoricalEntityHistoryConsumerService {
 			// Tries retrieve the update date from the entity.
 			try {
 				LocalDateTime updatedAt = LocalDateTime.parse(entity.getState().get("updatedAt").toString(), DateTimeHelper.DATE_TIME_FORMATTER);
+				entity.setUser(message.getStringProperty("user"));
 				entity.setCreatedAt(updatedAt);
 				entity.setUpdatedAt(updatedAt);
 			}

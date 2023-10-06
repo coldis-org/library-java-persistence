@@ -76,6 +76,7 @@ public class ${historicalEntity.getConsumerServiceTypeName()} {
 			// Tries retrieve the update date from the entity.
 			try {
 				LocalDateTime updatedAt = LocalDateTime.parse(entity.getState().get("updatedAt").toString(), DateTimeHelper.DATE_TIME_FORMATTER);
+				entity.setUser(message.getStringProperty("user"));
 				entity.setCreatedAt(updatedAt);
 				entity.setUpdatedAt(updatedAt);
 			}

@@ -88,8 +88,8 @@ public class JmsConfiguration {
 	/**
 	 * Creates the JMS container factory.
 	 */
-	@Bean(name = "historicalJmsContainerFactory")
-	@Qualifier(value = "historicalJmsContainerFactory")
+	@Bean(name = "entityHistoryJmsContainerFactory")
+	@Qualifier(value = "entityHistoryJmsContainerFactory")
 	public DefaultJmsListenerContainerFactory createJmsContainerFactory(
 			@Autowired
 			final DefaultJmsListenerContainerFactory containerFactory) {
@@ -99,8 +99,8 @@ public class JmsConfiguration {
 	/**
 	 * Creates the JMS template.
 	 */
-	@Bean(name = "historicalJmsTemplate")
-	@Qualifier(value = "historicalJmsTemplate")
+	@Bean(name = "entityHistoryJmsTemplate")
+	@Qualifier(value = "entityHistoryJmsTemplate")
 	public JmsTemplate createJmsTemplate(
 			@Autowired
 			final JmsTemplate jmsTemplate) {

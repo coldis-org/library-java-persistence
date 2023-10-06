@@ -1,5 +1,6 @@
 package  org.coldis.library.test.persistence.history.historical.service;
 
+import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
@@ -9,12 +10,16 @@ import java.util.concurrent.TimeUnit;
 import org.coldis.library.model.view.ModelView;
 import org.coldis.library.persistence.history.EntityHistoryProducerService;
 import org.coldis.library.serialization.ObjectMapperHelper;
+import org.coldis.library.service.jms.JmsMessage;
+import org.coldis.library.service.jms.JmsTemplateHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jms.core.JmsTemplate;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -54,8 +59,14 @@ public class TestHistoricalEntityHistoryProducerService implements EntityHistory
 	 * JMS template for processing original entity updates.
 	 */
 	@Autowired
-	@Qualifier(value = "historicalJmsTemplate")
+	@Qualifier(value = "entityHistoryJmsTemplate")
 	private JmsTemplate jmsTemplate;
+
+	/**
+	 * JMS template helper.
+	 */
+	@Autowired
+	private JmsTemplateHelper jmsTemplateHelper;
 
 	/**
 	 * Sets the thread pool size.
@@ -89,19 +100,31 @@ public class TestHistoricalEntityHistoryProducerService implements EntityHistory
 			TestHistoricalEntityHistoryProducerService.THREAD_POOL = threadPoolExecutor;
 		}
 	}
+	
+	/**
+	 * Queues history.
+	 * @param jmsMessage JMS message.
+	 */
+	private void queueHistory(final JmsMessage<Object> jmsMessage) {
+		this.jmsTemplateHelper.send(jmsTemplate, jmsMessage);
+	}
 
 	/**
 	 * Adds the entity history.
 	 */
 	private void addHistory(final TestHistoricalEntity state) {
+		final SecurityContext securityContext = SecurityContextHolder.getContext();
+		final String user = (securityContext != null && securityContext.getAuthentication() != null ? securityContext.getAuthentication().getName() : null);
+		final JmsMessage<Object> jmsMessage = new JmsMessage<>()
+				.withDestination(TestHistoricalEntityHistoryProducerService.QUEUE)
+				.withMessage(ObjectMapperHelper.serialize(objectMapper, state, ModelView.Persistent.class, false))
+				.withProperties(Map.of("user", (user == null ? "" : user)));
 		if (TestHistoricalEntityHistoryProducerService.THREAD_POOL == null) {
-			this.jmsTemplate.convertAndSend(TestHistoricalEntityHistoryProducerService.QUEUE, 
-					ObjectMapperHelper.serialize(objectMapper, state, ModelView.Persistent.class, false));
+			this.queueHistory(jmsMessage);
 		}
 		else {
 			TestHistoricalEntityHistoryProducerService.THREAD_POOL.execute(() -> {
-				this.jmsTemplate.convertAndSend(TestHistoricalEntityHistoryProducerService.QUEUE, 
-						ObjectMapperHelper.serialize(objectMapper, state, ModelView.Persistent.class, false));
+				this.queueHistory(jmsMessage);
 			});
 		}
 	}

@@ -15,4 +15,5 @@ public interface EntityHistory<EntityType> extends Identifiable {
 	 * @return The state of the original entity..
 	 */
 	EntityType getState();
+
 }

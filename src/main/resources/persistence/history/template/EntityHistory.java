@@ -36,6 +36,34 @@ public class ${historicalEntity.getEntityTypeName()} extends AbstractTimestampab
 	 * Object identifier.
 	 */
 	private Long id;
+	
+	/**
+	 * Entity state.
+	 */
+	private Map<String, Object> state;
+	
+	/**
+	 * User.
+	 */
+	private String user;
+	
+	/**
+	 * No arguments constructor.
+	 */
+	public ${historicalEntity.getEntityTypeName()}() {
+	}
+
+	/**
+	 * Entity state constructor.
+	 *
+	 * @param state New entity state.
+	 * @param createdAt When entity was created.
+	 */
+	public ${historicalEntity.getEntityTypeName()}(final Map<String, Object> state, final LocalDateTime createdAt) {
+		super();
+		this.state = state;
+		setCreatedAt(createdAt);
+	}
 
 	/**
 	 * @see org.coldis.library.model.Identifiable${h}getId()
@@ -57,29 +85,6 @@ public class ${historicalEntity.getEntityTypeName()} extends AbstractTimestampab
 	}
 
 	/**
-	 * Entity state.
-	 */
-	private Map<String, Object> state;
-	
-	/**
-	 * No arguments constructor.
-	 */
-	public ${historicalEntity.getEntityTypeName()}() {
-	}
-
-	/**
-	 * Entity state constructor.
-	 *
-	 * @param state New entity state.
-	 * @param createdAt When entity was created.
-	 */
-	public ${historicalEntity.getEntityTypeName()}(final Map<String, Object> state, final LocalDateTime createdAt) {
-		super();
-		this.state = state;
-		setCreatedAt(createdAt);
-	}
-
-	/**
 	 * @see org.coldis.library.persistence.history.EntityHistory${h}getState()
 	 */
 	@Convert(converter = MapJsonConverter.class)
@@ -97,13 +102,31 @@ public class ${historicalEntity.getEntityTypeName()} extends AbstractTimestampab
 	protected void setState(final Map<String, Object> state) {
 		this.state = state;
 	}
+	
+	/**
+	 * @see org.coldis.library.persistence.history.EntityHistory${h}getState()
+	 */
+	@Column(name = "u5er")
+	public String getUser() {
+		return user;
+	}
 
+	/**
+	 * Sets the user.
+	 *
+	 * @param state
+	 *            New user.
+	 */
+	public void setUser(String user) {
+		this.user = user;
+	}
+	
 	/**
 	 * @see java.lang.Object${h}hashCode()
 	 */
 	@Override
 	public int hashCode() {
-		return Objects.hash(this.id, this.state);
+		return Objects.hash(this.id, this.state, this.user);
 	}
 
 	/**
@@ -121,7 +144,7 @@ public class ${historicalEntity.getEntityTypeName()} extends AbstractTimestampab
 			return false;
 		}
 		final ${historicalEntity.getEntityTypeName()} other = (${historicalEntity.getEntityTypeName()}) obj;
-		return Objects.equals(this.id, other.id) && Objects.equals(this.state, other.state);
+		return Objects.equals(this.id, other.id) && Objects.equals(this.state, other.state) && Objects.equals(this.user, other.user);
 	}
 
 }
