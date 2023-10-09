@@ -384,7 +384,7 @@ public class HistoricalEntityMetadata {
 	 * @return The queue name.
 	 */
 	public String getQueueName() {
-		return this.getOriginalEntityTypeName().replaceAll("([A-Z])", "-$1").toLowerCase() + "/history";
+		return this.getOriginalEntityTypeName().replaceAll("([A-Z])", "-$1").toLowerCase().substring(1) + "/history";
 	}
 	
 	/**
