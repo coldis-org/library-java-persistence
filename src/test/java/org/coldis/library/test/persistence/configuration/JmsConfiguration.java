@@ -1,10 +1,8 @@
 package org.coldis.library.test.persistence.configuration;
 
-import javax.jms.ConnectionFactory;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.jms.JmsProperties.AcknowledgeMode;
+import org.springframework.boot.autoconfigure.jms.AcknowledgeMode;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -12,6 +10,8 @@ import org.springframework.jms.config.DefaultJmsListenerContainerFactory;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.jms.support.converter.MessageConverter;
 import org.springframework.jms.support.destination.DestinationResolver;
+
+import jakarta.jms.ConnectionFactory;
 
 /**
  * JMS configuration.
@@ -90,7 +90,7 @@ public class JmsConfiguration {
 	 */
 	@Bean(name = "entityHistoryJmsContainerFactory")
 	@Qualifier(value = "entityHistoryJmsContainerFactory")
-	public DefaultJmsListenerContainerFactory createJmsContainerFactory(
+	public DefaultJmsListenerContainerFactory createEntityHistoryJmsContainerFactory(
 			@Autowired
 			final DefaultJmsListenerContainerFactory containerFactory) {
 		return containerFactory;
@@ -101,7 +101,7 @@ public class JmsConfiguration {
 	 */
 	@Bean(name = "entityHistoryJmsTemplate")
 	@Qualifier(value = "entityHistoryJmsTemplate")
-	public JmsTemplate createJmsTemplate(
+	public JmsTemplate createEntityHistoryJmsTemplate(
 			@Autowired
 			final JmsTemplate jmsTemplate) {
 		return jmsTemplate;

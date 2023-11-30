@@ -3,12 +3,12 @@ package org.coldis.library.persistence.converter;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import javax.persistence.Converter;
-
 import org.coldis.library.serialization.ObjectMapperHelper;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import jakarta.persistence.Converter;
 
 /**
  * Sorted set from/to JSON converter.

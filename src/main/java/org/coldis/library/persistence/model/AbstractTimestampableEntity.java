@@ -2,15 +2,15 @@ package org.coldis.library.persistence.model;
 
 import java.time.LocalDateTime;
 
-import javax.persistence.Column;
-import javax.persistence.EntityListeners;
-import javax.persistence.MappedSuperclass;
-
 import org.coldis.library.dto.DtoAttribute;
 import org.coldis.library.model.AbstractTimestampable;
 import org.coldis.library.model.view.ModelView;
 
 import com.fasterxml.jackson.annotation.JsonView;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.EntityListeners;
+import jakarta.persistence.MappedSuperclass;
 
 /**
  * Abstract time-stamped JPA entity.

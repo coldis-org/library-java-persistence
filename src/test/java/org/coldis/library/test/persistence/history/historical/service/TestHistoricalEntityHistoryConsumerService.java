@@ -6,7 +6,7 @@ import java.util.TimeZone;
 import java.time.Instant;
 import java.time.LocalDateTime;
 
-import javax.jms.Message;
+import jakarta.jms.Message;
 
 import org.coldis.library.exception.IntegrationException;
 import org.coldis.library.helper.DateTimeHelper;
@@ -40,7 +40,7 @@ public class TestHistoricalEntityHistoryConsumerService {
 	/**
 	 * Entity queue.
 	 */
-	public static final String QUEUE = "TestHistoricalEntityHistory/history";
+	public static final String QUEUE = "test-historical-entity/history";
 	
 	/**
 	 * Object mapper.

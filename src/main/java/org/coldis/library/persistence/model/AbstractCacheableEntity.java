@@ -2,12 +2,12 @@ package org.coldis.library.persistence.model;
 
 import java.time.LocalDateTime;
 
-import javax.persistence.MappedSuperclass;
-
 import org.coldis.library.model.Typable;
 import org.coldis.library.model.view.ModelView;
 
 import com.fasterxml.jackson.annotation.JsonView;
+
+import jakarta.persistence.MappedSuperclass;
 
 /**
  * Cached entity.

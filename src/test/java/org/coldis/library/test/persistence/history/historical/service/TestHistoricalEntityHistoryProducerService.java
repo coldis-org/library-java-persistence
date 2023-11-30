@@ -46,7 +46,7 @@ public class TestHistoricalEntityHistoryProducerService implements EntityHistory
 	/**
 	 * Entity queue.
 	 */
-	public static final String QUEUE = "TestHistoricalEntityHistory/history";
+	public static final String QUEUE = "test-historical-entity/history";
 
 	/**
 	 * Object mapper.

@@ -3,12 +3,6 @@ package org.coldis.library.persistence.keyvalue;
 import java.io.Serializable;
 import java.util.Objects;
 
-import javax.persistence.Column;
-import javax.persistence.Convert;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Transient;
-
 import org.coldis.library.dto.DtoAttribute;
 import org.coldis.library.model.Typable;
 import org.coldis.library.model.view.ModelView;
@@ -19,14 +13,23 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Transient;
+
 /**
  * Key value.
  *
  * @param <ValueType> Value type.
  */
 @Entity
-@ConditionalOnProperty(name = "org.coldis.configuration.persistence-keyvalue-enabled", havingValue = "true",
-matchIfMissing = true)
+@ConditionalOnProperty(
+		name = "org.coldis.configuration.persistence-keyvalue-enabled",
+		havingValue = "true",
+		matchIfMissing = true
+)
 public class KeyValue<ValueType extends Typable> extends AbstractTimestampableEntity {
 
 	/**
@@ -78,7 +81,8 @@ public class KeyValue<ValueType extends Typable> extends AbstractTimestampableEn
 	 *
 	 * @param key New key.
 	 */
-	public void setKey(final String key) {
+	public void setKey(
+			final String key) {
 		this.key = key;
 	}
 
@@ -101,7 +105,8 @@ public class KeyValue<ValueType extends Typable> extends AbstractTimestampableEn
 	 *
 	 * @param value New value.
 	 */
-	protected void setInternalValue(final ValueType value) {
+	protected void setInternalValue(
+			final ValueType value) {
 		this.internalValue = value;
 	}
 
@@ -121,7 +126,8 @@ public class KeyValue<ValueType extends Typable> extends AbstractTimestampableEn
 	 *
 	 * @param value New value.
 	 */
-	public void setValue(final ValueType value) {
+	public void setValue(
+			final ValueType value) {
 		this.setInternalValue(value);
 	}
 
@@ -137,7 +143,8 @@ public class KeyValue<ValueType extends Typable> extends AbstractTimestampableEn
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
-	public boolean equals(final Object obj) {
+	public boolean equals(
+			final Object obj) {
 		if (this == obj) {
 			return true;
 		}

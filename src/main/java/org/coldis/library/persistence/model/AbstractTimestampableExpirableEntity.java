@@ -2,17 +2,17 @@ package org.coldis.library.persistence.model;
 
 import java.time.LocalDateTime;
 
-import javax.persistence.Column;
-import javax.persistence.EntityListeners;
-import javax.persistence.MappedSuperclass;
-import javax.persistence.Transient;
-
 import org.coldis.library.dto.DtoAttribute;
 import org.coldis.library.model.AbstractTimestampableExpirable;
 import org.coldis.library.model.view.ModelView;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.EntityListeners;
+import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.Transient;
 
 /**
  * Abstract JPA entity that might expire and is time-stamped.
@@ -30,8 +30,14 @@ public abstract class AbstractTimestampableExpirableEntity extends AbstractTimes
 	 * @see org.coldis.library.model.AbstractTimestampable#getCreatedAt()
 	 */
 	@Override
-	@DtoAttribute(readOnly = true, usedInComparison = false)
-	@Column(columnDefinition = "TIMESTAMPTZ", nullable = false)
+	@DtoAttribute(
+			readOnly = true,
+			usedInComparison = false
+	)
+	@Column(
+			columnDefinition = "TIMESTAMPTZ",
+			nullable = false
+	)
 	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public LocalDateTime getCreatedAt() {
 		return super.getCreatedAt();
@@ -41,8 +47,14 @@ public abstract class AbstractTimestampableExpirableEntity extends AbstractTimes
 	 * @see org.coldis.library.model.AbstractTimestampable#getUpdatedAt()
 	 */
 	@Override
-	@DtoAttribute(readOnly = true, usedInComparison = false)
-	@Column(columnDefinition = "TIMESTAMPTZ", nullable = false)
+	@DtoAttribute(
+			readOnly = true,
+			usedInComparison = false
+	)
+	@Column(
+			columnDefinition = "TIMESTAMPTZ",
+			nullable = false
+	)
 	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public LocalDateTime getUpdatedAt() {
 		return super.getUpdatedAt();
@@ -52,7 +64,10 @@ public abstract class AbstractTimestampableExpirableEntity extends AbstractTimes
 	 * @see org.coldis.library.model.AbstractExpirableObject#getExpiredAt()
 	 */
 	@Override
-	@DtoAttribute(readOnly = true, usedInComparison = false)
+	@DtoAttribute(
+			readOnly = true,
+			usedInComparison = false
+	)
 	@Column(columnDefinition = "TIMESTAMPTZ")
 	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public LocalDateTime getExpiredAt() {
@@ -74,7 +89,10 @@ public abstract class AbstractTimestampableExpirableEntity extends AbstractTimes
 	 * @see org.coldis.library.model.AbstractExpirableObject#getExpired()
 	 */
 	@Override
-	@DtoAttribute(readOnly = true, usedInComparison = false)
+	@DtoAttribute(
+			readOnly = true,
+			usedInComparison = false
+	)
 	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
 	public Boolean getExpired() {
 		return super.getExpired();
@@ -85,7 +103,8 @@ public abstract class AbstractTimestampableExpirableEntity extends AbstractTimes
 	 *
 	 * @param expired Expired.
 	 */
-	protected void setExpired(final Boolean expired) {
+	protected void setExpired(
+			final Boolean expired) {
 	}
 
 }

@@ -3,15 +3,15 @@ package org.coldis.library.persistence.model;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
-import javax.persistence.Column;
-import javax.persistence.MappedSuperclass;
-
 import org.coldis.library.dto.DtoAttribute;
 import org.coldis.library.model.science.AbstractDistributionGroup;
 import org.coldis.library.model.science.DistributionGroup;
 import org.coldis.library.model.view.ModelView;
 
 import com.fasterxml.jackson.annotation.JsonView;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.MappedSuperclass;
 
 /**
  * Abstract distribution group JPA entity.

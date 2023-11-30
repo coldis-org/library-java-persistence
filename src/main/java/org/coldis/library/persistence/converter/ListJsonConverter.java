@@ -2,12 +2,12 @@ package org.coldis.library.persistence.converter;
 
 import java.util.List;
 
-import javax.persistence.Converter;
-
 import org.coldis.library.serialization.ObjectMapperHelper;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import jakarta.persistence.Converter;
 
 /**
  * List from/to JSON converter.

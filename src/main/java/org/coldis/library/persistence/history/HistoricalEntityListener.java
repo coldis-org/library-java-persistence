@@ -1,9 +1,5 @@
 package org.coldis.library.persistence.history;
 
-import javax.persistence.PostPersist;
-import javax.persistence.PostUpdate;
-
-import org.apache.commons.lang3.StringUtils;
 import org.coldis.library.exception.IntegrationException;
 import org.coldis.library.model.SimpleMessage;
 import org.slf4j.Logger;
@@ -13,6 +9,9 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Component;
+
+import jakarta.persistence.PostPersist;
+import jakarta.persistence.PostUpdate;
 
 /**
  * JPA entity history listener.

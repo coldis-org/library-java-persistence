@@ -2,11 +2,11 @@ package org.coldis.library.persistence.model;
 
 import java.time.LocalDateTime;
 
-import javax.persistence.PrePersist;
-import javax.persistence.PreUpdate;
-
 import org.coldis.library.helper.DateTimeHelper;
 import org.coldis.library.model.Timestampable;
+
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 
 /**
  * JPA entity time-stamp listener.

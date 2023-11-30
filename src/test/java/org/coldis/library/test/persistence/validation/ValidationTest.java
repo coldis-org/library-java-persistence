@@ -3,8 +3,6 @@ package org.coldis.library.test.persistence.validation;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.validation.Validator;
-
 import org.coldis.library.model.view.ModelView;
 import org.coldis.library.test.persistence.TestApplication;
 import org.junit.jupiter.api.Assertions;
@@ -12,6 +10,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
+
+import jakarta.validation.Validator;
 
 /**
  * Persistence model test.

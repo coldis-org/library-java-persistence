@@ -2,13 +2,6 @@ package org.coldis.library.test.persistence.history;
 
 import java.util.Objects;
 
-import javax.persistence.Entity;
-import javax.persistence.EntityListeners;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Transient;
-
 import org.coldis.library.model.Identifiable;
 import org.coldis.library.model.Typable;
 import org.coldis.library.model.view.ModelView;
@@ -17,6 +10,13 @@ import org.coldis.library.persistence.history.HistoricalEntityListener;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonView;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Transient;
 
 /**
  * Test entity.

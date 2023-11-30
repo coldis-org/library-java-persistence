@@ -2,13 +2,6 @@ package org.coldis.library.test.persistence.model;
 
 import java.util.List;
 
-import javax.persistence.Column;
-import javax.persistence.Convert;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-
 import org.coldis.library.model.Identifiable;
 import org.coldis.library.model.view.ModelView;
 import org.coldis.library.persistence.converter.TypableJsonConverter;
@@ -16,6 +9,13 @@ import org.coldis.library.persistence.converter.TypableListJsonConverter;
 import org.coldis.library.persistence.model.AbstractTimestampableExpirableEntity;
 
 import com.fasterxml.jackson.annotation.JsonView;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 
 /**
  * Test entity.

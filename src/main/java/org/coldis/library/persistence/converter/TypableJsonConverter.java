@@ -1,12 +1,12 @@
 package org.coldis.library.persistence.converter;
 
-import javax.persistence.Converter;
-
 import org.coldis.library.model.Typable;
 import org.coldis.library.serialization.ObjectMapperHelper;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import jakarta.persistence.Converter;
 
 /**
  * Type object from/to JSON converter.

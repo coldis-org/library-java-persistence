@@ -1,12 +1,12 @@
 package org.coldis.library.persistence.converter;
 
-import javax.persistence.AttributeConverter;
-
 import org.coldis.library.model.view.ModelView;
 import org.coldis.library.persistence.configuration.JpaAutoConfiguration;
 import org.coldis.library.serialization.ObjectMapperHelper;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import jakarta.persistence.AttributeConverter;
 
 /**
  * Abstract JPA converter to JSON object (String).
