@@ -27,7 +27,7 @@ public class RequiredAttributesValidator implements ConstraintValidator<Required
 	private RequiredAttributes requiredAttributes;
 
 	/**
-	 * @see javax.validation.ConstraintValidator#initialize(java.lang.annotation.Annotation)
+	 * @see jakarta.validation.ConstraintValidator#initialize(java.lang.annotation.Annotation)
 	 */
 	@Override
 	public void initialize(
@@ -36,8 +36,8 @@ public class RequiredAttributesValidator implements ConstraintValidator<Required
 	}
 
 	/**
-	 * @see javax.validation.ConstraintValidator#isValid(java.lang.Object,
-	 *      javax.validation.ConstraintValidatorContext)
+	 * @see jakarta.validation.ConstraintValidator#isValid(java.lang.Object,
+	 *      jakarta.validation.ConstraintValidatorContext)
 	 */
 	@Override
 	@SuppressWarnings("unchecked")

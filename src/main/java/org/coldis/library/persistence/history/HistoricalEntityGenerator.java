@@ -123,8 +123,8 @@ public class HistoricalEntityGenerator extends AbstractProcessor {
 	}
 
 	/**
-	 * @see javax.annotation.processing.AbstractProcessor#process(java.util.Set,
-	 *      javax.annotation.processing.RoundEnvironment)
+	 * @see jakarta.annotation.processing.AbstractProcessor#process(java.util.Set,
+	 *      jakarta.annotation.processing.RoundEnvironment)
 	 */
 	@Override
 	@SuppressWarnings("unchecked")

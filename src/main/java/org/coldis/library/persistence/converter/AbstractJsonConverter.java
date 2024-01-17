@@ -30,7 +30,7 @@ public abstract class AbstractJsonConverter<ObjectType> implements AttributeConv
 	}
 
 	/**
-	 * @see javax.persistence.AttributeConverter#convertToDatabaseColumn(java.lang.Object)
+	 * @see jakarta.persistence.AttributeConverter#convertToDatabaseColumn(java.lang.Object)
 	 */
 	@Override
 	public String convertToDatabaseColumn(
@@ -51,7 +51,7 @@ public abstract class AbstractJsonConverter<ObjectType> implements AttributeConv
 			final String jsonObject);
 
 	/**
-	 * @see javax.persistence.AttributeConverter#convertToEntityAttribute(java.lang.Object)
+	 * @see jakarta.persistence.AttributeConverter#convertToEntityAttribute(java.lang.Object)
 	 */
 	@Override
 	public ObjectType convertToEntityAttribute(

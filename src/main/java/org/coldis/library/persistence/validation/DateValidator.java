@@ -28,7 +28,7 @@ public class DateValidator implements ConstraintValidator<ValidDate, Object> {
 	private ValidDate validDate;
 
 	/**
-	 * @see javax.validation.ConstraintValidator#initialize(java.lang.annotation.Annotation)
+	 * @see jakarta.validation.ConstraintValidator#initialize(java.lang.annotation.Annotation)
 	 */
 	@Override
 	public void initialize(final ValidDate validDate) {
@@ -60,8 +60,8 @@ public class DateValidator implements ConstraintValidator<ValidDate, Object> {
 	}
 
 	/**
-	 * @see javax.validation.ConstraintValidator#isValid(java.lang.Object,
-	 *      javax.validation.ConstraintValidatorContext)
+	 * @see jakarta.validation.ConstraintValidator#isValid(java.lang.Object,
+	 *      jakarta.validation.ConstraintValidatorContext)
 	 */
 	@Override
 	public boolean isValid(final Object value, final ConstraintValidatorContext context) {
