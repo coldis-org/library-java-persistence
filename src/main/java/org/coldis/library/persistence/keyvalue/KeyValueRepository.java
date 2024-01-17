@@ -59,7 +59,7 @@ public interface KeyValueRepository<ValueType extends Typable> extends JpaReposi
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	@QueryHints(
 			value = { @QueryHint(
-					name = "javax.persistence.lock.timeout",
+					name = "jakarta.persistence.lock.timeout",
 					value = "-2"
 			) }
 	)
@@ -77,7 +77,7 @@ public interface KeyValueRepository<ValueType extends Typable> extends JpaReposi
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	@QueryHints(
 			value = { @QueryHint(
-					name = "javax.persistence.lock.timeout",
+					name = "jakarta.persistence.lock.timeout",
 					value = "0"
 			) }
 	)
