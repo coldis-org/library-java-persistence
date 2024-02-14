@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.coldis</groupId>
 		<artifactId>configuration</artifactId>
-		<version>2.0.51</version>
+		<version>2.0.54</version>
 	</parent>
 
 	<groupId>org.coldis.library</groupId>
@@ -47,17 +47,17 @@
 		<dependency>
 			<groupId>org.coldis.library</groupId>
 			<artifactId>core</artifactId>
-			<version>2.0.9</version>
+			<version>2.0.10</version>
 		</dependency>
 		<dependency>
 			<groupId>org.coldis.library</groupId>
 			<artifactId>dto</artifactId>
-			<version>2.0.8</version>
+			<version>2.0.11</version>
 		</dependency>
 		<dependency>
 			<groupId>org.coldis.library</groupId>
 			<artifactId>serialization</artifactId>
-			<version>2.0.5</version>
+			<version>2.0.7</version>
 		</dependency>
 		<dependency>
 			<groupId>org.coldis.library</groupId>
@@ -67,7 +67,7 @@
 		<dependency>
 			<groupId>org.coldis.library</groupId>
 			<artifactId>test</artifactId>
-			<version>2.0.5</version>
+			<version>2.0.6</version>
 			<scope>test</scope>
 		</dependency>
 
