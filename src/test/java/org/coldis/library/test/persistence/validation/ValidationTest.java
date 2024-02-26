@@ -4,24 +4,39 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.coldis.library.model.view.ModelView;
+import org.coldis.library.test.ContainerExtension;
+import org.coldis.library.test.TestHelper;
 import org.coldis.library.test.persistence.TestApplication;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
+import org.testcontainers.containers.GenericContainer;
 
 import jakarta.validation.Validator;
 
 /**
  * Persistence model test.
  */
+@ExtendWith(ContainerExtension.class)
 @SpringBootTest(
 		webEnvironment = WebEnvironment.RANDOM_PORT,
 		properties = "test.properties",
 		classes = TestApplication.class
 )
 public class ValidationTest {
+
+	/**
+	 * Postgres container.
+	 */
+	public static GenericContainer<?> POSTGRES_CONTAINER = TestHelper.createPostgresContainer();
+
+	/**
+	 * Artemis container.
+	 */
+	public static GenericContainer<?> ARTEMIS_CONTAINER = TestHelper.createArtemisContainer();
 
 	/**
 	 * Validator.

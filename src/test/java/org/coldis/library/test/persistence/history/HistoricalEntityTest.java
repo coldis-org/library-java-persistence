@@ -2,25 +2,38 @@ package org.coldis.library.test.persistence.history;
 
 import org.apache.commons.collections4.IterableUtils;
 import org.coldis.library.serialization.ObjectMapperHelper;
+import org.coldis.library.test.ContainerExtension;
 import org.coldis.library.test.TestHelper;
 import org.coldis.library.test.persistence.TestApplication;
 import org.coldis.library.test.persistence.history.historical.repository.TestHistoricalEntityHistoryRepository;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
+import org.testcontainers.containers.GenericContainer;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /*** Entity history test. */
-
+@ExtendWith(ContainerExtension.class)
 @SpringBootTest(
 		webEnvironment = WebEnvironment.RANDOM_PORT,
 		classes = TestApplication.class
 )
 public class HistoricalEntityTest {
+
+	/**
+	 * Postgres container.
+	 */
+	public static GenericContainer<?> POSTGRES_CONTAINER = TestHelper.createPostgresContainer();
+
+	/**
+	 * Artemis container.
+	 */
+	public static GenericContainer<?> ARTEMIS_CONTAINER = TestHelper.createArtemisContainer();
 
 	/**
 	 * Object mapper.
