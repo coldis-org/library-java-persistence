@@ -83,7 +83,7 @@ public class TestHistoricalEntityHistoryProducerService implements EntityHistory
 			final Integer parallelism,
 			@Value("${org.coldis.library.test.persistence.history.historical.model.testhistoricalentityhistory.history-producer-pool-core-size:5}")
 			final Integer corePoolSize,
-			@Value("${org.coldis.library.test.persistence.history.historical.model.testhistoricalentityhistory.history-producer-pool-max-size:31}")
+			@Value("${org.coldis.library.test.persistence.history.historical.model.testhistoricalentityhistory.history-producer-pool-max-size:17}")
 			final Integer maxPoolSize,
 			@Value("${org.coldis.library.test.persistence.history.historical.model.testhistoricalentityhistory.history-producer-pool-queue-size:3000}")
 			final Integer queueSize,
