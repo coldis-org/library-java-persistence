@@ -83,7 +83,7 @@ public class ${historicalEntity.getProducerServiceTypeName()} implements EntityH
 			final Integer parallelism,
 			@Value("${${historicalEntity.getEntityQualifiedTypeName().toLowerCase()}.history-producer-pool-core-size:5}")
 			final Integer corePoolSize,
-			@Value("${${historicalEntity.getEntityQualifiedTypeName().toLowerCase()}.history-producer-pool-max-size:31}")
+			@Value("${${historicalEntity.getEntityQualifiedTypeName().toLowerCase()}.history-producer-pool-max-size:17}")
 			final Integer maxPoolSize,
 			@Value("${${historicalEntity.getEntityQualifiedTypeName().toLowerCase()}.history-producer-pool-queue-size:3000}")
 			final Integer queueSize,
