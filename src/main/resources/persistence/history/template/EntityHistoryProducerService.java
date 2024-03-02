@@ -83,11 +83,11 @@ public class ${historicalEntity.getProducerServiceTypeName()} implements EntityH
 			final Integer parallelism,
 			@Value("${${historicalEntity.getEntityQualifiedTypeName().toLowerCase()}.history-producer-pool-core-size:5}")
 			final Integer corePoolSize,
-			@Value("${${historicalEntity.getEntityQualifiedTypeName().toLowerCase()}.history-producer-pool-max-size:13}")
+			@Value("${${historicalEntity.getEntityQualifiedTypeName().toLowerCase()}.history-producer-pool-max-size:23}")
 			final Integer maxPoolSize,
-			@Value("${${historicalEntity.getEntityQualifiedTypeName().toLowerCase()}.history-producer-pool-queue-size:300}")
+			@Value("${${historicalEntity.getEntityQualifiedTypeName().toLowerCase()}.history-producer-pool-queue-size:3000}")
 			final Integer queueSize,
-			@Value("${${historicalEntity.getEntityQualifiedTypeName().toLowerCase()}.history-producer-pool-keep-alive:37}")
+			@Value("${${historicalEntity.getEntityQualifiedTypeName().toLowerCase()}.history-producer-pool-keep-alive:61}")
 			final Integer keepAlive) {
 		if (parallelism != null) {
 			${historicalEntity.getProducerServiceTypeName()}.THREAD_POOL = new ForkJoinPool(parallelism, ForkJoinPool.defaultForkJoinWorkerThreadFactory, null, true, corePoolSize, maxPoolSize,
@@ -119,13 +119,19 @@ public class ${historicalEntity.getProducerServiceTypeName()} implements EntityH
 				.withDestination(${historicalEntity.getProducerServiceTypeName()}.QUEUE)
 				.withMessage(ObjectMapperHelper.serialize(objectMapper, state, ModelView.Persistent.class, false))
 				.withProperties(Map.of("user", (user == null ? "" : user)));
-		if (${historicalEntity.getProducerServiceTypeName()}.THREAD_POOL == null) {
-			this.queueHistory(jmsMessage);
-		}
-		else {
-			${historicalEntity.getProducerServiceTypeName()}.THREAD_POOL.execute(() -> {
+		try {
+			if (${historicalEntity.getProducerServiceTypeName()}.THREAD_POOL == null) {
 				this.queueHistory(jmsMessage);
-			});
+			}
+			else {
+				${historicalEntity.getProducerServiceTypeName()}.THREAD_POOL.execute(() -> {
+					this.queueHistory(jmsMessage);
+				});
+			}
+		}
+		catch(Exception exception) {
+			LOGGER.error("Could not queue history for entity: " + exception.getLocalizedMessage());
+			LOGGER.debug("Could not queue history for entity.", exception);
 		}
 	}
 

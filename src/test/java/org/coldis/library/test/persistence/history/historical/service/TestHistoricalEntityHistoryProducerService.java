@@ -83,11 +83,11 @@ public class TestHistoricalEntityHistoryProducerService implements EntityHistory
 			final Integer parallelism,
 			@Value("${org.coldis.library.test.persistence.history.historical.model.testhistoricalentityhistory.history-producer-pool-core-size:5}")
 			final Integer corePoolSize,
-			@Value("${org.coldis.library.test.persistence.history.historical.model.testhistoricalentityhistory.history-producer-pool-max-size:13}")
+			@Value("${org.coldis.library.test.persistence.history.historical.model.testhistoricalentityhistory.history-producer-pool-max-size:23}")
 			final Integer maxPoolSize,
-			@Value("${org.coldis.library.test.persistence.history.historical.model.testhistoricalentityhistory.history-producer-pool-queue-size:300}")
+			@Value("${org.coldis.library.test.persistence.history.historical.model.testhistoricalentityhistory.history-producer-pool-queue-size:3000}")
 			final Integer queueSize,
-			@Value("${org.coldis.library.test.persistence.history.historical.model.testhistoricalentityhistory.history-producer-pool-keep-alive:37}")
+			@Value("${org.coldis.library.test.persistence.history.historical.model.testhistoricalentityhistory.history-producer-pool-keep-alive:61}")
 			final Integer keepAlive) {
 		if (parallelism != null) {
 			TestHistoricalEntityHistoryProducerService.THREAD_POOL = new ForkJoinPool(parallelism, ForkJoinPool.defaultForkJoinWorkerThreadFactory, null, true, corePoolSize, maxPoolSize,
@@ -119,13 +119,19 @@ public class TestHistoricalEntityHistoryProducerService implements EntityHistory
 				.withDestination(TestHistoricalEntityHistoryProducerService.QUEUE)
 				.withMessage(ObjectMapperHelper.serialize(objectMapper, state, ModelView.Persistent.class, false))
 				.withProperties(Map.of("user", (user == null ? "" : user)));
-		if (TestHistoricalEntityHistoryProducerService.THREAD_POOL == null) {
-			this.queueHistory(jmsMessage);
-		}
-		else {
-			TestHistoricalEntityHistoryProducerService.THREAD_POOL.execute(() -> {
+		try {
+			if (TestHistoricalEntityHistoryProducerService.THREAD_POOL == null) {
 				this.queueHistory(jmsMessage);
-			});
+			}
+			else {
+				TestHistoricalEntityHistoryProducerService.THREAD_POOL.execute(() -> {
+					this.queueHistory(jmsMessage);
+				});
+			}
+		}
+		catch(Exception exception) {
+			LOGGER.error("Could not queue history for entity: " + exception.getLocalizedMessage());
+			LOGGER.debug("Could not queue history for entity.", exception);
 		}
 	}
 
