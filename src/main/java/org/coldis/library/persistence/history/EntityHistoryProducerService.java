@@ -12,6 +12,7 @@ public interface EntityHistoryProducerService<EntityType> {
 	 *
 	 * @param entity Entity current state.
 	 */
-	void handleUpdate(EntityType entity);
+	void handleUpdate(
+			EntityType entity);
 
 }

@@ -1,17 +1,11 @@
 package org.coldis.library.test.persistence.history.historical.service;
 
 import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import org.coldis.library.helper.ComputingResourcesHelper;
 import org.coldis.library.model.view.ModelView;
 import org.coldis.library.persistence.history.EntityHistoryProducerService;
+import org.coldis.library.persistence.history.HistoricalEntityListener;
 import org.coldis.library.serialization.ObjectMapperHelper;
 import org.coldis.library.service.jms.JmsMessage;
 import org.coldis.library.service.jms.JmsTemplateHelper;
@@ -43,11 +37,6 @@ public class TestHistoricalEntityHistoryProducerService implements EntityHistory
 	private static final Logger LOGGER = LoggerFactory.getLogger(TestHistoricalEntityHistoryProducerService.class);
 
 	/**
-	 * Thread pool.
-	 */
-	private static ExecutorService THREAD_POOL = Executors.newVirtualThreadPerTaskExecutor();;
-
-	/**
 	 * Entity queue.
 	 */
 	public static final String QUEUE = "test-historical-entity/history";
@@ -73,45 +62,6 @@ public class TestHistoricalEntityHistoryProducerService implements EntityHistory
 	private JmsTemplateHelper jmsTemplateHelper;
 
 	/**
-	 * Sets the thread pool size.
-	 *
-	 * @param parallelism  Parallelism (activates work stealing pool).
-	 * @param corePoolSize Core pool size (activates blocking thread pool).
-	 * @param maxPoolSize  Max pool size.
-	 * @param queueSize    Queue size.
-	 * @param keepAlive    Keep alive.
-	 */
-	@Autowired
-	private void setThreadPoolSize(
-			@Value("${org.coldis.library.test.persistence.history.historical.model.testhistoricalentityhistory.history-producer-pool-core-size:5}")
-			final Integer corePoolSize,
-			@Value("${org.coldis.library.test.persistence.history.historical.model.testhistoricalentityhistory.history-producer-pool-max-size:-1}")
-			final Integer maxPoolSize,
-			@Value("${org.coldis.library.test.persistence.history.historical.model.testhistoricalentityhistory.history-producer-pool-queue-size:5000}")
-			final Integer queueSize,
-			@Value("${org.coldis.library.test.persistence.history.historical.model.testhistoricalentityhistory.history-producer-pool-keep-alive:61}")
-			final Integer keepAlive) {
-	    final Integer actualMaxPoolSize =
-	            ((maxPoolSize == null) || (maxPoolSize < 0)
-	                ? ((Long) (ComputingResourcesHelper.getCpuQuota(true) / 10000L)).intValue()
-	                : maxPoolSize);
-	    LOGGER.info("Log actual max pool size is: " + actualMaxPoolSize);
-        if (corePoolSize != null) {
-          ThreadFactory factory = Thread.ofVirtual().factory();
-          final ThreadPoolExecutor threadPoolExecutor =
-              new ThreadPoolExecutor(
-                  corePoolSize,
-                  actualMaxPoolSize,
-                  keepAlive,
-                  TimeUnit.SECONDS,
-                  new ArrayBlockingQueue<>(queueSize, true),
-                  factory);
-          threadPoolExecutor.allowCoreThreadTimeOut(true);
-          THREAD_POOL = threadPoolExecutor;
-        }
-	}
-	
-	/**
 	 * Queues history.
 	 * @param jmsMessage JMS message.
 	 */
@@ -130,11 +80,11 @@ public class TestHistoricalEntityHistoryProducerService implements EntityHistory
 				.withMessage(ObjectMapperHelper.serialize(objectMapper, state, ModelView.Persistent.class, false))
 				.withProperties(Map.of("user", (user == null ? "" : user)));
 		try {
-			if (TestHistoricalEntityHistoryProducerService.THREAD_POOL == null) {
+			if (HistoricalEntityListener.THREAD_POOL == null) {
 				this.queueHistory(jmsMessage);
 			}
 			else {
-				TestHistoricalEntityHistoryProducerService.THREAD_POOL.execute(() -> {
+				HistoricalEntityListener.THREAD_POOL.execute(() -> {
 					this.queueHistory(jmsMessage);
 				});
 			}

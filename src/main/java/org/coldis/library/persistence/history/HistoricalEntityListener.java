@@ -1,11 +1,20 @@
 package org.coldis.library.persistence.history;
 
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
 import org.coldis.library.exception.IntegrationException;
+import org.coldis.library.helper.ComputingResourcesHelper;
 import org.coldis.library.model.SimpleMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Component;
@@ -30,12 +39,49 @@ public class HistoricalEntityListener implements ApplicationContextAware {
 	private static ApplicationContext appContext;
 
 	/**
+	 * Thread pool.
+	 */
+	public static ExecutorService THREAD_POOL = null;
+
+	/**
 	 * @see org.springframework.context.ApplicationContextAware#setApplicationContext(org.springframework.context.ApplicationContext)
 	 */
 	@Override
 	public void setApplicationContext(
 			final ApplicationContext applicationContext) throws BeansException {
 		HistoricalEntityListener.appContext = applicationContext;
+	}
+
+	/**
+	 * Sets the thread pool size.
+	 *
+	 * @param parallelism  Parallelism (activates work stealing pool).
+	 * @param corePoolSize Core pool size (activates blocking thread pool).
+	 * @param maxPoolSize  Max pool size.
+	 * @param queueSize    Queue size.
+	 * @param keepAlive    Keep alive.
+	 */
+	@Autowired
+	private void setThreadPoolSize(
+			@Value("${org.coldis.library.persistence.history.history-producer-pool-core-size:5}")
+			final Integer corePoolSize,
+			@Value("${org.coldis.library.persistence.history.history-producer-pool-max-size:-1}")
+			final Integer maxPoolSize,
+			@Value("${org.coldis.library.persistence.history.history-producer-pool-queue-size:5000}")
+			final Integer queueSize,
+			@Value("${org.coldis.library.persistence.history.history-producer-pool-keep-alive:61}")
+			final Integer keepAlive) {
+		final Integer actualMaxPoolSize = ((maxPoolSize == null) || (maxPoolSize < 0)
+				? ((Long) (ComputingResourcesHelper.getCpuQuota(true) / 10000L)).intValue()
+				: maxPoolSize);
+		HistoricalEntityListener.LOGGER.info("Log actual max pool size is: " + actualMaxPoolSize);
+		if (corePoolSize != null) {
+			final ThreadFactory factory = Thread.ofVirtual().factory();
+			final ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(corePoolSize, actualMaxPoolSize, keepAlive, TimeUnit.SECONDS,
+					new ArrayBlockingQueue<>(queueSize, true), factory);
+			threadPoolExecutor.allowCoreThreadTimeOut(true);
+			HistoricalEntityListener.THREAD_POOL = threadPoolExecutor;
+		}
 	}
 
 	/**
