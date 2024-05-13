@@ -71,8 +71,7 @@ public class HistoricalEntityListener implements ApplicationContextAware {
 			final Integer queueSize,
 			@Value("${org.coldis.library.persistence.history.history-producer-pool-keep-alive:61}")
 			final Integer keepAlive) {
-		final Integer actualMaxPoolSize = ((maxPoolSize == null) || (maxPoolSize < 0)
-				? ((Long) (ComputingResourcesHelper.getCpuQuota(true) / 10000L)).intValue()
+		final Integer actualMaxPoolSize = ((maxPoolSize < 0) ? ((Long) ((ComputingResourcesHelper.getCpuQuota(true) * (-maxPoolSize)) / 10000L)).intValue()
 				: maxPoolSize);
 		HistoricalEntityListener.LOGGER.info("Log actual max pool size is: " + actualMaxPoolSize);
 		if (corePoolSize != null) {
