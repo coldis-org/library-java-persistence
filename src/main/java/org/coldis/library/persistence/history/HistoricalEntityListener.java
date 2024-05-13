@@ -63,20 +63,22 @@ public class HistoricalEntityListener implements ApplicationContextAware {
 	 */
 	@Autowired
 	private void setThreadPoolSize(
+			@Value("${org.coldis.library.persistence.history.history-producer-use-virtual-threads:true}")
+			final Boolean useVirtualThreads,
 			@Value("${org.coldis.library.persistence.history.history-producer-pool-core-size:1}")
 			final Integer corePoolSize,
 			@Value("${org.coldis.library.persistence.history.history-producer-pool-max-size:-1}")
 			final Integer maxPoolSize,
 			@Value("${org.coldis.library.persistence.history.history-producer-pool-queue-size:5000}")
 			final Integer queueSize,
-			@Value("${org.coldis.library.persistence.history.history-producer-pool-keep-alive:61}")
+			@Value("${org.coldis.library.persistence.history.history-producer-pool-keep-alive:237}")
 			final Integer keepAlive) {
 		if (corePoolSize != null) {
 			final Integer actualMaxPoolSize = ((maxPoolSize < 0)
-					? ((Long) ((ComputingResourcesHelper.getCpuQuota(true) * (-maxPoolSize)) / (ComputingResourcesHelper.CPU_QUOTA_UNIT / 3))).intValue()
+					? ((Long) ((ComputingResourcesHelper.getCpuQuota(true) * (-maxPoolSize)) / (ComputingResourcesHelper.CPU_QUOTA_UNIT / 7))).intValue()
 					: maxPoolSize);
-			HistoricalEntityListener.LOGGER.info("Log actual max pool size is: " + actualMaxPoolSize);
-			final ThreadFactory factory = Thread.ofVirtual().factory();
+			HistoricalEntityListener.LOGGER.info("History max pool size is: " + actualMaxPoolSize);
+			final ThreadFactory factory = (useVirtualThreads ? Thread.ofVirtual().factory() : Thread.ofPlatform().factory());
 			final ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(corePoolSize, actualMaxPoolSize, keepAlive, TimeUnit.SECONDS,
 					new ArrayBlockingQueue<>(queueSize, true), factory);
 			threadPoolExecutor.allowCoreThreadTimeOut(true);
