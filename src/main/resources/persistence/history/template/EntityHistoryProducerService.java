@@ -1,4 +1,4 @@
-package  ${historicalEntity.getServicePackageName()};
+package ${historicalEntity.getServicePackageName()};
 
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -9,11 +9,13 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import org.coldis.library.helper.ComputingResourcesHelper;
 import org.coldis.library.model.view.ModelView;
 import org.coldis.library.persistence.history.EntityHistoryProducerService;
 import org.coldis.library.serialization.ObjectMapperHelper;
 import org.coldis.library.service.jms.JmsMessage;
 import org.coldis.library.service.jms.JmsTemplateHelper;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,8 +28,7 @@ import org.springframework.stereotype.Controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import $
-import br.com.supersim.service.log.interceptor.LogInterceptor;{historicalEntity.getOriginalEntityQualifiedTypeName()};
+import ${historicalEntity.getOriginalEntityQualifiedTypeName()};
 
 /**
  * JPA entity history service for
@@ -92,9 +93,9 @@ public class ${historicalEntity.getProducerServiceTypeName()} implements EntityH
 			final Integer keepAlive) {
 	    final Integer actualMaxPoolSize =
 	            ((maxPoolSize == null) || (maxPoolSize < 0)
-	                ? ((Long) (LogInterceptor.getCpuQuota(true) / 10000L)).intValue()
+	                ? ((Long) (ComputingResourcesHelper.getCpuQuota(true) / 10000L)).intValue()
 	                : maxPoolSize);
-        LogInterceptor.LOGGER.info("Log actual max pool size is: " + actualMaxPoolSize);
+	    LOGGER.info("Log actual max pool size is: " + actualMaxPoolSize);
         if (corePoolSize != null) {
           ThreadFactory factory = Thread.ofVirtual().factory();
           final ThreadPoolExecutor threadPoolExecutor =
@@ -106,7 +107,7 @@ public class ${historicalEntity.getProducerServiceTypeName()} implements EntityH
                   new ArrayBlockingQueue<>(queueSize, true),
                   factory);
           threadPoolExecutor.allowCoreThreadTimeOut(true);
-          LogInterceptor.THREAD_POOL = threadPoolExecutor;
+          THREAD_POOL = threadPoolExecutor;
         }
 	}
 	

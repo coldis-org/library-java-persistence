@@ -1,17 +1,21 @@
-package  org.coldis.library.test.persistence.history.historical.service;
+package org.coldis.library.test.persistence.history.historical.service;
 
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import org.coldis.library.helper.ComputingResourcesHelper;
 import org.coldis.library.model.view.ModelView;
 import org.coldis.library.persistence.history.EntityHistoryProducerService;
 import org.coldis.library.serialization.ObjectMapperHelper;
 import org.coldis.library.service.jms.JmsMessage;
 import org.coldis.library.service.jms.JmsTemplateHelper;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,7 +45,7 @@ public class TestHistoricalEntityHistoryProducerService implements EntityHistory
 	/**
 	 * Thread pool.
 	 */
-	private static ExecutorService THREAD_POOL = null;
+	private static ExecutorService THREAD_POOL = Executors.newVirtualThreadPerTaskExecutor();;
 
 	/**
 	 * Entity queue.
@@ -79,26 +83,32 @@ public class TestHistoricalEntityHistoryProducerService implements EntityHistory
 	 */
 	@Autowired
 	private void setThreadPoolSize(
-			@Value("${org.coldis.library.test.persistence.history.historical.model.testhistoricalentityhistory.history-producer-pool-parallelism:}")
-			final Integer parallelism,
 			@Value("${org.coldis.library.test.persistence.history.historical.model.testhistoricalentityhistory.history-producer-pool-core-size:5}")
 			final Integer corePoolSize,
-			@Value("${org.coldis.library.test.persistence.history.historical.model.testhistoricalentityhistory.history-producer-pool-max-size:17}")
+			@Value("${org.coldis.library.test.persistence.history.historical.model.testhistoricalentityhistory.history-producer-pool-max-size:-1}")
 			final Integer maxPoolSize,
-			@Value("${org.coldis.library.test.persistence.history.historical.model.testhistoricalentityhistory.history-producer-pool-queue-size:3000}")
+			@Value("${org.coldis.library.test.persistence.history.historical.model.testhistoricalentityhistory.history-producer-pool-queue-size:5000}")
 			final Integer queueSize,
 			@Value("${org.coldis.library.test.persistence.history.historical.model.testhistoricalentityhistory.history-producer-pool-keep-alive:61}")
 			final Integer keepAlive) {
-		if (parallelism != null) {
-			TestHistoricalEntityHistoryProducerService.THREAD_POOL = new ForkJoinPool(parallelism, ForkJoinPool.defaultForkJoinWorkerThreadFactory, null, true, corePoolSize, maxPoolSize,
-					1, null, keepAlive, TimeUnit.SECONDS);
-		}
-		else if (corePoolSize != null) {
-			final ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(corePoolSize, maxPoolSize, keepAlive, TimeUnit.SECONDS,
-					new ArrayBlockingQueue<>(queueSize, true));
-			threadPoolExecutor.allowCoreThreadTimeOut(true);
-			TestHistoricalEntityHistoryProducerService.THREAD_POOL = threadPoolExecutor;
-		}
+	    final Integer actualMaxPoolSize =
+	            ((maxPoolSize == null) || (maxPoolSize < 0)
+	                ? ((Long) (ComputingResourcesHelper.getCpuQuota(true) / 10000L)).intValue()
+	                : maxPoolSize);
+	    LOGGER.info("Log actual max pool size is: " + actualMaxPoolSize);
+        if (corePoolSize != null) {
+          ThreadFactory factory = Thread.ofVirtual().factory();
+          final ThreadPoolExecutor threadPoolExecutor =
+              new ThreadPoolExecutor(
+                  corePoolSize,
+                  actualMaxPoolSize,
+                  keepAlive,
+                  TimeUnit.SECONDS,
+                  new ArrayBlockingQueue<>(queueSize, true),
+                  factory);
+          threadPoolExecutor.allowCoreThreadTimeOut(true);
+          THREAD_POOL = threadPoolExecutor;
+        }
 	}
 	
 	/**
