@@ -63,7 +63,7 @@ public class HistoricalEntityListener implements ApplicationContextAware {
 	 */
 	@Autowired
 	private void setThreadPoolSize(
-			@Value("${org.coldis.library.persistence.history.history-producer-pool-core-size:5}")
+			@Value("${org.coldis.library.persistence.history.history-producer-pool-core-size:1}")
 			final Integer corePoolSize,
 			@Value("${org.coldis.library.persistence.history.history-producer-pool-max-size:-1}")
 			final Integer maxPoolSize,
