@@ -90,7 +90,7 @@ public class ${historicalEntity.getProducerServiceTypeName()} implements EntityH
 			}
 		}
 		catch(Exception exception) {
-			LOGGER.error("Could not queue history for entity: " + exception.getLocalizedMessage());
+			LOGGER.error("Could not queue history for entity: " + exception.getClass().getName() + " - " + exception.getLocalizedMessage());
 			LOGGER.debug("Could not queue history for entity.", exception);
 		}
 	}

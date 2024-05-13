@@ -21,10 +21,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @ExtendWith(ContainerExtension.class)
 @SpringBootTest(
 		webEnvironment = WebEnvironment.RANDOM_PORT,
-		classes = TestApplication.class,
-		properties = "org.coldis.library.test.persistence.history.historical.model.testhistoricalentityhistory.history-producer-pool-core-size="
+		classes = TestApplication.class
 )
-public class HistoricalEntityTest2 {
+public class HistoricalEntityThreadPoolTest {
 
 	/**
 	 * Postgres container.

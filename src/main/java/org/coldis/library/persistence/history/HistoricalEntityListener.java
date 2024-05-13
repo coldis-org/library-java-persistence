@@ -7,8 +7,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import org.coldis.library.exception.IntegrationException;
-import org.coldis.library.helper.ComputingResourcesHelper;
 import org.coldis.library.model.SimpleMessage;
+import org.coldis.library.thread.PooledThreadFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -63,24 +63,26 @@ public class HistoricalEntityListener implements ApplicationContextAware {
 	 */
 	@Autowired
 	private void setThreadPoolSize(
-			@Value("${org.coldis.library.persistence.history.history-producer-use-virtual-threads:true}")
+			@Value("${org.coldis.library.persistence.history.history-producer.use-virtual-threads:true}")
 			final Boolean useVirtualThreads,
-			@Value("${org.coldis.library.persistence.history.history-producer-pool-core-size:1}")
+			@Value("${org.coldis.library.persistence.history.history-producer.core-size:}")
 			final Integer corePoolSize,
-			@Value("${org.coldis.library.persistence.history.history-producer-pool-max-size:-1}")
+			@Value("${org.coldis.library.persistence.history.history-producer.max-size:}")
 			final Integer maxPoolSize,
-			@Value("${org.coldis.library.persistence.history.history-producer-pool-queue-size:5000}")
+			@Value("${org.coldis.library.persistence.history.history-producer.max-size-cpu-multiplier:10}")
+			final Double maxPoolSizeCpuMultiplier,
+			@Value("${org.coldis.library.persistence.history.history-producer.queue-size:7000}")
 			final Integer queueSize,
-			@Value("${org.coldis.library.persistence.history.history-producer-pool-keep-alive:237}")
+			@Value("${org.coldis.library.persistence.history.history-producer.keep-alive:237}")
 			final Integer keepAlive) {
-		if (corePoolSize != null) {
-			final Integer actualMaxPoolSize = ((maxPoolSize < 0)
-					? ((Long) ((ComputingResourcesHelper.getCpuQuota(true) * (-maxPoolSize)) / (ComputingResourcesHelper.CPU_QUOTA_UNIT / 7))).intValue()
+		if ((corePoolSize != null) && (corePoolSize > 0)) {
+			final Integer actualMaxPoolSize = ((maxPoolSize == null) || (maxPoolSize < 0)
+					? ((Double) (((Integer) Runtime.getRuntime().availableProcessors()).doubleValue() * maxPoolSizeCpuMultiplier)).intValue()
 					: maxPoolSize);
-			HistoricalEntityListener.LOGGER.info("History max pool size is: " + actualMaxPoolSize);
-			final ThreadFactory factory = (useVirtualThreads ? Thread.ofVirtual().factory() : Thread.ofPlatform().factory());
+			HistoricalEntityListener.LOGGER.info("History max thread pool size is: " + actualMaxPoolSize);
+			final ThreadFactory factory = new PooledThreadFactory("pool-historical-entity-thread", true, Thread.MIN_PRIORITY + 1, useVirtualThreads);
 			final ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(corePoolSize, actualMaxPoolSize, keepAlive, TimeUnit.SECONDS,
-					new ArrayBlockingQueue<>(queueSize, true), factory);
+					new ArrayBlockingQueue<>(queueSize), factory);
 			threadPoolExecutor.allowCoreThreadTimeOut(true);
 			HistoricalEntityListener.THREAD_POOL = threadPoolExecutor;
 		}

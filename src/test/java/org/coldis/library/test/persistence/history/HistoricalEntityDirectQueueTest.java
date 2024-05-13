@@ -21,9 +21,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @ExtendWith(ContainerExtension.class)
 @SpringBootTest(
 		webEnvironment = WebEnvironment.RANDOM_PORT,
-		classes = TestApplication.class
+		classes = TestApplication.class,
+		properties = "org.coldis.library.persistence.history.history-producer.core-size="
 )
-public class HistoricalEntityTest {
+public class HistoricalEntityDirectQueueTest {
 
 	/**
 	 * Postgres container.
@@ -88,9 +89,7 @@ public class HistoricalEntityTest {
 				}), TestHelper.LONG_WAIT, TestHelper.SHORT_WAIT));
 		Assertions.assertTrue(TestHelper.waitUntilValid(() -> this.testHistoricalEntityHistoryRepository.findAll(), (
 				entityHistoryList) -> IterableUtils.toList(entityHistoryList).stream().anyMatch((
-						entity) ->
-
-		{
+						entity) -> {
 					// Converts the state into an entity.
 					final TestHistoricalEntity testHistoricalEntity = ObjectMapperHelper.convert(this.objectMapper, entity.getState(),
 							new TypeReference<TestHistoricalEntity>() {}, false);
