@@ -1,14 +1,10 @@
 package org.coldis.library.persistence.history;
 
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 import org.coldis.library.exception.IntegrationException;
 import org.coldis.library.model.SimpleMessage;
-import org.coldis.library.thread.PooledThreadFactory;
+import org.coldis.library.thread.PooledThreadExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -76,15 +72,8 @@ public class HistoricalEntityListener implements ApplicationContextAware {
 			@Value("${org.coldis.library.persistence.history.history-producer.keep-alive:237}")
 			final Integer keepAlive) {
 		if ((corePoolSize != null) && (corePoolSize > 0)) {
-			final Integer actualMaxPoolSize = ((maxPoolSize == null) || (maxPoolSize < 0)
-					? ((Double) (((Integer) Runtime.getRuntime().availableProcessors()).doubleValue() * maxPoolSizeCpuMultiplier)).intValue()
-					: maxPoolSize);
-			HistoricalEntityListener.LOGGER.info("History max thread pool size is: " + actualMaxPoolSize);
-			final ThreadFactory factory = new PooledThreadFactory("pool-historical-entity-thread", true, Thread.MIN_PRIORITY + 1, useVirtualThreads);
-			final ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(corePoolSize, actualMaxPoolSize, keepAlive, TimeUnit.SECONDS,
-					new ArrayBlockingQueue<>(queueSize), factory);
-			threadPoolExecutor.allowCoreThreadTimeOut(true);
-			HistoricalEntityListener.THREAD_POOL = threadPoolExecutor;
+			HistoricalEntityListener.THREAD_POOL = new PooledThreadExecutor("historical-entity-thread", Thread.MIN_PRIORITY + 1, false, useVirtualThreads,
+					corePoolSize, maxPoolSize, maxPoolSizeCpuMultiplier, queueSize, keepAlive);
 		}
 	}
 
