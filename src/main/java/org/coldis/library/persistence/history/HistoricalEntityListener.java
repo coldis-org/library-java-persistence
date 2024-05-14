@@ -75,7 +75,7 @@ public class HistoricalEntityListener implements ApplicationContextAware {
 			final Double maxPoolSizeCpuMultiplier,
 			@Value("${org.coldis.library.persistence.history.history-producer.queue-size:7000}")
 			final Integer queueSize,
-			@Value("${org.coldis.library.persistence.history.history-producer.keep-alive-seconds:23}")
+			@Value("${org.coldis.library.persistence.history.history-producer.keep-alive-seconds:30}")
 			final Integer keepAliveSeconds) {
 		if (((corePoolSize != null) && (corePoolSize > 0)) || ((corePoolSizeCpuMultiplier != null) && (corePoolSizeCpuMultiplier > 0))) {
 			HistoricalEntityListener.THREAD_POOL = new PooledThreadExecutor(name, priotity, false, useVirtualThreads, corePoolSize, corePoolSizeCpuMultiplier,

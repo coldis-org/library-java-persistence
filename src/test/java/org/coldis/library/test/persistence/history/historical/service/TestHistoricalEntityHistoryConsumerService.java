@@ -63,7 +63,7 @@ public class TestHistoricalEntityHistoryConsumerService {
 	@JmsListener(
 			containerFactory = "entityHistoryJmsContainerFactory",
 			destination = TestHistoricalEntityHistoryConsumerService.QUEUE,
-			concurrency = "${org.coldis.library.test.persistence.history.historical.model.testhistoricalentityhistory.history-concurrency:1-7}"
+			concurrency = "${org.coldis.library.test.persistence.history.historical.model.testhistoricalentityhistory.history-concurrency:1-3}"
 	)
 	public void handleUpdate(final Message message) {
 		TestHistoricalEntityHistoryConsumerService.LOGGER.debug("Processing 'org.coldis.library.test.persistence.history.historical.model.TestHistoricalEntityHistory' history update."); 

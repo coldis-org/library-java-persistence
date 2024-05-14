@@ -22,7 +22,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @SpringBootTest(
 		webEnvironment = WebEnvironment.RANDOM_PORT,
 		classes = TestApplication.class,
-		properties = "org.coldis.library.persistence.history.history-producer.core-size="
+		properties = {"org.coldis.library.persistence.history.history-producer.core-size=", "org.coldis.library.persistence.history.history-producer.core-size-cpu-multiplier=" }
 )
 public class HistoricalEntityDirectQueueTest {
 
