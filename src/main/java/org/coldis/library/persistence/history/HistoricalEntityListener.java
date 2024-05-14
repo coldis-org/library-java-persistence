@@ -51,7 +51,6 @@ public class HistoricalEntityListener implements ApplicationContextAware {
 	/**
 	 * Sets the thread pool size.
 	 *
-	 * @param parallelism  Parallelism (activates work stealing pool).
 	 * @param corePoolSize Core pool size (activates blocking thread pool).
 	 * @param maxPoolSize  Max pool size.
 	 * @param queueSize    Queue size.
@@ -61,15 +60,15 @@ public class HistoricalEntityListener implements ApplicationContextAware {
 	private void setThreadPoolSize(
 			@Value("${org.coldis.library.persistence.history.history-producer.use-virtual-threads:true}")
 			final Boolean useVirtualThreads,
-			@Value("${org.coldis.library.persistence.history.history-producer.core-size:}")
+			@Value("${org.coldis.library.persistence.history.history-producer.core-size:1}")
 			final Integer corePoolSize,
 			@Value("${org.coldis.library.persistence.history.history-producer.max-size:}")
 			final Integer maxPoolSize,
-			@Value("${org.coldis.library.persistence.history.history-producer.max-size-cpu-multiplier:10}")
+			@Value("${org.coldis.library.persistence.history.history-producer.max-size-cpu-multiplier:7}")
 			final Double maxPoolSizeCpuMultiplier,
 			@Value("${org.coldis.library.persistence.history.history-producer.queue-size:7000}")
 			final Integer queueSize,
-			@Value("${org.coldis.library.persistence.history.history-producer.keep-alive:237}")
+			@Value("${org.coldis.library.persistence.history.history-producer.keep-alive:23}")
 			final Integer keepAlive) {
 		if ((corePoolSize != null) && (corePoolSize > 0)) {
 			HistoricalEntityListener.THREAD_POOL = new PooledThreadExecutor("historical-entity-thread", Thread.MIN_PRIORITY + 1, false, useVirtualThreads,
