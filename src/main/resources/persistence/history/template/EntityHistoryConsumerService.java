@@ -63,7 +63,7 @@ public class ${historicalEntity.getConsumerServiceTypeName()} {
 	@JmsListener(
 			containerFactory = "entityHistoryJmsContainerFactory",
 			destination = ${historicalEntity.getConsumerServiceTypeName()}.QUEUE,
-			concurrency = "${${historicalEntity.getEntityQualifiedTypeName().toLowerCase()}.history-concurrency:1-7}"
+			concurrency = "${${historicalEntity.getEntityQualifiedTypeName().toLowerCase()}.history-concurrency:1-3}"
 	)
 	public void handleUpdate(final Message message) {
 		${historicalEntity.getConsumerServiceTypeName()}.LOGGER.debug("Processing '${historicalEntity.getEntityQualifiedTypeName()}' history update."); 

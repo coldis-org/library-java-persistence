@@ -1,5 +1,6 @@
 package org.coldis.library.persistence.history;
 
+import java.time.Duration;
 import java.util.concurrent.ExecutorService;
 
 import org.coldis.library.exception.IntegrationException;
@@ -58,21 +59,27 @@ public class HistoricalEntityListener implements ApplicationContextAware {
 	 */
 	@Autowired
 	private void setThreadPoolSize(
+			@Value("${org.coldis.library.persistence.history.history-producer.name:historical-entity-thread}")
+			final String name,
+			@Value("${org.coldis.library.persistence.history.history-producer.priority:2}")
+			final Integer priotity,
 			@Value("${org.coldis.library.persistence.history.history-producer.use-virtual-threads:true}")
 			final Boolean useVirtualThreads,
-			@Value("${org.coldis.library.persistence.history.history-producer.core-size:1}")
+			@Value("${org.coldis.library.persistence.history.history-producer.core-size}")
 			final Integer corePoolSize,
+			@Value("${org.coldis.library.persistence.history.history-producer.core-size-cpu-multiplier:2}")
+			final Double corePoolSizeCpuMultiplier,
 			@Value("${org.coldis.library.persistence.history.history-producer.max-size:}")
 			final Integer maxPoolSize,
 			@Value("${org.coldis.library.persistence.history.history-producer.max-size-cpu-multiplier:7}")
 			final Double maxPoolSizeCpuMultiplier,
 			@Value("${org.coldis.library.persistence.history.history-producer.queue-size:7000}")
 			final Integer queueSize,
-			@Value("${org.coldis.library.persistence.history.history-producer.keep-alive:23}")
-			final Integer keepAlive) {
-		if ((corePoolSize != null) && (corePoolSize > 0)) {
-			HistoricalEntityListener.THREAD_POOL = new PooledThreadExecutor("historical-entity-thread", Thread.MIN_PRIORITY + 1, false, useVirtualThreads,
-					corePoolSize, maxPoolSize, maxPoolSizeCpuMultiplier, queueSize, keepAlive);
+			@Value("${org.coldis.library.persistence.history.history-producer.keep-alive-seconds:23}")
+			final Integer keepAliveSeconds) {
+		if (((corePoolSize != null) && (corePoolSize > 0)) || ((corePoolSizeCpuMultiplier != null) && (corePoolSizeCpuMultiplier > 0))) {
+			HistoricalEntityListener.THREAD_POOL = new PooledThreadExecutor(name, priotity, false, useVirtualThreads, corePoolSize, corePoolSizeCpuMultiplier,
+					maxPoolSize, maxPoolSizeCpuMultiplier, queueSize, Duration.ofSeconds(keepAliveSeconds));
 		}
 	}
 
