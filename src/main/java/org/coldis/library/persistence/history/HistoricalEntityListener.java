@@ -6,7 +6,6 @@ import java.util.concurrent.ExecutorService;
 import org.coldis.library.exception.IntegrationException;
 import org.coldis.library.model.SimpleMessage;
 import org.coldis.library.thread.DynamicPooledThreadExecutor;
-import org.coldis.library.thread.PooledThreadExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
