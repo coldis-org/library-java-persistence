@@ -63,7 +63,7 @@ public class HistoricalEntityListener implements ApplicationContextAware {
 			final String name,
 			@Value("${org.coldis.library.persistence.history.history-producer.priority:2}")
 			final Integer priotity,
-			@Value("${org.coldis.library.persistence.history.history-producer.use-virtual-threads:true}")
+			@Value("${org.coldis.library.persistence.history.history-producer.use-virtual-threads:false}")
 			final Boolean useVirtualThreads,
 			@Value("${org.coldis.library.persistence.history.history-producer.core-size}")
 			final Integer corePoolSize,
