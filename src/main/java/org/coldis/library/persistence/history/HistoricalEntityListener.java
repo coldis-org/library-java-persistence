@@ -5,6 +5,7 @@ import java.util.concurrent.ExecutorService;
 
 import org.coldis.library.exception.IntegrationException;
 import org.coldis.library.model.SimpleMessage;
+import org.coldis.library.thread.DynamicPooledThreadExecutor;
 import org.coldis.library.thread.PooledThreadExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,8 +64,8 @@ public class HistoricalEntityListener implements ApplicationContextAware {
 			final String name,
 			@Value("${org.coldis.library.persistence.history.history-producer.priority:2}")
 			final Integer priotity,
-			@Value("${org.coldis.library.persistence.history.history-producer.use-virtual-threads:false}")
-			final Boolean useVirtualThreads,
+			@Value("${org.coldis.library.persistence.history.history-producer.virtual:false}")
+			final Boolean virtual,
 			@Value("${org.coldis.library.persistence.history.history-producer.core-size}")
 			final Integer corePoolSize,
 			@Value("${org.coldis.library.persistence.history.history-producer.core-size-cpu-multiplier:2}")
@@ -78,7 +79,7 @@ public class HistoricalEntityListener implements ApplicationContextAware {
 			@Value("${org.coldis.library.persistence.history.history-producer.keep-alive-seconds:30}")
 			final Integer keepAliveSeconds) {
 		if (((corePoolSize != null) && (corePoolSize > 0)) || ((corePoolSizeCpuMultiplier != null) && (corePoolSizeCpuMultiplier > 0))) {
-			HistoricalEntityListener.THREAD_POOL = new PooledThreadExecutor(name, priotity, false, useVirtualThreads, corePoolSize, corePoolSizeCpuMultiplier,
+			HistoricalEntityListener.THREAD_POOL = new DynamicPooledThreadExecutor(name, priotity, false, virtual, false, corePoolSize, corePoolSizeCpuMultiplier,
 					maxPoolSize, maxPoolSizeCpuMultiplier, queueSize, Duration.ofSeconds(keepAliveSeconds));
 		}
 	}
