@@ -1,11 +1,11 @@
 package org.coldis.library.persistence.history;
 
 import java.time.Duration;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executor;
 
 import org.coldis.library.exception.IntegrationException;
 import org.coldis.library.model.SimpleMessage;
-import org.coldis.library.thread.DynamicPooledThreadExecutor;
+import org.coldis.library.thread.DynamicThreadPoolFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -38,7 +38,7 @@ public class HistoricalEntityListener implements ApplicationContextAware {
 	/**
 	 * Thread pool.
 	 */
-	public static ExecutorService THREAD_POOL = null;
+	public static Executor THREAD_POOL = null;
 
 	/**
 	 * @see org.springframework.context.ApplicationContextAware#setApplicationContext(org.springframework.context.ApplicationContext)
@@ -54,7 +54,7 @@ public class HistoricalEntityListener implements ApplicationContextAware {
 	 *
 	 * @param corePoolSize Core pool size (activates blocking thread pool).
 	 * @param maxPoolSize  Max pool size.
-	 * @param queueSize    Queue size.
+	 * @param maxQueueSize    Queue size.
 	 * @param keepAlive    Keep alive.
 	 */
 	@Autowired
@@ -62,10 +62,14 @@ public class HistoricalEntityListener implements ApplicationContextAware {
 			@Value("${org.coldis.library.persistence.history.history-producer.name:historical-entity-thread}")
 			final String name,
 			@Value("${org.coldis.library.persistence.history.history-producer.priority:2}")
-			final Integer priotity,
+			final Integer priority,
 			@Value("${org.coldis.library.persistence.history.history-producer.virtual:false}")
 			final Boolean virtual,
-			@Value("${org.coldis.library.persistence.history.history-producer.core-size}")
+			@Value("${org.coldis.library.persistence.history.history-producer.parallelism:}")
+			final Integer parallelism,
+			@Value("${org.coldis.library.persistence.history.history-producer.parallelism-cpu-multiplier:2}")
+			final Double parallelismCpuMultiplier,
+			@Value("${org.coldis.library.persistence.history.history-producer.core-size:}")
 			final Integer corePoolSize,
 			@Value("${org.coldis.library.persistence.history.history-producer.core-size-cpu-multiplier:2}")
 			final Double corePoolSizeCpuMultiplier,
@@ -73,13 +77,16 @@ public class HistoricalEntityListener implements ApplicationContextAware {
 			final Integer maxPoolSize,
 			@Value("${org.coldis.library.persistence.history.history-producer.max-size-cpu-multiplier:7}")
 			final Double maxPoolSizeCpuMultiplier,
-			@Value("${org.coldis.library.persistence.history.history-producer.queue-size:7000}")
-			final Integer queueSize,
-			@Value("${org.coldis.library.persistence.history.history-producer.keep-alive-seconds:30}")
+			@Value("${org.coldis.library.persistence.history.history-producer.max-queue-size:7000}")
+			final Integer maxQueueSize,
+			@Value("${org.coldis.library.persistence.history.history-producer.keep-alive-seconds:60}")
 			final Integer keepAliveSeconds) {
 		if (((corePoolSize != null) && (corePoolSize > 0)) || ((corePoolSizeCpuMultiplier != null) && (corePoolSizeCpuMultiplier > 0))) {
-			HistoricalEntityListener.THREAD_POOL = new DynamicPooledThreadExecutor(name, priotity, false, virtual, false, corePoolSize, corePoolSizeCpuMultiplier,
-					maxPoolSize, maxPoolSizeCpuMultiplier, queueSize, Duration.ofSeconds(keepAliveSeconds));
+			HistoricalEntityListener.THREAD_POOL = new DynamicThreadPoolFactory().withName(name).withPriority(priority).withVirtual(virtual)
+					.withParallelism(parallelism).withParallelismCpuMultiplier(parallelismCpuMultiplier).withCorePoolSize(corePoolSize)
+					.withCorePoolSizeCpuMultiplier(corePoolSizeCpuMultiplier).withMaxPoolSize(maxPoolSize)
+					.withMaxPoolSizeCpuMultiplier(maxPoolSizeCpuMultiplier).withMaxQueueSize(maxQueueSize).withKeepAlive(Duration.ofSeconds(keepAliveSeconds))
+					.build();
 		}
 	}
 
