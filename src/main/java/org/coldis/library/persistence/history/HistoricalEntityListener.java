@@ -54,7 +54,7 @@ public class HistoricalEntityListener implements ApplicationContextAware {
 	 *
 	 * @param corePoolSize Core pool size (activates blocking thread pool).
 	 * @param maxPoolSize  Max pool size.
-	 * @param maxQueueSize    Queue size.
+	 * @param maxQueueSize Queue size.
 	 * @param keepAlive    Keep alive.
 	 */
 	@Autowired
@@ -69,6 +69,10 @@ public class HistoricalEntityListener implements ApplicationContextAware {
 			final Integer parallelism,
 			@Value("${org.coldis.library.persistence.history.history-producer.parallelism-cpu-multiplier:2}")
 			final Double parallelismCpuMultiplier,
+			@Value("${org.coldis.library.persistence.history.history-producer.min-runnable:}")
+			final Integer minRunnable,
+			@Value("${org.coldis.library.persistence.history.history-producer.min-runnable-cpu-multiplier:}")
+			final Double minRunnableCpuMultiplier,
 			@Value("${org.coldis.library.persistence.history.history-producer.core-size:}")
 			final Integer corePoolSize,
 			@Value("${org.coldis.library.persistence.history.history-producer.core-size-cpu-multiplier:2}")
@@ -83,7 +87,8 @@ public class HistoricalEntityListener implements ApplicationContextAware {
 			final Integer keepAliveSeconds) {
 		if (((corePoolSize != null) && (corePoolSize > 0)) || ((corePoolSizeCpuMultiplier != null) && (corePoolSizeCpuMultiplier > 0))) {
 			HistoricalEntityListener.THREAD_POOL = new DynamicThreadPoolFactory().withName(name).withPriority(priority).withVirtual(virtual)
-					.withParallelism(parallelism).withParallelismCpuMultiplier(parallelismCpuMultiplier).withCorePoolSize(corePoolSize)
+					.withParallelism(parallelism).withParallelismCpuMultiplier(parallelismCpuMultiplier).withMinRunnable(minRunnable)
+					.withMinRunnableCpuMultiplier(minRunnableCpuMultiplier).withCorePoolSize(corePoolSize)
 					.withCorePoolSizeCpuMultiplier(corePoolSizeCpuMultiplier).withMaxPoolSize(maxPoolSize)
 					.withMaxPoolSizeCpuMultiplier(maxPoolSizeCpuMultiplier).withMaxQueueSize(maxQueueSize).withKeepAlive(Duration.ofSeconds(keepAliveSeconds))
 					.build();
