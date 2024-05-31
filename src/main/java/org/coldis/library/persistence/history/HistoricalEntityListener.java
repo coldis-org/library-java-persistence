@@ -67,7 +67,7 @@ public class HistoricalEntityListener implements ApplicationContextAware {
 			final Boolean virtual,
 			@Value("${org.coldis.library.persistence.history.history-producer.parallelism:}")
 			final Integer parallelism,
-			@Value("${org.coldis.library.persistence.history.history-producer.parallelism-cpu-multiplier:2}")
+			@Value("${org.coldis.library.persistence.history.history-producer.parallelism-cpu-multiplier:0.5}")
 			final Double parallelismCpuMultiplier,
 			@Value("${org.coldis.library.persistence.history.history-producer.min-runnable:}")
 			final Integer minRunnable,
@@ -75,13 +75,13 @@ public class HistoricalEntityListener implements ApplicationContextAware {
 			final Double minRunnableCpuMultiplier,
 			@Value("${org.coldis.library.persistence.history.history-producer.core-size:}")
 			final Integer corePoolSize,
-			@Value("${org.coldis.library.persistence.history.history-producer.core-size-cpu-multiplier:2}")
+			@Value("${org.coldis.library.persistence.history.history-producer.core-size-cpu-multiplier:}")
 			final Double corePoolSizeCpuMultiplier,
 			@Value("${org.coldis.library.persistence.history.history-producer.max-size:}")
 			final Integer maxPoolSize,
-			@Value("${org.coldis.library.persistence.history.history-producer.max-size-cpu-multiplier:7}")
+			@Value("${org.coldis.library.persistence.history.history-producer.max-size-cpu-multiplier:128}")
 			final Double maxPoolSizeCpuMultiplier,
-			@Value("${org.coldis.library.persistence.history.history-producer.max-queue-size:7000}")
+			@Value("${org.coldis.library.persistence.history.history-producer.max-queue-size:5000}")
 			final Integer maxQueueSize,
 			@Value("${org.coldis.library.persistence.history.history-producer.keep-alive-seconds:60}")
 			final Integer keepAliveSeconds) {
