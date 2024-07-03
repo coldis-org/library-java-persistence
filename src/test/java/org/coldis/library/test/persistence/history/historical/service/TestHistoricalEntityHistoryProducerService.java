@@ -1,17 +1,15 @@
-package  org.coldis.library.test.persistence.history.historical.service;
+package org.coldis.library.test.persistence.history.historical.service;
 
 import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import org.coldis.library.model.view.ModelView;
 import org.coldis.library.persistence.history.EntityHistoryProducerService;
+import org.coldis.library.persistence.history.HistoricalEntityListener;
 import org.coldis.library.serialization.ObjectMapperHelper;
 import org.coldis.library.service.jms.JmsMessage;
 import org.coldis.library.service.jms.JmsTemplateHelper;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,11 +37,6 @@ public class TestHistoricalEntityHistoryProducerService implements EntityHistory
 	private static final Logger LOGGER = LoggerFactory.getLogger(TestHistoricalEntityHistoryProducerService.class);
 
 	/**
-	 * Thread pool.
-	 */
-	private static ExecutorService THREAD_POOL = null;
-
-	/**
 	 * Entity queue.
 	 */
 	public static final String QUEUE = "test-historical-entity/history";
@@ -69,39 +62,6 @@ public class TestHistoricalEntityHistoryProducerService implements EntityHistory
 	private JmsTemplateHelper jmsTemplateHelper;
 
 	/**
-	 * Sets the thread pool size.
-	 *
-	 * @param parallelism  Parallelism (activates work stealing pool).
-	 * @param corePoolSize Core pool size (activates blocking thread pool).
-	 * @param maxPoolSize  Max pool size.
-	 * @param queueSize    Queue size.
-	 * @param keepAlive    Keep alive.
-	 */
-	@Autowired
-	private void setThreadPoolSize(
-			@Value("${org.coldis.library.test.persistence.history.historical.model.testhistoricalentityhistory.history-producer-pool-parallelism:}")
-			final Integer parallelism,
-			@Value("${org.coldis.library.test.persistence.history.historical.model.testhistoricalentityhistory.history-producer-pool-core-size:5}")
-			final Integer corePoolSize,
-			@Value("${org.coldis.library.test.persistence.history.historical.model.testhistoricalentityhistory.history-producer-pool-max-size:17}")
-			final Integer maxPoolSize,
-			@Value("${org.coldis.library.test.persistence.history.historical.model.testhistoricalentityhistory.history-producer-pool-queue-size:3000}")
-			final Integer queueSize,
-			@Value("${org.coldis.library.test.persistence.history.historical.model.testhistoricalentityhistory.history-producer-pool-keep-alive:61}")
-			final Integer keepAlive) {
-		if (parallelism != null) {
-			TestHistoricalEntityHistoryProducerService.THREAD_POOL = new ForkJoinPool(parallelism, ForkJoinPool.defaultForkJoinWorkerThreadFactory, null, true, corePoolSize, maxPoolSize,
-					1, null, keepAlive, TimeUnit.SECONDS);
-		}
-		else if (corePoolSize != null) {
-			final ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(corePoolSize, maxPoolSize, keepAlive, TimeUnit.SECONDS,
-					new ArrayBlockingQueue<>(queueSize, true));
-			threadPoolExecutor.allowCoreThreadTimeOut(true);
-			TestHistoricalEntityHistoryProducerService.THREAD_POOL = threadPoolExecutor;
-		}
-	}
-	
-	/**
 	 * Queues history.
 	 * @param jmsMessage JMS message.
 	 */
@@ -120,17 +80,17 @@ public class TestHistoricalEntityHistoryProducerService implements EntityHistory
 				.withMessage(ObjectMapperHelper.serialize(objectMapper, state, ModelView.Persistent.class, false))
 				.withProperties(Map.of("user", (user == null ? "" : user)));
 		try {
-			if (TestHistoricalEntityHistoryProducerService.THREAD_POOL == null) {
+			if (HistoricalEntityListener.THREAD_POOL == null) {
 				this.queueHistory(jmsMessage);
 			}
 			else {
-				TestHistoricalEntityHistoryProducerService.THREAD_POOL.execute(() -> {
+				HistoricalEntityListener.THREAD_POOL.execute(() -> {
 					this.queueHistory(jmsMessage);
 				});
 			}
 		}
 		catch(Exception exception) {
-			LOGGER.error("Could not queue history for entity: " + exception.getLocalizedMessage());
+			LOGGER.error("Could not queue history for entity: " + exception.getClass().getName() + " - " + exception.getLocalizedMessage());
 			LOGGER.debug("Could not queue history for entity.", exception);
 		}
 	}
