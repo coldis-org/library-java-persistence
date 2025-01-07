@@ -2,6 +2,7 @@ package org.coldis.library.test.persistence.history;
 
 import org.apache.commons.collections4.IterableUtils;
 import org.coldis.library.serialization.ObjectMapperHelper;
+import org.coldis.library.test.SpringTestHelper;
 import org.coldis.library.test.StartTestWithContainerExtension;
 import org.coldis.library.test.StopTestWithContainerExtension;
 import org.coldis.library.test.TestHelper;
@@ -25,7 +26,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 		classes = TestApplication.class
 )
 @ExtendWith(StopTestWithContainerExtension.class)
-public class HistoricalEntityThreadPoolTest {
+public class HistoricalEntityThreadPoolTest extends SpringTestHelper {
 
 	/**
 	 * Postgres container.

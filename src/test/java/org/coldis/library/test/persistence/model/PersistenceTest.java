@@ -3,6 +3,7 @@ package org.coldis.library.test.persistence.model;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 
+import org.coldis.library.test.SpringTestHelper;
 import org.coldis.library.test.StartTestWithContainerExtension;
 import org.coldis.library.test.StopTestWithContainerExtension;
 import org.coldis.library.test.TestHelper;
@@ -25,7 +26,7 @@ import org.testcontainers.containers.GenericContainer;
 		classes = TestApplication.class
 )
 @ExtendWith(StopTestWithContainerExtension.class)
-public class PersistenceTest {
+public class PersistenceTest extends SpringTestHelper {
 
 	/**
 	 * Postgres container.

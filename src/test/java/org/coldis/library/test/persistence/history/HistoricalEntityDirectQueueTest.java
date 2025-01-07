@@ -2,6 +2,7 @@ package org.coldis.library.test.persistence.history;
 
 import org.apache.commons.collections4.IterableUtils;
 import org.coldis.library.serialization.ObjectMapperHelper;
+import org.coldis.library.test.SpringTestHelper;
 import org.coldis.library.test.StartTestWithContainerExtension;
 import org.coldis.library.test.StopTestWithContainerExtension;
 import org.coldis.library.test.TestHelper;
@@ -26,7 +27,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 		properties = {"org.coldis.library.persistence.history.history-producer.core-size=", "org.coldis.library.persistence.history.history-producer.core-size-cpu-multiplier=" }
 )
 @ExtendWith(StopTestWithContainerExtension.class)
-public class HistoricalEntityDirectQueueTest {
+public class HistoricalEntityDirectQueueTest extends SpringTestHelper {
 
 	/**
 	 * Postgres container.

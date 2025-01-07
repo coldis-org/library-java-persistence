@@ -12,6 +12,7 @@ import org.coldis.library.model.Typable;
 import org.coldis.library.persistence.LockBehavior;
 import org.coldis.library.persistence.keyvalue.KeyValue;
 import org.coldis.library.persistence.keyvalue.KeyValueService;
+import org.coldis.library.test.SpringTestHelper;
 import org.coldis.library.test.StartTestWithContainerExtension;
 import org.coldis.library.test.StopTestWithContainerExtension;
 import org.coldis.library.test.TestHelper;
@@ -36,7 +37,7 @@ import org.testcontainers.containers.GenericContainer;
 		classes = TestApplication.class
 )
 @ExtendWith(StopTestWithContainerExtension.class)
-public class KeyValueTest {
+public class KeyValueTest extends SpringTestHelper {
 	
 	/**
 	 * Postgres container.

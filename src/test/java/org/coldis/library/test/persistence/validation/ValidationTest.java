@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.coldis.library.model.view.ModelView;
+import org.coldis.library.test.SpringTestHelper;
 import org.coldis.library.test.StartTestWithContainerExtension;
 import org.coldis.library.test.StopTestWithContainerExtension;
 import org.coldis.library.test.TestHelper;
@@ -28,7 +29,7 @@ import jakarta.validation.Validator;
 		classes = TestApplication.class
 )
 @ExtendWith(StopTestWithContainerExtension.class)
-public class ValidationTest {
+public class ValidationTest extends SpringTestHelper {
 
 	/**
 	 * Postgres container.
