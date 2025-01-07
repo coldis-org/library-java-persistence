@@ -38,7 +38,7 @@ import org.testcontainers.containers.GenericContainer;
 )
 @ExtendWith(StopTestWithContainerExtension.class)
 public class KeyValueTest extends SpringTestHelper {
-	
+
 	/**
 	 * Postgres container.
 	 */
@@ -64,7 +64,7 @@ public class KeyValueTest extends SpringTestHelper {
 	/**
 	 * Test lock period.
 	 */
-	private static final Long LOCK_PERIOD = 4000L;
+	private static final Long LOCK_PERIOD = 10 * 1000L;
 
 	/**
 	 * Lock time.
@@ -233,7 +233,6 @@ public class KeyValueTest extends SpringTestHelper {
 		Assertions.assertTrue(thread1.finished && thread2.finished && thread3.finished);
 		Assertions.assertFalse(StringUtils.isNotEmpty(thread1.error) || StringUtils.isNotEmpty(thread2.error) || StringUtils.isNotEmpty(thread3.error));
 		Assertions.assertEquals(1, this.getLocks().size());
-
 	}
 
 	/**
@@ -243,10 +242,10 @@ public class KeyValueTest extends SpringTestHelper {
 	 */
 	@Test
 	public void testLockFailFast() throws Exception {
-		
+
 		// Resets the locks.
 		this.setLocks(null);
-		
+
 		// Creates three threads.
 		final List<LockAndHoldThread> threads = List.of(
 
@@ -255,7 +254,7 @@ public class KeyValueTest extends SpringTestHelper {
 				new LockAndHoldThread(LockBehavior.LOCK_FAIL_FAST), new LockAndHoldThread(LockBehavior.LOCK_FAIL_FAST)
 
 		);
-		
+
 		// Starts the threads in parallel.
 		threads.parallelStream().forEach(thread -> thread.start());
 
@@ -266,7 +265,7 @@ public class KeyValueTest extends SpringTestHelper {
 		Assertions.assertTrue(threads.stream().anyMatch(thread -> StringUtils.isEmpty(thread.error)));
 		Assertions.assertTrue(threads.stream().anyMatch(thread -> StringUtils.isNotEmpty(thread.error)));
 		Assertions.assertTrue(this.getLocks().size() < 6);
-		
+
 	}
 
 }
