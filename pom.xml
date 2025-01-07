@@ -1,12 +1,14 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
 	<modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <groupId>org.coldis</groupId>
-        <artifactId>configuration</artifactId>
-        <version>2.0.102</version>
-    </parent>
+	<parent>
+		<groupId>org.coldis</groupId>
+		<artifactId>configuration</artifactId>
+		<version>2.0.102</version>
+	</parent>
 
 	<groupId>org.coldis.library</groupId>
 	<artifactId>persistence</artifactId>
@@ -28,7 +30,8 @@
 	</developers>
 
 	<properties>
-	    <artemis.version>2.37.0</artemis.version>
+		<artemis.version>2.37.0</artemis.version>
+		<project.config.source.test.thread-count>1</project.config.source.test.thread-count>
 		<project.config.source.test.compile.annotationProcessors>
 			org.coldis.library.persistence.history.HistoricalEntityGenerator</project.config.source.test.compile.annotationProcessors>
 	</properties>
@@ -44,32 +47,32 @@
 
 	<dependencies>
 
-        <dependency>
-            <groupId>org.coldis.library</groupId>
-            <artifactId>core</artifactId>
+		<dependency>
+			<groupId>org.coldis.library</groupId>
+			<artifactId>core</artifactId>
 			<version>2.0.46</version>
 		</dependency>
-        <dependency>
-            <groupId>org.coldis.library</groupId>
-            <artifactId>dto</artifactId>
-            <version>2.0.22</version>
-        </dependency>
-        <dependency>
-            <groupId>org.coldis.library</groupId>
-            <artifactId>serialization</artifactId>
-            <version>2.0.16</version>
-        </dependency>
-        <dependency>
-            <groupId>org.coldis.library</groupId>
-            <artifactId>service-client</artifactId>
-            <version>2.0.17</version>
-        </dependency>
-        <dependency>
-            <groupId>org.coldis.library</groupId>
-            <artifactId>test</artifactId>
-            <version>2.0.39</version>
-            <scope>test</scope>
-        </dependency>
+		<dependency>
+			<groupId>org.coldis.library</groupId>
+			<artifactId>dto</artifactId>
+			<version>2.0.22</version>
+		</dependency>
+		<dependency>
+			<groupId>org.coldis.library</groupId>
+			<artifactId>serialization</artifactId>
+			<version>2.0.16</version>
+		</dependency>
+		<dependency>
+			<groupId>org.coldis.library</groupId>
+			<artifactId>service-client</artifactId>
+			<version>2.0.17</version>
+		</dependency>
+		<dependency>
+			<groupId>org.coldis.library</groupId>
+			<artifactId>test</artifactId>
+			<version>2.0.39</version>
+			<scope>test</scope>
+		</dependency>
 
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
