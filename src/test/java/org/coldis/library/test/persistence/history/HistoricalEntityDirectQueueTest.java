@@ -2,7 +2,8 @@ package org.coldis.library.test.persistence.history;
 
 import org.apache.commons.collections4.IterableUtils;
 import org.coldis.library.serialization.ObjectMapperHelper;
-import org.coldis.library.test.ContainerExtension;
+import org.coldis.library.test.StartTestWithContainerExtension;
+import org.coldis.library.test.StopTestWithContainerExtension;
 import org.coldis.library.test.TestHelper;
 import org.coldis.library.test.persistence.TestApplication;
 import org.coldis.library.test.persistence.history.historical.repository.TestHistoricalEntityHistoryRepository;
@@ -18,12 +19,13 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /*** Entity history test. */
-@ExtendWith(ContainerExtension.class)
+@ExtendWith(StartTestWithContainerExtension.class)
 @SpringBootTest(
 		webEnvironment = WebEnvironment.RANDOM_PORT,
 		classes = TestApplication.class,
 		properties = {"org.coldis.library.persistence.history.history-producer.core-size=", "org.coldis.library.persistence.history.history-producer.core-size-cpu-multiplier=" }
 )
+@ExtendWith(StopTestWithContainerExtension.class)
 public class HistoricalEntityDirectQueueTest {
 
 	/**

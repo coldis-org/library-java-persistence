@@ -4,7 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.coldis.library.model.view.ModelView;
-import org.coldis.library.test.ContainerExtension;
+import org.coldis.library.test.StartTestWithContainerExtension;
+import org.coldis.library.test.StopTestWithContainerExtension;
 import org.coldis.library.test.TestHelper;
 import org.coldis.library.test.persistence.TestApplication;
 import org.junit.jupiter.api.Assertions;
@@ -20,12 +21,13 @@ import jakarta.validation.Validator;
 /**
  * Persistence model test.
  */
-@ExtendWith(ContainerExtension.class)
+@ExtendWith(StartTestWithContainerExtension.class)
 @SpringBootTest(
 		webEnvironment = WebEnvironment.RANDOM_PORT,
 		properties = "test.properties",
 		classes = TestApplication.class
 )
+@ExtendWith(StopTestWithContainerExtension.class)
 public class ValidationTest {
 
 	/**

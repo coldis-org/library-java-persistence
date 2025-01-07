@@ -12,7 +12,8 @@ import org.coldis.library.model.Typable;
 import org.coldis.library.persistence.LockBehavior;
 import org.coldis.library.persistence.keyvalue.KeyValue;
 import org.coldis.library.persistence.keyvalue.KeyValueService;
-import org.coldis.library.test.ContainerExtension;
+import org.coldis.library.test.StartTestWithContainerExtension;
+import org.coldis.library.test.StopTestWithContainerExtension;
 import org.coldis.library.test.TestHelper;
 import org.coldis.library.test.persistence.TestApplication;
 import org.junit.jupiter.api.Assertions;
@@ -29,11 +30,12 @@ import org.testcontainers.containers.GenericContainer;
 /**
  * Key/value test.
  */
-@ExtendWith(ContainerExtension.class)
+@ExtendWith(StartTestWithContainerExtension.class)
 @SpringBootTest(
 		webEnvironment = WebEnvironment.RANDOM_PORT,
 		classes = TestApplication.class
 )
+@ExtendWith(StopTestWithContainerExtension.class)
 public class KeyValueTest {
 	
 	/**
