@@ -1,12 +1,9 @@
 package org.coldis.library.test.persistence.history.historical.model;
 
-import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Objects;
 
-import org.coldis.library.persistence.converter.MapJsonConverter;
-import org.coldis.library.persistence.history.EntityHistory;
-import org.coldis.library.persistence.model.AbstractTimestampableEntity;
+import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
@@ -16,6 +13,11 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
+
+import org.coldis.library.persistence.model.AbstractTimestampableEntity;
+import org.coldis.library.helper.DateTimeHelper;
+import org.coldis.library.persistence.converter.MapJsonConverter;
+import org.coldis.library.persistence.history.EntityHistory;
 
 /**
  * JPA entity history for {@link org.coldis.library.test.persistence.history.TestHistoricalEntity}.
