@@ -25,11 +25,6 @@ public abstract class AbstractDistributionGroupEntity extends AbstractTimestampa
 	private static final long serialVersionUID = -1959541715035057595L;
 
 	/**
-	 * If is the primary group.
-	 */
-	private Boolean primary = false;
-
-	/**
 	 * Distribution size.
 	 */
 	private Integer distributionSize;
@@ -48,29 +43,6 @@ public abstract class AbstractDistributionGroupEntity extends AbstractTimestampa
 	 * When group expires.
 	 */
 	private LocalDateTime expiredAt;
-
-	/**
-	 * Gets the primary.
-	 *
-	 * @return The primary.
-	 */
-	@Override
-	@Column(name = "pr1mary")
-	@JsonView({ ModelView.Persistent.class, ModelView.Public.class })
-	public Boolean getPrimary() {
-		return this.primary;
-	}
-
-	/**
-	 * Sets the primary.
-	 *
-	 * @param primary New primary.
-	 */
-	@Override
-	public void setPrimary(
-			final Boolean primary) {
-		this.primary = primary;
-	}
 
 	/**
 	 * Gets the distributionSize.
@@ -196,7 +168,7 @@ public abstract class AbstractDistributionGroupEntity extends AbstractTimestampa
 	public int hashCode() {
 		final int prime = 31;
 		int result = super.hashCode();
-		result = (prime * result) + Objects.hash(this.absoluteLimit, this.currentSize, this.distributionSize, this.expiredAt, this.primary);
+		result = (prime * result) + Objects.hash(this.absoluteLimit, this.currentSize, this.distributionSize, this.expiredAt);
 		return result;
 	}
 
@@ -209,13 +181,12 @@ public abstract class AbstractDistributionGroupEntity extends AbstractTimestampa
 		if (this == obj) {
 			return true;
 		}
-		if (!super.equals(obj) || !(obj instanceof AbstractDistributionGroupEntity)) {
+		if (!super.equals(obj) || (this.getClass() != obj.getClass())) {
 			return false;
 		}
 		final AbstractDistributionGroupEntity other = (AbstractDistributionGroupEntity) obj;
 		return Objects.equals(this.absoluteLimit, other.absoluteLimit) && Objects.equals(this.currentSize, other.currentSize)
-				&& Objects.equals(this.distributionSize, other.distributionSize) && Objects.equals(this.expiredAt, other.expiredAt)
-				&& Objects.equals(this.primary, other.primary);
+				&& Objects.equals(this.distributionSize, other.distributionSize) && Objects.equals(this.expiredAt, other.expiredAt);
 	}
 
 }
