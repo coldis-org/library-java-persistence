@@ -64,7 +64,7 @@ public class KeyValueTest extends SpringTestHelper {
 	/**
 	 * Test lock period.
 	 */
-	private static final Long LOCK_PERIOD = 120 * 1000L;
+	private static final Long LOCK_PERIOD = 5 * 1000L;
 
 	/**
 	 * Lock time.
