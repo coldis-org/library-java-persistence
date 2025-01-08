@@ -105,7 +105,26 @@ public class KeyValueService {
 	 * @param  value Value.
 	 * @return       The created entry.
 	 */
-	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	@Transactional(
+			propagation = Propagation.REQUIRES_NEW,
+			timeout = 1
+	)
+	private KeyValue<Typable> createForLock(
+			final String key,
+			final Typable value) {
+		return this.repository.save(new KeyValue<>(key, value));
+	}
+
+	/**
+	 * Creates a key entry.
+	 *
+	 * @param  key   The key.
+	 * @param  value Value.
+	 * @return       The created entry.
+	 */
+	@Transactional(
+			propagation = Propagation.REQUIRED
+	)
 	public KeyValue<Typable> create(
 			final String key,
 			final Typable value) {
@@ -162,7 +181,7 @@ public class KeyValueService {
 		if (entry == null) {
 			// Tries creating the entry.
 			try {
-				this.create(key, null);
+				this.createForLock(key, null);
 			}
 			catch (final Exception exception) {
 				KeyValueService.LOGGER.warn("Could not create key: " + exception.getLocalizedMessage());

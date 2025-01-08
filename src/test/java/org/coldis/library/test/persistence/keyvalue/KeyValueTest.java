@@ -6,8 +6,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.coldis.library.exception.BusinessException;
 import org.coldis.library.helper.DateTimeHelper;
+import org.coldis.library.helper.RandomHelper;
 import org.coldis.library.model.Typable;
 import org.coldis.library.persistence.LockBehavior;
 import org.coldis.library.persistence.keyvalue.KeyValue;
@@ -64,19 +66,19 @@ public class KeyValueTest extends SpringTestHelper {
 	/**
 	 * Test lock period.
 	 */
-	private static final Long LOCK_PERIOD = 5 * 1000L;
+	private static final Long LOCK_PERIOD = 2 * 1000L;
 
 	/**
 	 * Lock time.
 	 */
-	private List<LocalDateTime> locks;
+	private List<Pair<String, LocalDateTime>> locks;
 
 	/**
 	 * Gets the locks.
 	 *
 	 * @return The locks.
 	 */
-	public List<LocalDateTime> getLocks() {
+	public List<Pair<String, LocalDateTime>> getLocks() {
 		// Makes sure the list is initialized.
 		this.locks = (this.locks == null ? new ArrayList<>() : this.locks);
 		// Returns the list.
@@ -89,7 +91,7 @@ public class KeyValueTest extends SpringTestHelper {
 	 * @param locks New locks.
 	 */
 	protected void setLocks(
-			final List<LocalDateTime> locks) {
+			final List<Pair<String, LocalDateTime>> locks) {
 		this.locks = locks;
 	}
 
@@ -126,12 +128,13 @@ public class KeyValueTest extends SpringTestHelper {
 	 */
 	@Transactional(propagation = Propagation.REQUIRED)
 	public void lockAndHold(
+			final String code,
 			final LockBehavior lock) throws Exception {
 		// Locks an entry.
 		final KeyValue<Typable> lockValue = this.keyValueService.lock("test", lock);
 		// Registers the lock period and waits.
 		if (lockValue != null) {
-			this.getLocks().add(DateTimeHelper.getCurrentLocalDateTime());
+			this.getLocks().add(Pair.of(code, DateTimeHelper.getCurrentLocalDateTime()));
 			Thread.sleep(KeyValueTest.LOCK_PERIOD);
 		}
 	}
@@ -139,12 +142,14 @@ public class KeyValueTest extends SpringTestHelper {
 	/**
 	 * Lock and hold thread.
 	 */
-	class LockAndHoldThread extends Thread {
+	public class LockAndHoldThread extends Thread {
+
+		/** Code. */
+		final String code;
 
 		/**
 		 * Lock.
 		 */
-
 		final LockBehavior lock;
 
 		/**
@@ -160,7 +165,8 @@ public class KeyValueTest extends SpringTestHelper {
 		/**
 		 * Default contructor.
 		 */
-		public LockAndHoldThread(final LockBehavior lock) {
+		public LockAndHoldThread(final String code, final LockBehavior lock) {
+			this.code = code;
 			this.lock = lock;
 		}
 
@@ -170,7 +176,7 @@ public class KeyValueTest extends SpringTestHelper {
 		@Override
 		public void run() {
 			try {
-				KeyValueTest.this.lockAndHold(this.lock);
+				KeyValueTest.this.lockAndHold(this.code, this.lock);
 			}
 			catch (final Exception exception) {
 				this.error = exception.getLocalizedMessage();
@@ -186,30 +192,31 @@ public class KeyValueTest extends SpringTestHelper {
 	 */
 	@Test
 	public void testWaitAndLock() throws Exception {
-		synchronized (KeyValueTest.class) {
 
-			// Resets the locks.
-			this.clean();
+		// Resets the locks.
+		this.clean();
 
-			// Creates three threads.
-			final LockAndHoldThread thread1 = new LockAndHoldThread(LockBehavior.WAIT_AND_LOCK);
-			final LockAndHoldThread thread2 = new LockAndHoldThread(LockBehavior.WAIT_AND_LOCK);
-			final LockAndHoldThread thread3 = new LockAndHoldThread(LockBehavior.WAIT_AND_LOCK);
-			// Starts the threads in parallel.
-			thread1.start();
-			thread2.start();
-			thread3.start();
-			// Waits until all locks have been acquired.
-			Assertions.assertTrue(TestHelper.waitUntilValid(() -> thread1.finished && thread2.finished && thread3.finished, (finished -> finished),
-					TestHelper.VERY_LONG_WAIT * 2, TestHelper.REGULAR_WAIT));
-			Assertions.assertTrue(thread1.finished && thread2.finished && thread3.finished);
-			Assertions.assertFalse(StringUtils.isNotEmpty(thread1.error) || StringUtils.isNotEmpty(thread2.error) || StringUtils.isNotEmpty(thread3.error));
-			Assertions.assertEquals(3, this.getLocks().size());
-			// For each lock.
-			for (Integer lockNumber = 0; lockNumber < 2; lockNumber++) {
-				// Asserts that the lock acquire time is always respected between locks.
-				Assertions.assertTrue(this.getLocks().get(lockNumber).until(this.getLocks().get(lockNumber + 1), ChronoUnit.MILLIS) > KeyValueTest.LOCK_PERIOD);
-			}
+		// Creates three threads.
+		final Long testLockCode = RandomHelper.getPositiveRandomLong(1000000L);
+		final LockAndHoldThread thread1 = new LockAndHoldThread(testLockCode + "-1", LockBehavior.WAIT_AND_LOCK);
+		final LockAndHoldThread thread2 = new LockAndHoldThread(testLockCode + "-2", LockBehavior.WAIT_AND_LOCK);
+		final LockAndHoldThread thread3 = new LockAndHoldThread(testLockCode + "-3", LockBehavior.WAIT_AND_LOCK);
+
+		// Starts the threads in parallel.
+		thread1.start();
+		thread2.start();
+		thread3.start();
+		// Waits until all locks have been acquired.
+		Assertions.assertTrue(TestHelper.waitUntilValid(() -> thread1.finished && thread2.finished && thread3.finished, (finished -> finished),
+				TestHelper.VERY_LONG_WAIT * 2, TestHelper.REGULAR_WAIT));
+		Assertions.assertTrue(thread1.finished && thread2.finished && thread3.finished);
+		Assertions.assertFalse(StringUtils.isNotEmpty(thread1.error) || StringUtils.isNotEmpty(thread2.error) || StringUtils.isNotEmpty(thread3.error));
+		Assertions.assertEquals(3, this.getLocks().size());
+		// For each lock.
+		for (Integer lockNumber = 0; lockNumber < 2; lockNumber++) {
+			// Asserts that the lock acquire time is always respected between locks.
+			Assertions.assertTrue(this.getLocks().get(lockNumber).getRight().until(this.getLocks().get(lockNumber + 1).getRight(),
+					ChronoUnit.MILLIS) > KeyValueTest.LOCK_PERIOD);
 		}
 	}
 
@@ -220,27 +227,28 @@ public class KeyValueTest extends SpringTestHelper {
 	 */
 	@Test
 	public void testLockSkip() throws Exception {
-		synchronized (KeyValueTest.class) {
 
-			// Resets the locks.
-			this.clean();
+		// Resets the locks.
+		this.clean();
 
-			// Creates three threads.
-			final LockAndHoldThread thread1 = new LockAndHoldThread(LockBehavior.LOCK_SKIP);
-			final LockAndHoldThread thread2 = new LockAndHoldThread(LockBehavior.LOCK_SKIP);
-			final LockAndHoldThread thread3 = new LockAndHoldThread(LockBehavior.LOCK_SKIP);
-			// Starts the threads in parallel.
-			thread1.start();
-			thread2.start();
-			thread3.start();
-			// Waits until all locks have been acquired.
-			Assertions.assertTrue(TestHelper.waitUntilValid(() -> thread1.finished && thread2.finished && thread3.finished, (finished -> finished),
-					TestHelper.VERY_LONG_WAIT * 2, TestHelper.SHORT_WAIT));
-			Assertions.assertTrue(thread1.finished && thread2.finished && thread3.finished);
-			Assertions.assertFalse(StringUtils.isNotEmpty(thread1.error) || StringUtils.isNotEmpty(thread2.error) || StringUtils.isNotEmpty(thread3.error));
-			Assertions.assertEquals(1, this.getLocks().size());
+		// Creates three threads.
+		final Long testLockCode = RandomHelper.getPositiveRandomLong(1000000L);
+		final LockAndHoldThread thread1 = new LockAndHoldThread(testLockCode + "-1", LockBehavior.LOCK_SKIP);
+		final LockAndHoldThread thread2 = new LockAndHoldThread(testLockCode + "-2", LockBehavior.LOCK_SKIP);
+		final LockAndHoldThread thread3 = new LockAndHoldThread(testLockCode + "-3", LockBehavior.LOCK_SKIP);
 
-		}
+		// Starts the threads in parallel.
+		thread1.start();
+		thread2.start();
+		thread3.start();
+		// Waits until all locks have been acquired.
+		Assertions.assertTrue(TestHelper.waitUntilValid(() -> thread1.finished && thread2.finished && thread3.finished, (finished -> finished),
+				TestHelper.VERY_LONG_WAIT * 2, TestHelper.SHORT_WAIT));
+		// System.out.println(this.getLocks());
+		Assertions.assertTrue(thread1.finished && thread2.finished && thread3.finished);
+		Assertions.assertFalse(StringUtils.isNotEmpty(thread1.error) || StringUtils.isNotEmpty(thread2.error) || StringUtils.isNotEmpty(thread3.error));
+		Assertions.assertEquals(1, this.getLocks().size());
+
 	}
 
 	/**
@@ -250,31 +258,34 @@ public class KeyValueTest extends SpringTestHelper {
 	 */
 	@Test
 	public void testLockFailFast() throws Exception {
-		synchronized (KeyValueTest.class) {
 
-			// Resets the locks.
-			this.clean();
+		// Resets the locks.
+		this.clean();
 
-			// Creates three threads.
-			final List<LockAndHoldThread> threads = List.of(
+		// Creates three threads.
+		final Long testLockCode = RandomHelper.getPositiveRandomLong(1000000L);
 
-					new LockAndHoldThread(LockBehavior.LOCK_FAIL_FAST), new LockAndHoldThread(LockBehavior.LOCK_FAIL_FAST),
-					new LockAndHoldThread(LockBehavior.LOCK_FAIL_FAST), new LockAndHoldThread(LockBehavior.LOCK_FAIL_FAST),
-					new LockAndHoldThread(LockBehavior.LOCK_FAIL_FAST), new LockAndHoldThread(LockBehavior.LOCK_FAIL_FAST)
+		final List<LockAndHoldThread> threads = List.of(
 
-			);
+				new LockAndHoldThread(testLockCode + "-1", LockBehavior.LOCK_FAIL_FAST),
+				new LockAndHoldThread(testLockCode + "-2", LockBehavior.LOCK_FAIL_FAST),
+				new LockAndHoldThread(testLockCode + "-3", LockBehavior.LOCK_FAIL_FAST),
+				new LockAndHoldThread(testLockCode + "-4", LockBehavior.LOCK_FAIL_FAST),
+				new LockAndHoldThread(testLockCode + "-5", LockBehavior.LOCK_FAIL_FAST), new LockAndHoldThread(testLockCode + "-6", LockBehavior.LOCK_FAIL_FAST)
 
-			// Starts the threads in parallel.
-			threads.parallelStream().forEach(thread -> thread.start());
+		);
 
-			// Waits until all locks have been acquired.
-			Assertions.assertTrue(TestHelper.waitUntilValid(() -> threads.stream().allMatch(thread -> thread.finished), (finished -> finished),
-					TestHelper.VERY_LONG_WAIT * 4, TestHelper.REGULAR_WAIT));
-			Assertions.assertTrue(threads.stream().allMatch(thread -> thread.finished));
-			Assertions.assertTrue(threads.stream().anyMatch(thread -> StringUtils.isEmpty(thread.error)));
-			Assertions.assertTrue(threads.stream().anyMatch(thread -> StringUtils.isNotEmpty(thread.error)));
-			Assertions.assertTrue(this.getLocks().size() < 6);
-		}
+		// Starts the threads in parallel.
+		threads.parallelStream().forEach(thread -> thread.start());
+
+		// Waits until all locks have been acquired.
+		Assertions.assertTrue(TestHelper.waitUntilValid(() -> threads.stream().allMatch(thread -> thread.finished), (finished -> finished),
+				TestHelper.VERY_LONG_WAIT * 4, TestHelper.REGULAR_WAIT));
+		Assertions.assertTrue(threads.stream().allMatch(thread -> thread.finished));
+		Assertions.assertTrue(threads.stream().anyMatch(thread -> StringUtils.isEmpty(thread.error)));
+		Assertions.assertTrue(threads.stream().anyMatch(thread -> StringUtils.isNotEmpty(thread.error)));
+		Assertions.assertTrue(this.getLocks().size() < 6);
+
 	}
 
 }
