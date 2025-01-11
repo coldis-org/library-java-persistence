@@ -3,6 +3,7 @@ package org.coldis.library.persistence.converter;
 import org.coldis.library.model.view.ModelView;
 import org.coldis.library.persistence.configuration.JpaAutoConfiguration;
 import org.coldis.library.serialization.ObjectMapperHelper;
+import org.springframework.core.annotation.AnnotationUtils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -18,7 +19,7 @@ public abstract class AbstractJsonConverter<ObjectType> implements AttributeConv
 	/**
 	 * Serialization view to be used.
 	 */
-	private static final Class<?> SERIALIZATION_VIEW = ModelView.Persistent.class;
+	private static final Class<?> DEFAULT_SERIALIZATION_VIEW = ModelView.PersistentAndSensitive.class;
 
 	/**
 	 * Returns the object mapper.
@@ -35,8 +36,15 @@ public abstract class AbstractJsonConverter<ObjectType> implements AttributeConv
 	@Override
 	public String convertToDatabaseColumn(
 			final ObjectType originalObject) {
-		// Returns the JSON object.
-		return ObjectMapperHelper.serialize(this.getObjectMapper(), originalObject, AbstractJsonConverter.SERIALIZATION_VIEW, false);
+		String serializedObject = null;
+		if (originalObject != null) {
+			// Gets the serialization view.
+			final PersistenceView persistenceViewAnnotation = AnnotationUtils.findAnnotation(originalObject.getClass(), PersistenceView.class);
+			final Class<?> persistenceView = (persistenceViewAnnotation == null ? AbstractJsonConverter.DEFAULT_SERIALIZATION_VIEW
+					: persistenceViewAnnotation.value());
+			serializedObject = ObjectMapperHelper.serialize(this.getObjectMapper(), originalObject, persistenceView, false);
+		}
+		return serializedObject;
 	}
 
 	/**
