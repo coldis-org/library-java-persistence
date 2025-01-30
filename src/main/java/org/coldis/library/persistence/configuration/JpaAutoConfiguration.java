@@ -12,6 +12,7 @@ import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 
 /**
  * JPA auto configuration.
@@ -48,9 +49,9 @@ public class JpaAutoConfiguration {
 		// Creates the object mapper.
 		if (JpaAutoConfiguration.OBJECT_MAPPER == null) {
 			JpaAutoConfiguration.OBJECT_MAPPER = builder.build();
-			JpaAutoConfiguration.OBJECT_MAPPER.registerModule(ObjectMapperHelper.getDateTimeModule());
-			JpaAutoConfiguration.OBJECT_MAPPER = ObjectMapperHelper.addSubtypesFromPackage(JpaAutoConfiguration.OBJECT_MAPPER,
+			ObjectMapperHelper.configureMapper(JpaAutoConfiguration.OBJECT_MAPPER,
 					ArrayUtils.add(this.jsonTypePackages, org.coldis.library.Configuration.BASE_PACKAGE));
+			JpaAutoConfiguration.OBJECT_MAPPER.disable(SerializationFeature.INDENT_OUTPUT);
 			JpaAutoConfiguration.OBJECT_MAPPER.setSerializationInclusion(Include.NON_NULL);
 		}
 		// Returns the configured object mapper.
