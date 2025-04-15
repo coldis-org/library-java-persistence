@@ -268,10 +268,16 @@ public class KeyValueTest extends SpringTestHelper {
 		final List<LockAndHoldThread> threads = List.of(
 
 				new LockAndHoldThread(testLockCode + "-1", LockBehavior.LOCK_FAIL_FAST),
+
 				new LockAndHoldThread(testLockCode + "-2", LockBehavior.LOCK_FAIL_FAST),
+
 				new LockAndHoldThread(testLockCode + "-3", LockBehavior.LOCK_FAIL_FAST),
+
 				new LockAndHoldThread(testLockCode + "-4", LockBehavior.LOCK_FAIL_FAST),
-				new LockAndHoldThread(testLockCode + "-5", LockBehavior.LOCK_FAIL_FAST), new LockAndHoldThread(testLockCode + "-6", LockBehavior.LOCK_FAIL_FAST)
+
+				new LockAndHoldThread(testLockCode + "-5", LockBehavior.LOCK_FAIL_FAST),
+
+				new LockAndHoldThread(testLockCode + "-6", LockBehavior.LOCK_FAIL_FAST)
 
 		);
 
