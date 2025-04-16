@@ -79,7 +79,7 @@ public class HistoricalEntityListener implements ApplicationContextAware {
 			final Double corePoolSizeCpuMultiplier,
 			@Value("${org.coldis.library.persistence.history.history-producer.max-size:}")
 			final Integer maxPoolSize,
-			@Value("${org.coldis.library.persistence.history.history-producer.max-size-cpu-multiplier:30}")
+			@Value("${org.coldis.library.persistence.history.history-producer.max-size-cpu-multiplier:10}")
 			final Double maxPoolSizeCpuMultiplier,
 			@Value("${org.coldis.library.persistence.history.history-producer.max-queue-size:5000}")
 			final Integer maxQueueSize,
