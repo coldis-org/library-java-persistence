@@ -29,7 +29,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 		classes = TestApplication.class
 )
 @ExtendWith(StopTestWithContainerExtension.class)
-@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class HistoricalEntityThreadPoolTest extends SpringTestHelper {
 
 	/**

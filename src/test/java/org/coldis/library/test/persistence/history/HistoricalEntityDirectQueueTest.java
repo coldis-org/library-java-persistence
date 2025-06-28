@@ -15,6 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
+import org.springframework.test.annotation.DirtiesContext;
 import org.testcontainers.containers.GenericContainer;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -29,6 +30,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 		properties = {"org.coldis.library.persistence.history.history-producer.core-size=", "org.coldis.library.persistence.history.history-producer.core-size-cpu-multiplier=" }
 )
 @ExtendWith(StopTestWithContainerExtension.class)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class HistoricalEntityDirectQueueTest extends SpringTestHelper {
 
 	/**
