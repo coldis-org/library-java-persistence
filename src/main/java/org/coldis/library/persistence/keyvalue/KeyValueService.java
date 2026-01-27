@@ -190,42 +190,48 @@ public class KeyValueService {
 			final String key,
 			final LockBehavior lock,
 			final Boolean cleanAfterLock) throws BusinessException {
-		// Tries to lock the entry.
-		KeyValue<Typable> entry = this.findById(key, lock, true);
-		// If there is no entry.
-		if (entry == null) {
-			// Tries creating the entry.
-			try {
-				this.createForLock(key, null);
-			}
-			catch (final Exception exception) {
-				KeyValueService.LOGGER.warn("Could not create key: " + exception.getLocalizedMessage());
-				KeyValueService.LOGGER.debug("Could not create key.", exception);
-			}
-			// Locks the entry.
-			entry = this.findById(key, lock, true);
-		}
 
-		// If the entry should be cleaned after locking.
-		if (cleanAfterLock) {
-			if (this.jmsTemplate == null) {
+		try {
+
+			// Tries to lock the entry.
+			KeyValue<Typable> entry = this.findById(key, lock, true);
+			// If there is no entry.
+			if (entry == null) {
+				// Tries creating the entry.
 				try {
-					this.repository.deleteById(key);
+					this.createForLock(key, null);
 				}
 				catch (final Exception exception) {
-					KeyValueService.LOGGER.warn("Could not delete key: " + exception.getLocalizedMessage());
-					KeyValueService.LOGGER.debug("Could not delete key.", exception);
+					KeyValueService.LOGGER.warn("Could not create key: " + exception.getLocalizedMessage());
+					KeyValueService.LOGGER.debug("Could not create key.", exception);
+				}
+				// Locks the entry.
+				entry = this.findById(key, lock, true);
+			}
+
+			// Returns the object.
+			return entry;
+
+			// If the entry should be cleaned after locking.
+		}
+		finally {
+			if (cleanAfterLock) {
+				if (this.jmsTemplate == null) {
+					try {
+						this.repository.deleteById(key);
+					}
+					catch (final Exception exception) {
+						KeyValueService.LOGGER.warn("Could not delete key: " + exception.getLocalizedMessage());
+						KeyValueService.LOGGER.debug("Could not delete key.", exception);
+					}
+				}
+				else {
+					this.jmsTemplate.convertAndSend(KeyValueService.DELETE_QUEUE, key);
 				}
 			}
-			else {
-				this.jmsTemplate.convertAndSend(KeyValueService.DELETE_QUEUE, key);
-			}
 		}
-
-		// Returns the object.
-		return entry;
 	}
-	
+
 	/**
 	 * Locks a key.
 	 *
