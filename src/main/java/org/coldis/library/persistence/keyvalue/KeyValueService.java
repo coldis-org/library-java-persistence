@@ -10,6 +10,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jms.annotation.JmsListener;
+import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,10 +28,21 @@ public class KeyValueService {
 	private static final Logger LOGGER = LoggerFactory.getLogger(KeyValueService.class);
 
 	/**
+	 * Delete queue.
+	 */
+	private static final String DELETE_QUEUE = "key-value/delete";
+
+	/**
 	 * Repository.
 	 */
 	@Autowired
 	private KeyValueRepository<Typable> repository;
+
+	/**
+	 * JMS template.
+	 */
+	@Autowired(required = false)
+	private JmsTemplate jmsTemplate;
 
 	/**
 	 * Gets the repository.
@@ -122,9 +135,7 @@ public class KeyValueService {
 	 * @param  value Value.
 	 * @return       The created entry.
 	 */
-	@Transactional(
-			propagation = Propagation.REQUIRED
-	)
+	@Transactional(propagation = Propagation.REQUIRED)
 	public KeyValue<Typable> create(
 			final String key,
 			final Typable value) {
@@ -153,6 +164,7 @@ public class KeyValueService {
 	 *
 	 * @param key The key.
 	 */
+	@JmsListener(destination = KeyValueService.DELETE_QUEUE)
 	@Transactional(propagation = Propagation.REQUIRED)
 	public void delete(
 			final String key) {
@@ -165,6 +177,8 @@ public class KeyValueService {
 	 * Locks a key.
 	 *
 	 * @param  key               Key.
+	 * @param  lock              Lock behavior.
+	 * @param  cleanAfterLock    If the entry should be cleaned after locking.
 	 * @return                   Returns the locked object.
 	 * @throws BusinessException If the key cannot be locked.
 	 */
@@ -174,7 +188,8 @@ public class KeyValueService {
 	)
 	public KeyValue<Typable> lock(
 			final String key,
-			final LockBehavior lock) throws BusinessException {
+			final LockBehavior lock,
+			final Boolean cleanAfterLock) throws BusinessException {
 		// Tries to lock the entry.
 		KeyValue<Typable> entry = this.findById(key, lock, true);
 		// If there is no entry.
@@ -190,8 +205,40 @@ public class KeyValueService {
 			// Locks the entry.
 			entry = this.findById(key, lock, true);
 		}
+
+		// If the entry should be cleaned after locking.
+		if (cleanAfterLock) {
+			if (this.jmsTemplate == null) {
+				try {
+					this.repository.deleteById(key);
+				}
+				catch (final Exception exception) {
+					KeyValueService.LOGGER.warn("Could not delete key: " + exception.getLocalizedMessage());
+					KeyValueService.LOGGER.debug("Could not delete key.", exception);
+				}
+			}
+			else {
+				this.jmsTemplate.convertAndSend(KeyValueService.DELETE_QUEUE, key);
+			}
+		}
+
 		// Returns the object.
 		return entry;
+	}
+	
+	/**
+	 * Locks a key.
+	 *
+	 * @param  key               Key.
+	 * @param  lock              Lock behavior.
+	 * @return                   Returns the locked object.
+	 * @throws BusinessException If the key cannot be locked.
+	 */
+	@Deprecated
+	public KeyValue<Typable> lock(
+			final String key,
+			final LockBehavior lock) throws BusinessException {
+		return this.lock(key, lock, false);
 	}
 
 }

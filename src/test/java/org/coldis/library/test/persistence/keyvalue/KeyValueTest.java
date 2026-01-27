@@ -46,6 +46,11 @@ import org.testcontainers.containers.GenericContainer;
 public class KeyValueTest extends SpringTestHelper {
 
 	/**
+	 * Test lock key.
+	 */
+	private static final String TEST_LOCK_KEY = "test";
+
+	/**
 	 * Postgres container.
 	 */
 	public static GenericContainer<?> POSTGRES_CONTAINER = TestHelper.createPostgresContainer();
@@ -135,7 +140,7 @@ public class KeyValueTest extends SpringTestHelper {
 			final String code,
 			final LockBehavior lock) throws Exception {
 		// Locks an entry.
-		final KeyValue<Typable> lockValue = this.keyValueService.lock("test", lock);
+		final KeyValue<Typable> lockValue = this.keyValueService.lock(KeyValueTest.TEST_LOCK_KEY, lock, true);
 		// Registers the lock period and waits.
 		if (lockValue != null) {
 			this.getLocks().add(Pair.of(code, DateTimeHelper.getCurrentLocalDateTime()));
@@ -222,6 +227,16 @@ public class KeyValueTest extends SpringTestHelper {
 			Assertions.assertTrue(this.getLocks().get(lockNumber).getRight().until(this.getLocks().get(lockNumber + 1).getRight(),
 					ChronoUnit.MILLIS) > KeyValueTest.LOCK_PERIOD);
 		}
+
+		// Makes sure the lock is deleted from key/value store.
+		Assertions.assertTrue(TestHelper.waitUntilValid(() -> {
+			try {
+				return this.keyValueService.findById(KeyValueTest.TEST_LOCK_KEY) == null;
+			}
+			catch (final BusinessException exception) {
+				return true;
+			}
+		}, (deleted -> deleted), TestHelper.VERY_LONG_WAIT, TestHelper.REGULAR_WAIT));
 	}
 
 	/**
