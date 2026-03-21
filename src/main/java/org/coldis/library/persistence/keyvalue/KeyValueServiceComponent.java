@@ -9,9 +9,11 @@ import org.coldis.library.persistence.LockBehavior;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.jms.core.JmsTemplate;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,12 +22,12 @@ import org.springframework.transaction.annotation.Transactional;
  * Key/value service.
  */
 @Service
-public class KeyValueService {
+public class KeyValueServiceComponent {
 
 	/**
 	 * Logger.
 	 */
-	private static final Logger LOGGER = LoggerFactory.getLogger(KeyValueService.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(KeyValueServiceComponent.class);
 
 	/**
 	 * Delete queue.
@@ -164,13 +166,31 @@ public class KeyValueService {
 	 *
 	 * @param key The key.
 	 */
-	@JmsListener(destination = KeyValueService.DELETE_QUEUE)
 	@Transactional(propagation = Propagation.REQUIRED)
 	public void delete(
 			final String key) {
 		if (this.repository.existsById(key)) {
 			this.repository.deleteById(key);
 		}
+	}
+
+	/**
+	 * JMS listener for async delete. Only active when JMS is available.
+	 */
+	@Component
+	@ConditionalOnBean(JmsTemplate.class)
+	public static class KeyValueDeleteListener {
+
+		@Autowired
+		private KeyValueServiceComponent keyValueServiceComponent;
+
+		@JmsListener(destination = KeyValueServiceComponent.DELETE_QUEUE)
+		@Transactional(propagation = Propagation.REQUIRED)
+		public void deleteAsync(
+				final String key) {
+			this.keyValueServiceComponent.delete(key);
+		}
+
 	}
 
 	/**
@@ -202,8 +222,8 @@ public class KeyValueService {
 					this.createForLock(key, null);
 				}
 				catch (final Exception exception) {
-					KeyValueService.LOGGER.warn("Could not create key: " + exception.getLocalizedMessage());
-					KeyValueService.LOGGER.debug("Could not create key.", exception);
+					KeyValueServiceComponent.LOGGER.warn("Could not create key: " + exception.getLocalizedMessage());
+					KeyValueServiceComponent.LOGGER.debug("Could not create key.", exception);
 				}
 				// Locks the entry.
 				entry = this.findById(key, lock, true);
@@ -221,12 +241,12 @@ public class KeyValueService {
 						this.repository.deleteById(key);
 					}
 					catch (final Exception exception) {
-						KeyValueService.LOGGER.warn("Could not delete key: " + exception.getLocalizedMessage());
-						KeyValueService.LOGGER.debug("Could not delete key.", exception);
+						KeyValueServiceComponent.LOGGER.warn("Could not delete key: " + exception.getLocalizedMessage());
+						KeyValueServiceComponent.LOGGER.debug("Could not delete key.", exception);
 					}
 				}
 				else {
-					this.jmsTemplate.convertAndSend(KeyValueService.DELETE_QUEUE, key);
+					this.jmsTemplate.convertAndSend(KeyValueServiceComponent.DELETE_QUEUE, key);
 				}
 			}
 		}

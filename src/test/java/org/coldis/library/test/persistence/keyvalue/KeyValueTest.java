@@ -13,7 +13,7 @@ import org.coldis.library.helper.RandomHelper;
 import org.coldis.library.model.Typable;
 import org.coldis.library.persistence.LockBehavior;
 import org.coldis.library.persistence.keyvalue.KeyValue;
-import org.coldis.library.persistence.keyvalue.KeyValueService;
+import org.coldis.library.persistence.keyvalue.KeyValueServiceComponent;
 import org.coldis.library.test.SpringTestHelper;
 import org.coldis.library.test.StartTestWithContainerExtension;
 import org.coldis.library.test.StopTestWithContainerExtension;
@@ -70,7 +70,7 @@ public class KeyValueTest extends SpringTestHelper {
 	 * Key/value service.
 	 */
 	@Autowired
-	private KeyValueService keyValueService;
+	private KeyValueServiceComponent keyValueService;
 
 	/**
 	 * Test lock period.
