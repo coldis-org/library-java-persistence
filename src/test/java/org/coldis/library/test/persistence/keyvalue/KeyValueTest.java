@@ -113,6 +113,31 @@ public class KeyValueTest extends SpringTestHelper {
 	}
 
 	/**
+	 * Tests async delete via JMS.
+	 *
+	 * @throws Exception If the test fails.
+	 */
+	@Test
+	public void testAsyncDelete() throws Exception {
+		// Creates a key/value entry.
+		final String key = "async-delete-test";
+		this.keyValueService.create(key, new TestValue("toDelete", 99L));
+		// Makes sure it exists.
+		Assertions.assertNotNull(this.keyValueService.findById(key));
+		// Sends async delete via JMS (lock with cleanAfterLock=true).
+		this.keyValueService.lock(key, LockBehavior.WAIT_AND_LOCK, true);
+		// Waits until the entry is deleted by the listener.
+		Assertions.assertTrue(TestHelper.waitUntilValid(() -> {
+			try {
+				return this.keyValueService.findById(key) == null;
+			}
+			catch (final BusinessException exception) {
+				return true;
+			}
+		}, (deleted -> deleted), TestHelper.VERY_LONG_WAIT, TestHelper.REGULAR_WAIT));
+	}
+
+	/**
 	 * Tests the key/value persistence
 	 *
 	 * @throws BusinessException If the test fails.
