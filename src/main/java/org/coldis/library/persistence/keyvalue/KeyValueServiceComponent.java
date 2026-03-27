@@ -9,11 +9,8 @@ import org.coldis.library.persistence.LockBehavior;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.jms.annotation.JmsListener;
 import org.springframework.jms.core.JmsTemplate;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,7 +29,7 @@ public class KeyValueServiceComponent {
 	/**
 	 * Delete queue.
 	 */
-	private static final String DELETE_QUEUE = "key-value/delete";
+	static final String DELETE_QUEUE = "key-value/delete";
 
 	/**
 	 * Repository.
@@ -172,25 +169,6 @@ public class KeyValueServiceComponent {
 		if (this.repository.existsById(key)) {
 			this.repository.deleteById(key);
 		}
-	}
-
-	/**
-	 * JMS listener for async delete. Only active when JMS is available.
-	 */
-	@Component
-	@ConditionalOnBean(JmsTemplate.class)
-	public static class KeyValueDeleteListener {
-
-		@Autowired
-		private KeyValueServiceComponent keyValueServiceComponent;
-
-		@JmsListener(destination = KeyValueServiceComponent.DELETE_QUEUE)
-		@Transactional(propagation = Propagation.REQUIRED)
-		public void deleteAsync(
-				final String key) {
-			this.keyValueServiceComponent.delete(key);
-		}
-
 	}
 
 	/**
