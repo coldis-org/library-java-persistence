@@ -14,7 +14,10 @@ public class KeyValueDeleteListener {
 	@Autowired
 	private KeyValueServiceComponent keyValueServiceComponent;
 
-	@JmsListener(destination = KeyValueServiceComponent.DELETE_QUEUE)
+	@JmsListener(
+			destination = KeyValueServiceComponent.DELETE_QUEUE,
+			concurrency = "${org.coldis.library.persistence.keyvalue.delete-concurrency:1-5}"
+	)
 	@Transactional(propagation = Propagation.REQUIRED)
 	public void deleteAsync(
 			final String key) {
