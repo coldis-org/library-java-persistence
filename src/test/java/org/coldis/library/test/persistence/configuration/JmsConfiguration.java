@@ -38,7 +38,7 @@ public class JmsConfiguration {
 	 * @return                   The JMS container factory.
 	 */
 	@Primary
-	@Bean(name = "jmsContainerFactory")
+	@Bean(name = "jmsListenerContainerFactory")
 	public DefaultJmsListenerContainerFactory createJmsContainerFactory(
 			final ConnectionFactory connectionFactory) {
 		// Creates a new container factory.
