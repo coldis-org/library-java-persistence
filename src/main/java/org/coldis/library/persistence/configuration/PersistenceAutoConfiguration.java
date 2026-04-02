@@ -25,7 +25,7 @@ public class PersistenceAutoConfiguration {
 	/**
 	 * Persistence package.
 	 */
-	public static final String PERSISTENCE_PACKAGE = "org.coldis.library.persistence";
+	public static final String PERSISTENCE_PACKAGE = "org.coldis";
 
 	/**
 	 * Persistence properties.
