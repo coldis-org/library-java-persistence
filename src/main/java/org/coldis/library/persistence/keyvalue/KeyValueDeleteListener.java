@@ -16,7 +16,8 @@ public class KeyValueDeleteListener {
 
 	@JmsListener(
 			destination = KeyValueServiceComponent.DELETE_QUEUE,
-			concurrency = "${org.coldis.library.persistence.keyvalue.delete-concurrency:1-5}"
+			concurrency = "${org.coldis.library.persistence.keyvalue.delete-concurrency:1-5}",
+			containerFactory = "${org.coldis.library.persistence.keyvalue.container-factory:jmsListenerContainerFactory}"
 	)
 	@Transactional(propagation = Propagation.REQUIRED)
 	public void deleteAsync(
