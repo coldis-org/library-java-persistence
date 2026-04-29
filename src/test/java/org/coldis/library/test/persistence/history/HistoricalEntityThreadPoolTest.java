@@ -28,7 +28,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 		webEnvironment = WebEnvironment.RANDOM_PORT,
 		classes = TestApplication.class
 )
-@ExtendWith(StopTestWithContainerExtension.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class HistoricalEntityThreadPoolTest extends SpringTestHelper {
 

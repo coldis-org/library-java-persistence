@@ -29,7 +29,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 		classes = TestApplication.class,
 		properties = {"org.coldis.library.persistence.history.history-producer.core-size=", "org.coldis.library.persistence.history.history-producer.core-size-cpu-multiplier=" }
 )
-@ExtendWith(StopTestWithContainerExtension.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class HistoricalEntityDirectQueueTest extends SpringTestHelper {
 

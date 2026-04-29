@@ -1,6 +1,9 @@
 package org.coldis.library.persistence.configuration;
 
-import org.apache.commons.lang3.ArrayUtils;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.commons.lang3.StringUtils;
 import org.coldis.library.serialization.ObjectMapperHelper;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,8 +36,18 @@ public class JpaAutoConfiguration {
 	/**
 	 * JSON type packages.
 	 */
-	@Value(value = "#{'${org.coldis.configuration.base-package:}'.split(',')}")
-	private String[] jsonTypePackages;
+	private List<String> jsonTypePackages;
+
+	/**
+	 * JSON type packages.
+	 */
+	@Value(value = "#{'${org.coldis.configuration.persistence.jpa.base-package:}'.split(',')}")
+	private void setJsonTypePackages(
+			final String[] jsonTypePackages) {
+		this.jsonTypePackages = new ArrayList<>(List.of(jsonTypePackages));
+		this.jsonTypePackages.removeIf(StringUtils::isBlank);
+		this.jsonTypePackages.add(org.coldis.library.Configuration.BASE_PACKAGE);
+	}
 
 	/**
 	 * Creates the JSON object mapper.
@@ -49,8 +62,7 @@ public class JpaAutoConfiguration {
 		// Creates the object mapper.
 		if (JpaAutoConfiguration.OBJECT_MAPPER == null) {
 			JpaAutoConfiguration.OBJECT_MAPPER = builder.build();
-			ObjectMapperHelper.configureMapper(JpaAutoConfiguration.OBJECT_MAPPER,
-					ArrayUtils.add(this.jsonTypePackages, org.coldis.library.Configuration.BASE_PACKAGE));
+			ObjectMapperHelper.configureMapper(JpaAutoConfiguration.OBJECT_MAPPER, this.jsonTypePackages.toArray(new String[] {}));
 			JpaAutoConfiguration.OBJECT_MAPPER.disable(SerializationFeature.INDENT_OUTPUT);
 			JpaAutoConfiguration.OBJECT_MAPPER.setSerializationInclusion(Include.NON_NULL);
 		}
