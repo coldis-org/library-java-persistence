@@ -7,6 +7,7 @@ import org.coldis.library.model.Typable;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.data.repository.query.Param;
@@ -93,6 +94,21 @@ public interface KeyValueRepository<ValueType extends Typable> extends JpaReposi
 	 * @return     Values for key starting with.
 	 */
 	List<KeyValue<ValueType>> findByKeyStartsWith(
+			String key);
+
+	/**
+	 * Idempotent INSERT — creates the row with a null value if it doesn't exist; does nothing
+	 * if a row with this key already exists. Returns the number of rows actually inserted
+	 * (0 or 1). Used by {@code lock(...)} to make the create-or-find race architecturally
+	 * impossible without a separate lock primitive.
+	 */
+	@Modifying
+	@Query(
+			value = "INSERT INTO key_value (key, created_at, updated_at) VALUES (:key, NOW(), NOW()) ON CONFLICT (key) DO NOTHING",
+			nativeQuery = true
+	)
+	int insertIfAbsent(
+			@Param("key")
 			String key);
 
 }

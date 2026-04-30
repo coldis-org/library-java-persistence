@@ -6,11 +6,9 @@ import org.coldis.library.exception.BusinessException;
 import org.coldis.library.model.SimpleMessage;
 import org.coldis.library.model.Typable;
 import org.coldis.library.persistence.LockBehavior;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.coldis.library.persistence.lock.LockServiceComponent;
+import org.coldis.library.persistence.lock.LockType;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,14 +20,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class KeyValueServiceComponent {
 
 	/**
-	 * Logger.
-	 */
-	private static final Logger LOGGER = LoggerFactory.getLogger(KeyValueServiceComponent.class);
-
-	/**
 	 * Delete queue.
 	 */
 	static final String DELETE_QUEUE = "key-value/delete";
+
+	/** Advisory-lock namespace for key/value entries. */
+	private static final String LOCK_NAMESPACE = "key-value";
 
 	/**
 	 * Repository.
@@ -38,10 +34,10 @@ public class KeyValueServiceComponent {
 	private KeyValueRepository<Typable> repository;
 
 	/**
-	 * JMS template.
+	 * Lock service, used to serialize concurrent {@link #lock} callers per key.
 	 */
-	@Autowired(required = false)
-	private JmsTemplate jmsTemplate;
+	@Autowired
+	private LockServiceComponent lockService;
 
 	/**
 	 * Gets the repository.
@@ -117,23 +113,6 @@ public class KeyValueServiceComponent {
 	 * @param  value Value.
 	 * @return       The created entry.
 	 */
-	@Transactional(
-			propagation = Propagation.REQUIRES_NEW,
-			timeout = 1
-	)
-	private KeyValue<Typable> createForLock(
-			final String key,
-			final Typable value) {
-		return this.repository.save(new KeyValue<>(key, value));
-	}
-
-	/**
-	 * Creates a key entry.
-	 *
-	 * @param  key   The key.
-	 * @param  value Value.
-	 * @return       The created entry.
-	 */
 	@Transactional(propagation = Propagation.REQUIRED)
 	public KeyValue<Typable> create(
 			final String key,
@@ -172,62 +151,46 @@ public class KeyValueServiceComponent {
 	}
 
 	/**
-	 * Locks a key.
+	 * Locks a key, creating the row if it doesn't exist. Race-free against concurrent first-time
+	 * inserts via {@code INSERT ... ON CONFLICT DO NOTHING}, so no separate advisory lock is
+	 * required.
+	 *
+	 * <p>When {@code cleanAfterLock} is {@code true} the row is deleted in the same transaction —
+	 * a freshly-created row never persists past commit, and an existing row the caller chose to
+	 * clean up is removed atomically with the lock-release.
 	 *
 	 * @param  key               Key.
 	 * @param  lock              Lock behavior.
-	 * @param  cleanAfterLock    If the entry should be cleaned after locking.
-	 * @return                   Returns the locked object.
-	 * @throws BusinessException If the key cannot be locked.
+	 * @param  cleanAfterLock    If the entry should be deleted before this transaction commits.
+	 * @return                   The locked entry, or {@code null} when the requested behavior could
+	 *                           not acquire the row lock (e.g. {@code LOCK_SKIP} contended).
+	 * @throws BusinessException If a {@code LOCK_FAIL_FAST} acquisition fails.
 	 */
-	@Transactional(
-			propagation = Propagation.REQUIRED,
-			noRollbackFor = DataIntegrityViolationException.class
-	)
+	@Transactional(propagation = Propagation.REQUIRED)
 	public KeyValue<Typable> lock(
 			final String key,
 			final LockBehavior lock,
 			final Boolean cleanAfterLock) throws BusinessException {
-
-		try {
-
-			// Tries to lock the entry.
-			KeyValue<Typable> entry = this.findById(key, lock, true);
-			// If there is no entry.
-			if (entry == null) {
-				// Tries creating the entry.
-				try {
-					this.createForLock(key, null);
-				}
-				catch (final Exception exception) {
-					KeyValueServiceComponent.LOGGER.warn("Could not create key: " + exception.getLocalizedMessage());
-					KeyValueServiceComponent.LOGGER.debug("Could not create key.", exception);
-				}
-				// Locks the entry.
+		// Hot path: row already exists and is acquirable under the requested behavior.
+		// findByIdForUpdate handles row-level SKIP / NOWAIT semantics directly — no lock service
+		// needed for this case.
+		KeyValue<Typable> entry = this.findById(key, lock, true);
+		if (entry == null) {
+			// Cold path: row doesn't exist (or was SKIP-contended). Take a key-scoped lock
+			// via LockServiceComponent (TABLE mode for collision-free SKIP semantics) to
+			// serialize the create with any other concurrent first-time creators, then
+			// idempotent INSERT + re-find.
+			final boolean acquired = this.lockService.lockKeys(lock, LockType.TABLE, KeyValueServiceComponent.LOCK_NAMESPACE, List.of(key));
+			if (acquired) {
+				this.repository.insertIfAbsent(key);
 				entry = this.findById(key, lock, true);
 			}
-
-			// Returns the object.
-			return entry;
-
-			// If the entry should be cleaned after locking.
 		}
-		finally {
-			if (cleanAfterLock) {
-				if (this.jmsTemplate == null) {
-					try {
-						this.repository.deleteById(key);
-					}
-					catch (final Exception exception) {
-						KeyValueServiceComponent.LOGGER.warn("Could not delete key: " + exception.getLocalizedMessage());
-						KeyValueServiceComponent.LOGGER.debug("Could not delete key.", exception);
-					}
-				}
-				else {
-					this.jmsTemplate.convertAndSend(KeyValueServiceComponent.DELETE_QUEUE, key);
-				}
-			}
+		if (cleanAfterLock && (entry != null)) {
+			// Same-tx delete: row goes away atomically with this transaction's commit.
+			this.repository.delete(entry);
 		}
+		return entry;
 	}
 
 	/**
