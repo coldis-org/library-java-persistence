@@ -61,7 +61,7 @@ public class TestHistoricalEntityHistoryConsumerService {
 	 */
 	@Transactional
 	@JmsListener(
-			containerFactory = "entityHistoryJmsContainerFactory",
+			containerFactory = "${org.coldis.library.test.persistence.history.historical.model.testhistoricalentityhistory.history-container-factory:entityHistoryJmsContainerFactory}",
 			destination = TestHistoricalEntityHistoryConsumerService.QUEUE,
 			concurrency = "${org.coldis.library.test.persistence.history.historical.model.testhistoricalentityhistory.history-concurrency:1-3}"
 	)
