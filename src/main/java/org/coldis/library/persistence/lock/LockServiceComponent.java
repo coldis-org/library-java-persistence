@@ -1,22 +1,14 @@
 package org.coldis.library.persistence.lock;
 
-import java.sql.Array;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.Collection;
 
 import org.coldis.library.exception.BusinessException;
 import org.coldis.library.model.SimpleMessage;
 import org.coldis.library.persistence.LockBehavior;
-import org.hibernate.Session;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
-
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 
 /**
  * Acquires transaction-scoped locks for arbitrary string keys via either Postgres advisory locks
@@ -44,15 +36,9 @@ public class LockServiceComponent {
 	/** Message code raised when a {@code LOCK_FAIL_FAST} acquisition cannot grab a lock. */
 	public static final String LOCK_NOT_ACQUIRED_CODE = "lock.notacquired";
 
-	/** Postgres SQLState for "lock not available" — emitted when {@code lock_timeout} fires. */
-	private static final String SQLSTATE_LOCK_NOT_AVAILABLE = "55P03";
-
-	/** Effectively-zero wait used to make TABLE-mode INSERT non-blocking. */
-	private static final String NON_BLOCKING_LOCK_TIMEOUT = "1ms";
-
-	/** Entity manager. */
-	@PersistenceContext
-	private EntityManager entityManager;
+	/** Repository for {@link LockKey} rows and Postgres advisory primitives — owns the raw JDBC. */
+	@Autowired
+	private LockKeyRepository repository;
 
 	// ---------------------------------------------------------------------------------------
 	// Convenience overloads — default to ADVISORY + WAIT_AND_LOCK.
@@ -170,7 +156,7 @@ public class LockServiceComponent {
 	}
 
 	// ---------------------------------------------------------------------------------------
-	// ADVISORY mode.
+	// Mode-specific orchestration — delegates the actual SQL to LockKeyRepository.
 	// ---------------------------------------------------------------------------------------
 
 	private boolean acquireAdvisory(
@@ -180,66 +166,14 @@ public class LockServiceComponent {
 		boolean acquired = true;
 		if ((keys != null) && !keys.isEmpty()) {
 			if ((behavior == null) || LockBehavior.WAIT_AND_LOCK.equals(behavior) || LockBehavior.NO_LOCK.equals(behavior)) {
-				this.advisoryAcquireBlocking(namespace, keys);
+				this.repository.acquireAdvisoryBlocking(namespace, keys);
 			}
 			else {
-				acquired = this.advisoryAcquireTry(namespace, keys);
+				acquired = this.repository.acquireAdvisoryTry(namespace, keys);
 			}
 		}
 		return acquired;
 	}
-
-	private void advisoryAcquireBlocking(
-			final int namespace,
-			final Collection<String> keys) {
-		final String[] keyArray = keys.toArray(new String[0]);
-		this.entityManager.unwrap(Session.class).doWork(connection -> {
-			final Array sqlArray = connection.createArrayOf("text", keyArray);
-			try (PreparedStatement statement = connection.prepareStatement(
-					"SELECT pg_advisory_xact_lock(?, hashtext(k)) "
-							+ "FROM unnest(?) AS k "
-							+ "ORDER BY hashtext(k)")) {
-				statement.setInt(1, namespace);
-				statement.setArray(2, sqlArray);
-				statement.execute();
-			}
-			finally {
-				sqlArray.free();
-			}
-		});
-	}
-
-	private boolean advisoryAcquireTry(
-			final int namespace,
-			final Collection<String> keys) {
-		final String[] keyArray = keys.toArray(new String[0]);
-		final boolean[] allAcquired = { true };
-		this.entityManager.unwrap(Session.class).doWork(connection -> {
-			final Array sqlArray = connection.createArrayOf("text", keyArray);
-			try (PreparedStatement statement = connection.prepareStatement(
-					"SELECT pg_try_advisory_xact_lock(?, hashtext(k)) "
-							+ "FROM unnest(?) AS k "
-							+ "ORDER BY hashtext(k)")) {
-				statement.setInt(1, namespace);
-				statement.setArray(2, sqlArray);
-				try (ResultSet rs = statement.executeQuery()) {
-					while (rs.next()) {
-						if (!rs.getBoolean(1)) {
-							allAcquired[0] = false;
-						}
-					}
-				}
-			}
-			finally {
-				sqlArray.free();
-			}
-		});
-		return allAcquired[0];
-	}
-
-	// ---------------------------------------------------------------------------------------
-	// TABLE mode.
-	// ---------------------------------------------------------------------------------------
 
 	private boolean acquireTable(
 			final LockBehavior behavior,
@@ -253,83 +187,12 @@ public class LockServiceComponent {
 					.sorted()
 					.toArray(String[]::new);
 			final boolean nonBlocking = LockBehavior.LOCK_SKIP.equals(behavior) || LockBehavior.LOCK_FAIL_FAST.equals(behavior);
-			acquired = this.tableInsertLockRows(ids, nonBlocking);
+			acquired = this.repository.acquireTableLock(ids, nonBlocking);
 			if (acquired) {
-				LockServiceComponent.registerBeforeCommitDelete(this.entityManager, ids);
+				this.registerBeforeCommitDelete(ids);
 			}
 		}
 		return acquired;
-	}
-
-	/**
-	 * Inserts a lock row for every id in deterministic (sorted) order.
-	 *
-	 * <p>For non-blocking modes, the INSERT is wrapped in a savepoint and {@code lock_timeout}
-	 * is set to {@value #NON_BLOCKING_LOCK_TIMEOUT}. If the timeout fires, Postgres marks the
-	 * statement aborted with SQLState {@code 55P03} and the entire transaction goes into the
-	 * "current transaction is aborted" state — the savepoint lets us {@code ROLLBACK TO} back
-	 * out of the failed statement so the caller's transaction can continue normally.
-	 * {@code lock_timeout} is reset to {@code 0} (no timeout) before returning so the rest of
-	 * the surrounding transaction is unaffected.
-	 */
-	private boolean tableInsertLockRows(
-			final String[] ids,
-			final boolean nonBlocking) {
-		final boolean[] acquired = { true };
-		this.entityManager.unwrap(Session.class).doWork(connection -> {
-			if (nonBlocking) {
-				// SET LOCAL is issued before the savepoint so its reset (below) is unaffected
-				// by the savepoint rollback.
-				LockServiceComponent.executeStatement(connection, "SET LOCAL lock_timeout = '" + LockServiceComponent.NON_BLOCKING_LOCK_TIMEOUT + "'");
-				LockServiceComponent.executeStatement(connection, "SAVEPOINT lock_attempt");
-			}
-			boolean inserted = false;
-			SQLException toThrow = null;
-			try (PreparedStatement statement = connection.prepareStatement(
-					"INSERT INTO lock_key (id) "
-							+ "SELECT k FROM unnest(?) AS k ORDER BY k "
-							+ "ON CONFLICT (id) DO NOTHING")) {
-				final Array sqlArray = connection.createArrayOf("text", ids);
-				try {
-					statement.setArray(1, sqlArray);
-					statement.executeUpdate();
-					inserted = true;
-				}
-				finally {
-					sqlArray.free();
-				}
-			}
-			catch (final SQLException exception) {
-				if (nonBlocking && LockServiceComponent.SQLSTATE_LOCK_NOT_AVAILABLE.equals(exception.getSQLState())) {
-					acquired[0] = false;
-				}
-				else {
-					toThrow = exception;
-				}
-			}
-			if (nonBlocking) {
-				if (!inserted) {
-					// Either the lock_timeout fired or some other failure happened — either way
-					// the tx is poisoned at the savepoint level; rolling back to the savepoint
-					// clears it.
-					LockServiceComponent.executeStatement(connection, "ROLLBACK TO SAVEPOINT lock_attempt");
-				}
-				LockServiceComponent.executeStatement(connection, "RELEASE SAVEPOINT lock_attempt");
-				LockServiceComponent.executeStatement(connection, "SET LOCAL lock_timeout = '0'");
-			}
-			if (toThrow != null) {
-				throw toThrow;
-			}
-		});
-		return acquired[0];
-	}
-
-	private static void executeStatement(
-			final java.sql.Connection connection,
-			final String sql) throws SQLException {
-		try (Statement statement = connection.createStatement()) {
-			statement.execute(sql);
-		}
 	}
 
 	/**
@@ -338,26 +201,15 @@ public class LockServiceComponent {
 	 * empty in steady state. If the transaction rolls back instead, the original INSERT is also
 	 * rolled back — no row persists.
 	 */
-	private static void registerBeforeCommitDelete(
-			final EntityManager entityManager,
+	private void registerBeforeCommitDelete(
 			final String[] ids) {
+		final LockKeyRepository repo = this.repository;
 		TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
 
 			@Override
 			public void beforeCommit(
 					final boolean readOnly) {
-				entityManager.unwrap(Session.class).doWork(connection -> {
-					try (PreparedStatement statement = connection.prepareStatement("DELETE FROM lock_key WHERE id = ANY(?)")) {
-						final Array sqlArray = connection.createArrayOf("text", ids);
-						try {
-							statement.setArray(1, sqlArray);
-							statement.executeUpdate();
-						}
-						finally {
-							sqlArray.free();
-						}
-					}
-				});
+				repo.releaseTableLock(ids);
 			}
 
 		});
