@@ -41,13 +41,13 @@ public class LockServiceComponent {
 	private LockKeyRepository repository;
 
 	// ---------------------------------------------------------------------------------------
-	// Convenience overloads — default to ADVISORY + WAIT_AND_LOCK.
+	// Always-blocking convenience overloads — default to ADVISORY + WAIT_AND_LOCK.
 	// ---------------------------------------------------------------------------------------
 
 	/**
 	 * Acquires advisory locks for every given key under the default namespace; blocks until held.
 	 */
-	public void lockKeys(
+	public void lockKeysBlocking(
 			final Collection<String> keys) throws BusinessException {
 		this.lockKeys(LockBehavior.WAIT_AND_LOCK, LockType.ADVISORY, LockServiceComponent.DEFAULT_NAMESPACE, keys);
 	}
@@ -57,7 +57,7 @@ public class LockServiceComponent {
 	 * held. The namespace string is hashed to a 32-bit int via {@link String#hashCode()} (which
 	 * is spec-stable across JVMs).
 	 */
-	public void lockKeys(
+	public void lockKeysBlocking(
 			final String namespace,
 			final Collection<String> keys) throws BusinessException {
 		this.lockKeys(LockBehavior.WAIT_AND_LOCK, LockType.ADVISORY, namespace, keys);
@@ -67,10 +67,39 @@ public class LockServiceComponent {
 	 * Acquires advisory locks for every given key under the given numeric namespace; blocks
 	 * until held.
 	 */
-	public void lockKeys(
+	public void lockKeysBlocking(
 			final int namespace,
 			final Collection<String> keys) throws BusinessException {
 		this.lockKeys(LockBehavior.WAIT_AND_LOCK, LockType.ADVISORY, namespace, keys);
+	}
+
+	// ---------------------------------------------------------------------------------------
+	// Deprecated aliases — same name as behavior-aware overloads but different return type
+	// (void vs boolean) made the call-site intent ambiguous. Use lockKeysBlocking(...) for the
+	// always-blocking convenience forms.
+	// ---------------------------------------------------------------------------------------
+
+	/** @deprecated Use {@link #lockKeysBlocking(Collection)}. */
+	@Deprecated
+	public void lockKeys(
+			final Collection<String> keys) throws BusinessException {
+		this.lockKeysBlocking(keys);
+	}
+
+	/** @deprecated Use {@link #lockKeysBlocking(String, Collection)}. */
+	@Deprecated
+	public void lockKeys(
+			final String namespace,
+			final Collection<String> keys) throws BusinessException {
+		this.lockKeysBlocking(namespace, keys);
+	}
+
+	/** @deprecated Use {@link #lockKeysBlocking(int, Collection)}. */
+	@Deprecated
+	public void lockKeys(
+			final int namespace,
+			final Collection<String> keys) throws BusinessException {
+		this.lockKeysBlocking(namespace, keys);
 	}
 
 	// ---------------------------------------------------------------------------------------
