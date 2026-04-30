@@ -7,6 +7,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Collection;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.hibernate.Session;
 import org.springframework.stereotype.Repository;
@@ -30,6 +31,14 @@ public class LockKeyRepository {
 
 	/** Effectively-zero wait used to make table-mode INSERT non-blocking. */
 	private static final String NON_BLOCKING_LOCK_TIMEOUT = "1ms";
+
+	/**
+	 * Process-wide monotonic counter used to derive a unique savepoint name per
+	 * {@link #acquireTableLock} call. A unique name avoids relying on Postgres' implicit
+	 * same-name savepoint stacking when {@code acquireTableLock} is invoked more than once in
+	 * the same transaction.
+	 */
+	private static final AtomicLong SAVEPOINT_COUNTER = new AtomicLong();
 
 	@PersistenceContext
 	private EntityManager entityManager;
@@ -116,12 +125,13 @@ public class LockKeyRepository {
 			final String[] ids,
 			final boolean nonBlocking) {
 		final boolean[] acquired = { true };
+		final String savepointName = "lock_attempt_" + LockKeyRepository.SAVEPOINT_COUNTER.incrementAndGet();
 		this.entityManager.unwrap(Session.class).doWork(connection -> {
 			if (nonBlocking) {
 				// SET LOCAL is issued before the savepoint so its reset (below) is unaffected
 				// by the savepoint rollback.
 				LockKeyRepository.executeStatement(connection, "SET LOCAL lock_timeout = '" + LockKeyRepository.NON_BLOCKING_LOCK_TIMEOUT + "'");
-				LockKeyRepository.executeStatement(connection, "SAVEPOINT lock_attempt");
+				LockKeyRepository.executeStatement(connection, "SAVEPOINT " + savepointName);
 			}
 			boolean inserted = false;
 			SQLException toThrow = null;
@@ -152,9 +162,9 @@ public class LockKeyRepository {
 					// Either the lock_timeout fired or some other failure happened — either way
 					// the tx is poisoned at the savepoint level; rolling back to the savepoint
 					// clears it.
-					LockKeyRepository.executeStatement(connection, "ROLLBACK TO SAVEPOINT lock_attempt");
+					LockKeyRepository.executeStatement(connection, "ROLLBACK TO SAVEPOINT " + savepointName);
 				}
-				LockKeyRepository.executeStatement(connection, "RELEASE SAVEPOINT lock_attempt");
+				LockKeyRepository.executeStatement(connection, "RELEASE SAVEPOINT " + savepointName);
 				LockKeyRepository.executeStatement(connection, "SET LOCAL lock_timeout = '0'");
 			}
 			if (toThrow != null) {
