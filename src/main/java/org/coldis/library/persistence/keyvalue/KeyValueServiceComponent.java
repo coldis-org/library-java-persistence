@@ -152,25 +152,19 @@ public class KeyValueServiceComponent {
 
 	/**
 	 * Locks a key, creating the row if it doesn't exist. Race-free against concurrent first-time
-	 * inserts via {@code INSERT ... ON CONFLICT DO NOTHING}, so no separate advisory lock is
-	 * required.
-	 *
-	 * <p>When {@code cleanAfterLock} is {@code true} the row is deleted in the same transaction —
-	 * a freshly-created row never persists past commit, and an existing row the caller chose to
-	 * clean up is removed atomically with the lock-release.
+	 * inserts via {@link LockServiceComponent} on the cold (create) path; existing rows are
+	 * acquired directly via {@code findByIdForUpdate} with the requested {@link LockBehavior}.
 	 *
 	 * @param  key               Key.
 	 * @param  lock              Lock behavior.
-	 * @param  cleanAfterLock    If the entry should be deleted before this transaction commits.
-	 * @return                   The locked entry, or {@code null} when the requested behavior could
-	 *                           not acquire the row lock (e.g. {@code LOCK_SKIP} contended).
+	 * @return                   The locked entry, or {@code null} when the requested behavior
+	 *                           could not acquire the row lock (e.g. {@code LOCK_SKIP} contended).
 	 * @throws BusinessException If a {@code LOCK_FAIL_FAST} acquisition fails.
 	 */
 	@Transactional(propagation = Propagation.REQUIRED)
 	public KeyValue<Typable> lock(
 			final String key,
-			final LockBehavior lock,
-			final Boolean cleanAfterLock) throws BusinessException {
+			final LockBehavior lock) throws BusinessException {
 		// Hot path: row already exists and is acquirable under the requested behavior.
 		// findByIdForUpdate handles row-level SKIP / NOWAIT semantics directly — no lock service
 		// needed for this case.
@@ -186,26 +180,27 @@ public class KeyValueServiceComponent {
 				entry = this.findById(key, lock, true);
 			}
 		}
-		if (cleanAfterLock && (entry != null)) {
-			// Same-tx delete: row goes away atomically with this transaction's commit.
-			this.repository.delete(entry);
-		}
 		return entry;
 	}
 
 	/**
-	 * Locks a key.
-	 *
-	 * @param  key               Key.
-	 * @param  lock              Lock behavior.
-	 * @return                   Returns the locked object.
-	 * @throws BusinessException If the key cannot be locked.
+	 * @deprecated The {@code cleanAfterLock} flag conflates "lock a key" with "ensure no
+	 *             materialized row survives the transaction." For a transient transaction-scoped
+	 *             lock with no row materialized at all, use {@link LockServiceComponent#lockKeys}
+	 *             directly. For a lock that creates and keeps the row, use
+	 *             {@link #lock(String, LockBehavior)}.
 	 */
 	@Deprecated
+	@Transactional(propagation = Propagation.REQUIRED)
 	public KeyValue<Typable> lock(
 			final String key,
-			final LockBehavior lock) throws BusinessException {
-		return this.lock(key, lock, false);
+			final LockBehavior lock,
+			final Boolean cleanAfterLock) throws BusinessException {
+		final KeyValue<Typable> entry = this.lock(key, lock);
+		if ((cleanAfterLock != null) && cleanAfterLock && (entry != null)) {
+			this.repository.delete(entry);
+		}
+		return entry;
 	}
 
 }
