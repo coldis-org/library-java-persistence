@@ -149,5 +149,6 @@ public void processIfFree(String key) throws BusinessException {
 ## Caveats
 
 - **All writers on a key must take the lock.** If subsystem A acquires the lock for key K but subsystem B writes to the underlying row without taking the lock, serialization is broken. The lock is purely cooperative.
+- **Pick one `LockType` per logical keyset.** ADVISORY orders acquisitions by `hashtext(key)`; TABLE orders alphabetically by namespace-prefixed key. Within a single `LockType` the ordering is deterministic and deadlock-free. **Mixing modes for the same keys across transactions can deadlock**, because two concurrent batches may grab the same keys in opposite orders. Choose one `LockType` per keyset and stick with it.
 - **Cross-transaction propagation must be handled explicitly.** A nested `@Transactional(REQUIRES_NEW)` opens a separate transaction with a separate connection — locks acquired there are released when that inner transaction commits, not when the outer one does.
 - **TABLE mode requires a writable transaction.** The `beforeCommit` DELETE hook can't run in a read-only transaction, so TABLE locks must be acquired from a regular `@Transactional` (not `readOnly = true`).

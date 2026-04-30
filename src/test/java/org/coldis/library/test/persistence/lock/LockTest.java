@@ -19,6 +19,7 @@ import org.coldis.library.test.TestWithContainer;
 import org.coldis.library.test.persistence.TestApplication;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,7 +57,7 @@ public class LockTest extends SpringTestHelper {
 	private final List<Boolean> acquireOutcomes = Collections.synchronizedList(new ArrayList<>());
 
 	@BeforeEach
-	public void clean() {
+	public void beforeEach() {
 		this.lockAcquiredAt.clear();
 		this.acquireOutcomes.clear();
 	}
@@ -179,6 +180,7 @@ public class LockTest extends SpringTestHelper {
 	// =========================================================================================
 
 	@Test
+	@DisplayName("ADVISORY: same key in two transactions serializes — second acquires only after the first commits")
 	public void testAdvisorySameKeyBlocks() throws Exception {
 		final String key = "advisory-test-same-key-" + System.nanoTime();
 		final LockThread t1 = new LockThread(LockType.ADVISORY, List.of(key), LockTest.HOLD_PERIOD_MS);
@@ -197,6 +199,7 @@ public class LockTest extends SpringTestHelper {
 	}
 
 	@Test
+	@DisplayName("ADVISORY: different keys do not block each other")
 	public void testAdvisoryDifferentKeysDontBlock() throws Exception {
 		final long suffix = System.nanoTime();
 		final LockThread t1 = new LockThread(LockType.ADVISORY, List.of("advisory-key-a-" + suffix), LockTest.HOLD_PERIOD_MS);
@@ -213,6 +216,7 @@ public class LockTest extends SpringTestHelper {
 	}
 
 	@Test
+	@DisplayName("ADVISORY: same key in different namespaces does not block")
 	public void testAdvisoryDifferentNamespacesDontBlock() throws Exception {
 		final String key = "advisory-shared-key-" + System.nanoTime();
 		final LockThread t1 = new LockThread(LockType.ADVISORY, 1, List.of(key), LockTest.HOLD_PERIOD_MS);
@@ -226,12 +230,14 @@ public class LockTest extends SpringTestHelper {
 	}
 
 	@Test
+	@DisplayName("ADVISORY: empty key collection is a no-op")
 	public void testAdvisoryEmptyKeysIsNoOp() throws Exception {
 		this.lockAndHold(LockType.ADVISORY, List.of(), 0);
 		Assertions.assertEquals(1, this.lockAcquiredAt.size());
 	}
 
 	@Test
+	@DisplayName("ADVISORY: overlapping batches with different orderings serialize on the shared key without deadlock")
 	public void testAdvisoryOverlappingBatchesAreDeadlockFree() throws Exception {
 		final long suffix = System.nanoTime();
 		final String shared = "advisory-overlap-shared-" + suffix;
@@ -253,6 +259,7 @@ public class LockTest extends SpringTestHelper {
 	// =========================================================================================
 
 	@Test
+	@DisplayName("TABLE: same key in two transactions serializes — second acquires only after the first commits")
 	public void testTableSameKeyBlocks() throws Exception {
 		final String key = "table-test-same-key-" + System.nanoTime();
 		final LockThread t1 = new LockThread(LockType.TABLE, List.of(key), LockTest.HOLD_PERIOD_MS);
@@ -271,6 +278,7 @@ public class LockTest extends SpringTestHelper {
 	}
 
 	@Test
+	@DisplayName("TABLE: different keys do not block each other")
 	public void testTableDifferentKeysDontBlock() throws Exception {
 		final long suffix = System.nanoTime();
 		final LockThread t1 = new LockThread(LockType.TABLE, List.of("table-key-a-" + suffix), LockTest.HOLD_PERIOD_MS);
@@ -291,6 +299,7 @@ public class LockTest extends SpringTestHelper {
 	 * for the holder to release.
 	 */
 	@Test
+	@DisplayName("TABLE: LOCK_SKIP returns false immediately when the key is held by another transaction")
 	public void testTableSkipReturnsFalseWhenContended() throws Exception {
 		final String key = "table-skip-" + System.nanoTime();
 		final LockThread holder = new LockThread(LockType.TABLE, List.of(key), LockTest.HOLD_PERIOD_MS);
@@ -315,6 +324,7 @@ public class LockTest extends SpringTestHelper {
 	 * LOCK_FAIL_FAST must throw when the key is held by another transaction.
 	 */
 	@Test
+	@DisplayName("TABLE: LOCK_FAIL_FAST throws when the key is held by another transaction")
 	public void testTableFailFastThrowsWhenContended() throws Exception {
 		final String key = "table-failfast-" + System.nanoTime();
 		final LockThread holder = new LockThread(LockType.TABLE, List.of(key), LockTest.HOLD_PERIOD_MS);

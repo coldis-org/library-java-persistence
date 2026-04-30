@@ -9,12 +9,17 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 /**
- * Internal lock-table row used by {@link LockServiceComponent} when {@link LockType#TABLE} is
- * requested. Each acquired lock corresponds to a row inserted at acquire time and deleted before
- * the surrounding transaction commits, so the table stays empty in steady state.
+ * Internal lock-table marker row used by {@link LockServiceComponent} when {@link LockType#TABLE}
+ * is requested. Each acquired lock corresponds to a row inserted at acquire time and deleted
+ * before the surrounding transaction commits, so the table stays empty in steady state.
  *
  * <p>The id is a single string formed by the caller's namespace and key concatenated with a
  * delimiter; real string equality avoids the hash-collision risk of advisory locks.
+ *
+ * <p><b>This is intentionally a marker entity, not a domain model.</b> It carries no behavior and
+ * exists only so {@code lock_key} appears in JPA's schema generation; the row's mere presence /
+ * absence under a transaction's xmin is what serializes lock acquisition. Adding business logic
+ * here would be inappropriate.
  */
 @Entity
 @Table(name = "lock_key")
