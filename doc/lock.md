@@ -142,7 +142,7 @@ public void processIfFree(String key) throws BusinessException {
 ## When not to use
 
 - **The work already operates on an existing row** → use `SELECT ... FOR UPDATE` directly. Row locks are visible in the standard locking views and integrate with cascades.
-- **The race is a missing-row insert and you own the target table** → use `INSERT ... ON CONFLICT DO NOTHING` directly on that table. Eliminates the race architecturally without any separate lock primitive. (See `KeyValueServiceComponent.lock` for an example — it uses `KeyValueRepository.insertIfAbsent` instead of acquiring a lock.)
+- **The race is a missing-row insert and you own the target table, *and* the caller doesn't need non-blocking semantics** → use `INSERT ... ON CONFLICT DO NOTHING` directly on that table for blocking callers. The INSERT is itself blocking on uncommitted unique-constraint conflicts, so it serializes WAIT-mode callers without any separate lock. For `LOCK_SKIP` / `LOCK_FAIL_FAST` callers a lock primitive is still required (Postgres has no `INSERT ... NOWAIT`). `KeyValueServiceComponent.lock` shows the hybrid: try `findByIdForUpdate` first (covers existing rows under any behavior), fall back to `LockServiceComponent.lockKeys` + `insertIfAbsent` for the create path.
 - **The lock must outlive the transaction** → use session-scoped advisory variants directly. This component intentionally only exposes the transaction-scoped variants.
 - **A non-PostgreSQL database is in play** → advisory locks are PostgreSQL-specific; the `ON CONFLICT` syntax used in TABLE mode is too.
 
