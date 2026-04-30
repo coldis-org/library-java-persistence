@@ -19,11 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class KeyValueServiceComponent {
 
-	/**
-	 * Delete queue.
-	 */
-	static final String DELETE_QUEUE = "key-value/delete";
-
 	/** Advisory-lock namespace for key/value entries. */
 	private static final String LOCK_NAMESPACE = "key-value";
 
