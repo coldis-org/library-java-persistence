@@ -56,9 +56,9 @@ public class KeyValueServiceComponent {
 			final LockBehavior lock,
 			final Boolean ignoreNotFound) throws BusinessException {
 		// Tries to find the keyValue.
-		final KeyValue<Typable> keyValue = (LockBehavior.WAIT_AND_LOCK.equals(lock) ? this.repository.findByIdForUpdate(key).orElse(null)
-				: LockBehavior.LOCK_FAIL_FAST.equals(lock) ? this.repository.findByIdForUpdateFailFast(key).orElse(null)
-						: LockBehavior.LOCK_SKIP.equals(lock) ? this.repository.findByIdForUpdateSkipLocked(key).orElse(null)
+		final KeyValue<Typable> keyValue = (LockBehavior.WAIT_AND_LOCK.equals(lock) ? this.repository.findByIdForUpdateWait(key).orElse(null)
+				: LockBehavior.LOCK_FAIL_FAST.equals(lock) ? this.repository.findByIdForUpdateFail(key).orElse(null)
+						: LockBehavior.LOCK_SKIP.equals(lock) ? this.repository.findByIdForUpdateSkip(key).orElse(null)
 								: this.repository.findById(key).orElse(null));
 		// If no keyValue is found.
 		if (!ignoreNotFound && (keyValue == null)) {

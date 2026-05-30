@@ -4,17 +4,12 @@ import java.util.List;
 import java.util.Optional;
 
 import org.coldis.library.model.Typable;
+import org.coldis.library.persistence.repository.PostgresJpaRepository;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-
-import jakarta.persistence.LockModeType;
-import jakarta.persistence.QueryHint;
 
 /**
  * Key/value repository.
@@ -27,7 +22,7 @@ import jakarta.persistence.QueryHint;
 		havingValue = "true",
 		matchIfMissing = true
 )
-public interface KeyValueRepository<ValueType extends Typable> extends JpaRepository<KeyValue<ValueType>, String> {
+public interface KeyValueRepository<ValueType extends Typable> extends PostgresJpaRepository<KeyValue<ValueType>, String> {
 
 	/**
 	 * Finds a key/value.
@@ -42,50 +37,41 @@ public interface KeyValueRepository<ValueType extends Typable> extends JpaReposi
 	/**
 	 * Finds a key/value for update.
 	 *
-	 * @param  key The key for the value.
-	 * @return     A key/value for update.
+	 * @param      key The key for the value.
+	 * @return         A key/value for update.
+	 * @deprecated     Use {@link #findByIdForUpdateWait(Object)}.
 	 */
-	@Lock(LockModeType.PESSIMISTIC_WRITE)
-	@Query("SELECT keyValue FROM KeyValue keyValue WHERE keyValue.key = :key")
-	Optional<KeyValue<ValueType>> findByIdForUpdate(
-			@Param("key")
-			String key);
+	@Deprecated
+	default Optional<KeyValue<ValueType>> findByIdForUpdate(
+			final String key) {
+		return this.findByIdForUpdateWait(key);
+	}
 
 	/**
-	 * Finds a key/value for update.
+	 * Finds a key/value for update, skipping if locked.
 	 *
-	 * @param  key The key for the value.
-	 * @return     A key/value for update.
+	 * @param      key The key for the value.
+	 * @return         A key/value for update, or empty if locked.
+	 * @deprecated     Use {@link #findByIdForUpdateSkip(Object)}.
 	 */
-	@Lock(LockModeType.PESSIMISTIC_WRITE)
-	@QueryHints(
-			value = { @QueryHint(
-					name = "jakarta.persistence.lock.timeout",
-					value = "-2"
-			) }
-	)
-	@Query("SELECT keyValue FROM KeyValue keyValue WHERE keyValue.key = :key")
-	Optional<KeyValue<ValueType>> findByIdForUpdateSkipLocked(
-			@Param("key")
-			String key);
+	@Deprecated
+	default Optional<KeyValue<ValueType>> findByIdForUpdateSkipLocked(
+			final String key) {
+		return this.findByIdForUpdateSkip(key);
+	}
 
 	/**
-	 * Finds a key/value for update.
+	 * Finds a key/value for update, failing fast if locked.
 	 *
-	 * @param  key The key for the value.
-	 * @return     A key/value for update.
+	 * @param      key The key for the value.
+	 * @return         A key/value for update.
+	 * @deprecated     Use {@link #findByIdForUpdateFail(Object)}.
 	 */
-	@Lock(LockModeType.PESSIMISTIC_WRITE)
-	@QueryHints(
-			value = { @QueryHint(
-					name = "jakarta.persistence.lock.timeout",
-					value = "0"
-			) }
-	)
-	@Query("SELECT keyValue FROM KeyValue keyValue WHERE keyValue.key = :key")
-	Optional<KeyValue<ValueType>> findByIdForUpdateFailFast(
-			@Param("key")
-			String key);
+	@Deprecated
+	default Optional<KeyValue<ValueType>> findByIdForUpdateFailFast(
+			final String key) {
+		return this.findByIdForUpdateFail(key);
+	}
 
 	/**
 	 * Finds values for key starting with.

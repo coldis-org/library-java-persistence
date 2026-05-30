@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 @EntityScan(basePackages = { PersistenceAutoConfiguration.PERSISTENCE_PACKAGE, "${org.coldis.configuration.persistence.jpa.base-package}" })
 @EnableJpaRepositories(
 		enableDefaultTransactions = false,
+		repositoryBaseClass = org.coldis.library.persistence.repository.PostgresJpaRepositoryImpl.class,
 		basePackages = { PersistenceAutoConfiguration.PERSISTENCE_PACKAGE, "${org.coldis.configuration.persistence.jpa.base-package}" }
 )
 public class JpaAutoConfiguration {

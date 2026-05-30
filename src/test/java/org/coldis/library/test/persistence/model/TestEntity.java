@@ -1,5 +1,6 @@
 package org.coldis.library.test.persistence.model;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.coldis.library.model.Identifiable;
@@ -47,6 +48,11 @@ public class TestEntity extends AbstractTimestampableExpirableEntity implements 
 	 * Test attribute.
 	 */
 	private List<TestObject> attribute3;
+
+	/**
+	 * Lease timestamp (exercises the claimLease/releaseLease helpers).
+	 */
+	private LocalDateTime leasedUntil;
 
 	/**
 	 * Gets the id.
@@ -130,6 +136,25 @@ public class TestEntity extends AbstractTimestampableExpirableEntity implements 
 	 */
 	public void setAttribute3(final List<TestObject> attribute3) {
 		this.attribute3 = attribute3;
+	}
+
+	/**
+	 * Gets the lease timestamp.
+	 *
+	 * @return The lease timestamp.
+	 */
+	@Column(columnDefinition = "TIMESTAMP")
+	public LocalDateTime getLeasedUntil() {
+		return this.leasedUntil;
+	}
+
+	/**
+	 * Sets the lease timestamp.
+	 *
+	 * @param leasedUntil New lease timestamp.
+	 */
+	public void setLeasedUntil(final LocalDateTime leasedUntil) {
+		this.leasedUntil = leasedUntil;
 	}
 
 }
