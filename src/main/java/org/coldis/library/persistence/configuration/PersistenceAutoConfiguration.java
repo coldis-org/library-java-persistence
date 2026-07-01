@@ -18,7 +18,8 @@ import org.springframework.context.annotation.PropertySource;
 		matchIfMissing = true
 )
 @PropertySource(value = { PersistenceAutoConfiguration.PERSISTENCE_PROPERTIES })
-@Import(value = { AopTransactionManagementAutoConfiguration.class, ProxyTransactionManagementAutoConfiguration.class, JpaAutoConfiguration.class })
+@Import(value = { AopTransactionManagementAutoConfiguration.class, ProxyTransactionManagementAutoConfiguration.class, JpaAutoConfiguration.class,
+		PrimaryJpaConfiguration.class, SecondaryDatasourcesRegistrar.class })
 @AutoConfigureBefore(value = { JpaBaseConfiguration.class, HibernateJpaAutoConfiguration.class })
 public class PersistenceAutoConfiguration {
 
