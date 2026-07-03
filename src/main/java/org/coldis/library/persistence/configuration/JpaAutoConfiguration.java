@@ -9,7 +9,9 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 
@@ -25,7 +27,11 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 @EnableJpaRepositories(
 		enableDefaultTransactions = false,
 		repositoryBaseClass = org.coldis.library.persistence.repository.PostgresJpaRepositoryImpl.class,
-		basePackages = { PersistenceAutoConfiguration.PERSISTENCE_PACKAGE, "${org.coldis.configuration.persistence.jpa.base-package}" }
+		basePackages = { PersistenceAutoConfiguration.PERSISTENCE_PACKAGE, "${org.coldis.configuration.persistence.jpa.base-package}" },
+		// Keep secondary-datasource repositories out of the primary scan (no-op unless configured).
+		excludeFilters = @ComponentScan.Filter(
+				type = FilterType.CUSTOM,
+				classes = SecondaryRepositoryPackageFilter.class)
 )
 public class JpaAutoConfiguration {
 
