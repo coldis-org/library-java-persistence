@@ -1,6 +1,7 @@
 package org.coldis.library.persistence.configuration;
 
 import java.util.List;
+import java.util.Set;
 
 import javax.sql.DataSource;
 
@@ -14,8 +15,11 @@ import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.orm.jpa.persistenceunit.PersistenceManagedTypes;
+import org.springframework.orm.jpa.persistenceunit.PersistenceManagedTypesScanner;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import jakarta.persistence.EntityManagerFactory;
@@ -43,6 +47,10 @@ public class PrimaryJpaConfiguration {
 	@Autowired
 	private BeanFactory beanFactory;
 
+	/** Resource loader (used to scan the primary unit's managed types). */
+	@Autowired
+	private ResourceLoader resourceLoader;
+
 	/**
 	 * Primary datasource properties (bound from {@code spring.datasource}).
 	 *
@@ -69,7 +77,9 @@ public class PrimaryJpaConfiguration {
 
 	/**
 	 * Primary entity manager factory, scanning the packages registered by the coldis
-	 * {@link JpaAutoConfiguration} entity scan ({@link EntityScanPackages}, single source of truth).
+	 * {@link JpaAutoConfiguration} entity scan ({@link EntityScanPackages}, single source of truth)
+	 * while leaving every {@link DatasourceUnit @DatasourceUnit} annotated entity to its secondary
+	 * unit.
 	 *
 	 * @param  builder Shared entity manager factory builder.
 	 * @return         The primary entity manager factory.
@@ -79,7 +89,10 @@ public class PrimaryJpaConfiguration {
 	public LocalContainerEntityManagerFactoryBean entityManagerFactory(
 			final EntityManagerFactoryBuilder builder) {
 		final List<String> packages = EntityScanPackages.get(this.beanFactory).getPackageNames();
-		return builder.dataSource(this.dataSource()).persistenceUnit("default").packages(packages.toArray(new String[] {})).build();
+		final Set<String> secondaryClassNames = DatasourceUnitScan.of(this.resourceLoader, packages).getAnnotatedClassNames();
+		final PersistenceManagedTypes managedTypes = new PersistenceManagedTypesScanner(this.resourceLoader,
+				className -> !secondaryClassNames.contains(className)).scan(packages.toArray(new String[] {}));
+		return builder.dataSource(this.dataSource()).persistenceUnit("default").managedTypes(managedTypes).build();
 	}
 
 	/**

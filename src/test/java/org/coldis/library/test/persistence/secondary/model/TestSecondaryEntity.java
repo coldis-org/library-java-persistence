@@ -1,5 +1,7 @@
 package org.coldis.library.test.persistence.secondary.model;
 
+import org.coldis.library.persistence.configuration.DatasourceUnit;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -7,11 +9,12 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 /**
- * Entity owned by the SECONDARY persistence unit. It lives under {@code org.coldis} (like a real
- * consumer's entities), so both the primary and the secondary EntityManagerFactory map it — the test
- * proves rows written through the secondary unit land only in the secondary database.
+ * Entity owned by the SECONDARY persistence unit. It lives under the same base packages as the
+ * primary entities (like a real consumer's entities) — the {@link DatasourceUnit} annotation alone
+ * binds it to the secondary unit, so only the secondary EntityManagerFactory maps it.
  */
 @Entity
+@DatasourceUnit(value = "secondary")
 @Table(name = "test_secondary_entity")
 public class TestSecondaryEntity {
 

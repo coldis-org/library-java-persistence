@@ -1,8 +1,8 @@
 package org.coldis.library.test.persistence.secondary;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.Statement;
 
 import javax.sql.DataSource;
 
@@ -31,8 +31,10 @@ import org.testcontainers.containers.GenericContainer;
 /**
  * Multi-datasource integration test against <strong>three</strong> real PostgreSQL instances: the
  * explicit primary plus two property-driven secondaries ({@code secondary}, {@code tertiary}),
- * proving N secondaries. It asserts routing and isolation (a row written through one unit lands ONLY
- * in that unit's database) and that the primary keeps working alongside them.
+ * proving N secondaries. Unit membership is annotation-driven ({@code @DatasourceUnit} on the
+ * entities and repositories; the properties carry only connection settings). It asserts routing and
+ * isolation (a unit's entities exist ONLY in that unit's database) and that the primary keeps working
+ * alongside them.
  */
 @TestWithContainer
 @ExtendWith(StartTestWithContainerExtension.class)
@@ -44,13 +46,9 @@ import org.testcontainers.containers.GenericContainer;
 				"org.coldis.configuration.persistence.datasources.secondary.url=jdbc:postgresql://localhost:${POSTGRES_CONTAINER_SECONDARY_5432}/test",
 				"org.coldis.configuration.persistence.datasources.secondary.username=test",
 				"org.coldis.configuration.persistence.datasources.secondary.password=test",
-				"org.coldis.configuration.persistence.datasources.secondary.entity-packages=org.coldis.library.test.persistence.secondary.model",
-				"org.coldis.configuration.persistence.datasources.secondary.repository-packages=org.coldis.library.test.persistence.secondary",
 				"org.coldis.configuration.persistence.datasources.tertiary.url=jdbc:postgresql://localhost:${POSTGRES_CONTAINER_TERTIARY_5432}/test",
 				"org.coldis.configuration.persistence.datasources.tertiary.username=test",
-				"org.coldis.configuration.persistence.datasources.tertiary.password=test",
-				"org.coldis.configuration.persistence.datasources.tertiary.entity-packages=org.coldis.library.test.persistence.tertiary.model",
-				"org.coldis.configuration.persistence.datasources.tertiary.repository-packages=org.coldis.library.test.persistence.tertiary" },
+				"org.coldis.configuration.persistence.datasources.tertiary.password=test" },
 		classes = TestApplication.class)
 @ExtendWith(StopTestWithContainerExtension.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
@@ -113,8 +111,9 @@ public class SecondaryDatasourceTest extends SpringTestHelper {
 	}
 
 	/**
-	 * A row written through the secondary unit is readable through the secondary unit and is
-	 * <strong>absent</strong> from the primary database.
+	 * A row written through the secondary unit is readable through the secondary unit, and the
+	 * secondary entity's table exists <strong>only</strong> in the secondary database — the annotated
+	 * entity is not even mapped by the primary or tertiary units.
 	 */
 	@Test
 	public void testSecondaryRoutingAndIsolation() throws Exception {
@@ -124,12 +123,13 @@ public class SecondaryDatasourceTest extends SpringTestHelper {
 		Assertions.assertNotNull(saved.getId());
 		Assertions.assertEquals("secondary-only", this.testSecondaryEntityRepository.findById(saved.getId()).orElseThrow().getName());
 		Assertions.assertEquals(1, this.testSecondaryEntityRepository.count());
-		Assertions.assertEquals(0, this.count(this.dataSource, "test_secondary_entity"));
+		Assertions.assertFalse(this.tableExists(this.dataSource, "test_secondary_entity"));
+		Assertions.assertFalse(this.tableExists(this.tertiaryDataSource, "test_secondary_entity"));
 	}
 
 	/**
 	 * A row written through the tertiary unit lands only in the tertiary database — proving a second,
-	 * independent secondary datasource (N &gt; 1).
+	 * independent secondary datasource (N &gt; 1) with its own annotation-selected entities.
 	 */
 	@Test
 	public void testTertiaryRoutingAndIsolation() throws Exception {
@@ -139,36 +139,43 @@ public class SecondaryDatasourceTest extends SpringTestHelper {
 		Assertions.assertNotNull(saved.getId());
 		Assertions.assertEquals("tertiary-only", this.testTertiaryEntityRepository.findById(saved.getId()).orElseThrow().getName());
 		Assertions.assertEquals(1, this.testTertiaryEntityRepository.count());
-		Assertions.assertEquals(0, this.count(this.dataSource, "test_tertiary_entity"));
+		Assertions.assertFalse(this.tableExists(this.dataSource, "test_tertiary_entity"));
+		Assertions.assertFalse(this.tableExists(this.secondaryDataSource, "test_tertiary_entity"));
 	}
 
 	/**
-	 * The primary unit still works while secondary units are configured.
+	 * The primary unit still works while secondary units are configured, and primary entities do not
+	 * leak into the secondary schemas.
 	 */
 	@Test
-	public void testPrimaryUnitStillWorks() {
+	public void testPrimaryUnitStillWorks() throws Exception {
 		TestEntity entity = new TestEntity();
 		entity = this.testEntityService.save(entity);
 		Assertions.assertNotNull(entity.getId());
 		Assertions.assertNotNull(entity.getCreatedAt());
+		Assertions.assertTrue(this.tableExists(this.dataSource, "test_entity"));
+		Assertions.assertFalse(this.tableExists(this.secondaryDataSource, "test_entity"));
+		Assertions.assertFalse(this.tableExists(this.tertiaryDataSource, "test_entity"));
 	}
 
 	/**
-	 * Counts rows of a table through the given datasource.
+	 * Checks whether a table exists in the given datasource's database.
 	 *
 	 * @param  dataSource Datasource to query.
 	 * @param  table      Table name.
-	 * @return            Row count.
+	 * @return            Whether the table exists.
 	 * @throws Exception  If the query fails.
 	 */
-	private long count(
+	private boolean tableExists(
 			final DataSource dataSource,
 			final String table) throws Exception {
 		try (Connection connection = dataSource.getConnection();
-				Statement statement = connection.createStatement();
-				ResultSet resultSet = statement.executeQuery("SELECT count(*) FROM " + table)) {
-			resultSet.next();
-			return resultSet.getLong(1);
+				PreparedStatement statement = connection.prepareStatement("SELECT count(*) FROM information_schema.tables WHERE table_name = ?")) {
+			statement.setString(1, table);
+			try (ResultSet resultSet = statement.executeQuery()) {
+				resultSet.next();
+				return (resultSet.getLong(1) > 0);
+			}
 		}
 	}
 
