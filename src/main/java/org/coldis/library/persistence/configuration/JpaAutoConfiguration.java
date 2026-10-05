@@ -28,10 +28,11 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 		enableDefaultTransactions = false,
 		repositoryBaseClass = org.coldis.library.persistence.repository.PostgresJpaRepositoryImpl.class,
 		basePackages = { PersistenceAutoConfiguration.PERSISTENCE_PACKAGE, "${org.coldis.configuration.persistence.jpa.base-package}" },
-		// Keep secondary-datasource repositories out of the primary scan (no-op unless annotated).
-		excludeFilters = @ComponentScan.Filter(
-				type = FilterType.ANNOTATION,
-				classes = DatasourceUnit.class)
+		// Keep secondary-datasource and LDAP repositories out of the primary JPA scan.
+		excludeFilters = {
+				@ComponentScan.Filter(type = FilterType.ANNOTATION, classes = DatasourceUnit.class),
+				@ComponentScan.Filter(type = FilterType.REGEX, pattern = ".*\\.ldap\\.repository\\..*")
+		}
 )
 public class JpaAutoConfiguration {
 
