@@ -1,38 +1,109 @@
 package org.coldis.library.test.persistence.settings;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.sql.DataSource;
 
 import org.coldis.library.persistence.settings.QuerySettings;
+import org.springframework.beans.factory.BeanNameAware;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 
 /**
- * Annotated at type level, with one method overriding it. Its {@code @PostConstruct} method and
- * {@code toString} run outside transactions, so the type-level settings must not cover them.
+ * Annotated at type level, with one method overriding it. Its framework callbacks (injection,
+ * container and lifecycle callbacks, {@code Object} methods) run outside transactions, so the
+ * type-level settings must not cover them: the context would not start otherwise.
  */
 @Component
 @QuerySettings(workMem = "66MB")
-public class QuerySettingsTypeLevelServiceComponent {
+public class QuerySettingsTypeLevelServiceComponent implements BeanNameAware, InitializingBean {
 
 	/** Primary datasource. */
-	@Autowired
 	private DataSource dataSource;
 
-	/** Whether the initialization callback ran. */
-	private boolean initialized;
+	/** Callbacks that ran, in order. */
+	private final List<String> callbacks = new ArrayList<>();
+
+	/**
+	 * Setter injection (outside any transaction).
+	 *
+	 * @param dataSource Primary datasource.
+	 */
+	@Autowired
+	public void setDataSource(
+			final DataSource dataSource) {
+		this.dataSource = dataSource;
+		this.callbacks.add("setDataSource");
+	}
+
+	/**
+	 * @see org.springframework.beans.factory.BeanNameAware#setBeanName(java.lang.String)
+	 */
+	@Override
+	public void setBeanName(
+			final String name) {
+		this.callbacks.add("setBeanName");
+	}
+
+	/**
+	 * @see org.springframework.beans.factory.InitializingBean#afterPropertiesSet()
+	 */
+	@Override
+	public void afterPropertiesSet() {
+		this.callbacks.add("afterPropertiesSet");
+	}
 
 	/**
 	 * Initialization callback (outside any transaction).
 	 */
 	@PostConstruct
 	public void initialize() {
-		this.initialized = true;
+		this.callbacks.add("initialize");
+	}
+
+	/**
+	 * Destruction callback (outside any transaction).
+	 */
+	@PreDestroy
+	public void release() {
+		this.callbacks.add("release");
+	}
+
+	/**
+	 * @return Callbacks that ran, in order.
+	 */
+	@QuerySettings(
+			workMem = "1MB",
+			startTransaction = true
+	)
+	public List<String> getCallbacks() {
+		return new ArrayList<>(this.callbacks);
+	}
+
+	/**
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		return Objects.hash(this.dataSource);
+	}
+
+	/**
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(
+			final Object other) {
+		return (other instanceof final QuerySettingsTypeLevelServiceComponent component) && Objects.equals(this.dataSource, component.dataSource);
 	}
 
 	/**
@@ -40,7 +111,7 @@ public class QuerySettingsTypeLevelServiceComponent {
 	 */
 	@Override
 	public String toString() {
-		return "QuerySettingsTypeLevelServiceComponent[initialized=" + this.initialized + "]";
+		return "QuerySettingsTypeLevelServiceComponent" + this.callbacks;
 	}
 
 	/**

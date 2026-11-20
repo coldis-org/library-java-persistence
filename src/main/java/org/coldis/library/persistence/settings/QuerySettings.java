@@ -33,9 +33,14 @@ import java.lang.annotation.Target;
  * start-up.</li>
  * </ul>
  * A method annotation replaces (does not merge with) the type annotation. On a class, the type
- * annotation covers the public instance methods the class declares, except {@code toString},
- * {@code equals}, {@code hashCode} and {@code @Autowired}, {@code @PostConstruct} and
- * {@code @PreDestroy} methods; annotate other methods individually. Annotations on interfaces
+ * annotation covers the public instance methods the class declares, except those the framework
+ * calls outside transactions: {@code toString}, {@code equals}, {@code hashCode}, container
+ * callbacks ({@code Aware} setters, {@code InitializingBean}, {@code DisposableBean},
+ * {@code SmartInitializingSingleton}, {@code Lifecycle}), and methods annotated with
+ * {@code @Autowired}, {@code @Value}, {@code @Resource}, {@code @PostConstruct},
+ * {@code @PreDestroy}, {@code @EventListener} or {@code @Scheduled}. Annotate other methods
+ * individually. On a repository interface, the type annotation may also sit on a parent interface.
+ * Only one live application context per JVM is supported (the woven aspect is a JVM singleton). Annotations on interfaces
  * that are not Spring Data repositories are not applied (and fail the start-up).
  *
  * <h2>Semantics</h2>

@@ -5,7 +5,7 @@ package org.coldis.library.persistence.settings;
  * effect.
  */
 @FunctionalInterface
-public interface QuerySettingsInvocation {
+interface QuerySettingsInvocation {
 
 	/**
 	 * Runs the annotated method.

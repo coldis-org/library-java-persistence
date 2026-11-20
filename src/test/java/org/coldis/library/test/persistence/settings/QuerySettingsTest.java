@@ -1,5 +1,6 @@
 package org.coldis.library.test.persistence.settings;
 
+import java.util.List;
 import java.util.Map;
 
 import javax.sql.DataSource;
@@ -85,6 +86,10 @@ public class QuerySettingsTest extends SpringTestHelper {
 	/** Repository annotated at type level. */
 	@Autowired
 	private QuerySettingsTypeLevelTestRepository typeLevelRepository;
+
+	/** Repository inheriting the type annotation of its parent interface. */
+	@Autowired
+	private QuerySettingsInheritedTestRepository inheritedRepository;
 
 	/** Primary transaction manager. */
 	@Autowired
@@ -291,22 +296,24 @@ public class QuerySettingsTest extends SpringTestHelper {
 	@Test
 	@DisplayName("startTransaction completes like @Transactional on failure")
 	public void testStartTransactionFailure() {
-		new TransactionTemplate(this.transactionManager).executeWithoutResult(status -> Assertions.assertThrows(Exception.class,
-				() -> this.testServiceComponent.failCheckedInStartedTransaction()));
+		new TransactionTemplate(this.transactionManager).executeWithoutResult(status -> Assertions.assertEquals("Checked failure.",
+				Assertions.assertThrows(Exception.class, () -> this.testServiceComponent.failCheckedInStartedTransaction()).getMessage()));
 		Assertions.assertThrows(UnexpectedRollbackException.class,
 				() -> new TransactionTemplate(this.transactionManager).executeWithoutResult(status -> Assertions
 						.assertThrows(IllegalArgumentException.class, () -> this.testServiceComponent.failUncheckedInStartedTransaction())));
 		Assertions.assertThrows(IllegalArgumentException.class, () -> this.testServiceComponent.failUncheckedInStartedTransaction());
-		Assertions.assertThrows(Exception.class, () -> this.testServiceComponent.failCheckedInStartedTransaction());
+		Assertions.assertEquals("Checked failure.",
+				Assertions.assertThrows(Exception.class, () -> this.testServiceComponent.failCheckedInStartedTransaction()).getMessage());
 	}
 
 	/**
 	 * A repository annotated at type level gets the settings on its methods.
 	 */
 	@Test
-	@DisplayName("type-level annotation on a repository interface applies to its methods")
+	@DisplayName("type-level annotation on a repository interface (or its parent) applies to its methods")
 	public void testTypeLevelRepository() {
 		Assertions.assertEquals("96MB", this.typeLevelRepository.findWorkMem());
+		Assertions.assertEquals("95MB", this.inheritedRepository.findWorkMem());
 	}
 
 	/**
@@ -319,7 +326,15 @@ public class QuerySettingsTest extends SpringTestHelper {
 		final Map<String, String> values = this.typeLevelServiceComponent.readSettingsAroundOwnCall();
 		Assertions.assertEquals("66MB", values.get("inner"));
 		Assertions.assertEquals("66MB", values.get("outer-after"));
-		Assertions.assertEquals("QuerySettingsTypeLevelServiceComponent[initialized=true]", this.typeLevelServiceComponent.toString());
+		Assertions.assertEquals(List.of("setDataSource", "setBeanName", "initialize", "afterPropertiesSet"), this.typeLevelServiceComponent.getCallbacks());
+		Assertions.assertTrue(this.typeLevelServiceComponent.toString().startsWith("QuerySettingsTypeLevelServiceComponent"));
+		Assertions.assertTrue(this.typeLevelServiceComponent.equals(this.typeLevelServiceComponent));
+		Assertions.assertEquals(this.typeLevelServiceComponent.hashCode(), this.typeLevelServiceComponent.hashCode());
+		this.typeLevelServiceComponent.release();
+		this.typeLevelServiceComponent.afterPropertiesSet();
+		this.typeLevelServiceComponent.setBeanName("again");
+		Assertions.assertEquals(List.of("setDataSource", "setBeanName", "initialize", "afterPropertiesSet", "release", "afterPropertiesSet", "setBeanName"),
+				this.typeLevelServiceComponent.getCallbacks());
 	}
 
 	/**
@@ -355,7 +370,7 @@ public class QuerySettingsTest extends SpringTestHelper {
 		Assertions.assertTrue(QuerySettingsTestServiceComponent.class.getMethod("readSettingsWithQuerySettings").isAnnotationPresent(QuerySettingsWoven.class));
 		Assertions.assertTrue(QuerySettingsTypeLevelServiceComponent.class.isAnnotationPresent(QuerySettingsWoven.class));
 		this.checkBeans(QuerySettingsTestServiceComponent.class, QuerySettingsTypeLevelServiceComponent.class, QuerySettingsTestRepository.class,
-				QuerySettingsTypeLevelTestRepository.class);
+				QuerySettingsTypeLevelTestRepository.class, QuerySettingsInheritedTestRepository.class);
 		this.assertRejected("'search_path', which is not an allowed query setting", QuerySettingsFixtures.DisallowedSetting.class);
 		this.assertRejected("'work_mem' more than once", QuerySettingsFixtures.DuplicateSetting.class);
 		this.assertRejected("declares no setting", QuerySettingsFixtures.NoSetting.class);

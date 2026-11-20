@@ -4,6 +4,7 @@ import java.util.Arrays;
 
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.data.repository.core.support.RepositoryFactoryBeanSupport;
 
 /**
@@ -29,7 +30,7 @@ public class QuerySettingsRepositoryPostProcessor implements BeanPostProcessor {
 	 */
 	private static boolean isAnnotated(
 			final Class<?> repositoryInterface) {
-		return repositoryInterface.isAnnotationPresent(QuerySettings.class)
+		return (AnnotationUtils.findAnnotation(repositoryInterface, QuerySettings.class) != null)
 				|| Arrays.stream(repositoryInterface.getMethods()).anyMatch(method -> method.isAnnotationPresent(QuerySettings.class));
 	}
 

@@ -36,7 +36,7 @@ public class QuerySettingsRepository {
 	 * @return              Values by name.
 	 * @throws SQLException If a setting does not exist or the statement fails.
 	 */
-	public Map<String, String> read(
+	Map<String, String> read(
 			final Connection connection,
 			final Set<String> names) throws SQLException {
 		final Map<String, String> values = new LinkedHashMap<>();
@@ -58,7 +58,7 @@ public class QuerySettingsRepository {
 	 * @param  values       Values by name.
 	 * @throws SQLException If a value is invalid or the statement fails.
 	 */
-	public void write(
+	void write(
 			final Connection connection,
 			final Map<String, String> values) throws SQLException {
 		try (PreparedStatement statement = connection.prepareStatement(QuerySettingsRepository.WRITE_SETTINGS)) {

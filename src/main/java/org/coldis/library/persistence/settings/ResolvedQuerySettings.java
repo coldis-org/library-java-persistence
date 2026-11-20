@@ -7,7 +7,7 @@ import java.util.Map;
 /**
  * A validated {@link QuerySettings} annotation, with placeholders resolved and names in lower case.
  */
-public final class ResolvedQuerySettings {
+final class ResolvedQuerySettings {
 
 	/** Datasource name (empty for the primary). */
 	private final String datasource;
@@ -23,7 +23,7 @@ public final class ResolvedQuerySettings {
 	 * @param startTransaction Whether to open a transaction when none is active.
 	 * @param values           Setting values by name.
 	 */
-	public ResolvedQuerySettings(
+	ResolvedQuerySettings(
 			final String datasource,
 			final boolean startTransaction,
 			final Map<String, String> values) {
@@ -35,21 +35,21 @@ public final class ResolvedQuerySettings {
 	/**
 	 * @return Datasource name (empty for the primary).
 	 */
-	public String getDatasource() {
+	String getDatasource() {
 		return this.datasource;
 	}
 
 	/**
 	 * @return Whether to open a transaction when none is active.
 	 */
-	public boolean isStartTransaction() {
+	boolean isStartTransaction() {
 		return this.startTransaction;
 	}
 
 	/**
 	 * @return Setting values by name, in declaration order.
 	 */
-	public Map<String, String> getValues() {
+	Map<String, String> getValues() {
 		return this.values;
 	}
 

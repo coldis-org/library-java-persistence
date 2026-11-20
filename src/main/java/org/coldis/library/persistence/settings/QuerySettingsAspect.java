@@ -35,11 +35,12 @@ public class QuerySettingsAspect {
 	/**
 	 * Sets the component applying the settings. A JVM may run several application contexts (a test
 	 * suite does), and the aspect is one instance per JVM: the latest context wins, and a closing
-	 * context clears its own component.
+	 * context clears its own component. Annotated classes of an older context that is still open then
+	 * resolve datasources through the newest one, so only one live context per JVM is supported.
 	 *
 	 * @param querySettingsServiceComponent Component applying the settings.
 	 */
-	public void setQuerySettingsServiceComponent(
+	void setQuerySettingsServiceComponent(
 			final QuerySettingsServiceComponent querySettingsServiceComponent) {
 		this.querySettingsServiceComponent = querySettingsServiceComponent;
 	}
@@ -49,7 +50,7 @@ public class QuerySettingsAspect {
 	 *
 	 * @param querySettingsServiceComponent Component of the closing context.
 	 */
-	public void clearQuerySettingsServiceComponent(
+	void clearQuerySettingsServiceComponent(
 			final QuerySettingsServiceComponent querySettingsServiceComponent) {
 		if (this.querySettingsServiceComponent == querySettingsServiceComponent) {
 			this.querySettingsServiceComponent = null;
@@ -64,13 +65,21 @@ public class QuerySettingsAspect {
 	}
 
 	/**
-	 * Business methods of an annotated type: public instance methods it declares, except the
-	 * {@code Object} methods and injection and lifecycle callbacks (which run outside transactions).
+	 * Business methods of an annotated type: public instance methods it declares, except those the
+	 * framework calls outside transactions ({@code Object} methods, container callbacks, injection,
+	 * lifecycle, event and scheduling methods).
 	 */
 	@Pointcut("execution(public !static * *(..)) && @within(org.coldis.library.persistence.settings.QuerySettings)"
 			+ " && !execution(String toString()) && !execution(boolean equals(Object)) && !execution(int hashCode())"
-			+ " && !@annotation(org.springframework.beans.factory.annotation.Autowired) && !@annotation(jakarta.annotation.PostConstruct)"
-			+ " && !@annotation(jakarta.annotation.PreDestroy)")
+			+ " && !execution(* org.springframework.beans.factory.Aware+.set*(..))"
+			+ " && !execution(void org.springframework.beans.factory.InitializingBean+.afterPropertiesSet())"
+			+ " && !execution(void org.springframework.beans.factory.DisposableBean+.destroy())"
+			+ " && !execution(void org.springframework.beans.factory.SmartInitializingSingleton+.afterSingletonsInstantiated())"
+			+ " && !execution(* org.springframework.context.Lifecycle+.*(..)) && !execution(* org.springframework.context.Phased+.*(..))"
+			+ " && !@annotation(org.springframework.beans.factory.annotation.Autowired) && !@annotation(org.springframework.beans.factory.annotation.Value)"
+			+ " && !@annotation(jakarta.annotation.Resource)"
+			+ " && !@annotation(jakarta.annotation.PostConstruct) && !@annotation(jakarta.annotation.PreDestroy)"
+			+ " && !@annotation(org.springframework.context.event.EventListener) && !@annotation(org.springframework.scheduling.annotation.Scheduled)")
 	public void annotatedTypeMethod() {
 	}
 

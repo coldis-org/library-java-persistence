@@ -18,11 +18,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.sql.DataSource;
 
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.aspectj.lang.Aspects;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.data.repository.Repository;
 import org.springframework.jdbc.datasource.ConnectionHolder;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
@@ -41,6 +44,9 @@ import org.springframework.util.ClassUtils;
  * annotation found on a bean and fails when an annotated class was not woven.
  */
 public class QuerySettingsServiceComponent implements SmartInitializingSingleton, DisposableBean {
+
+	/** Logger. */
+	private static final Logger LOGGER = LoggerFactory.getLogger(QuerySettingsServiceComponent.class);
 
 	/** Primary datasource display name. */
 	private static final String PRIMARY = "primary";
@@ -155,7 +161,7 @@ public class QuerySettingsServiceComponent implements SmartInitializingSingleton
 	 * @param  description Annotated element description (for error messages).
 	 * @return            The resolved settings.
 	 */
-	public ResolvedQuerySettings resolve(
+	ResolvedQuerySettings resolve(
 			final QuerySettings annotation,
 			final String description) {
 		final Map<String, String> values = new LinkedHashMap<>();
@@ -184,12 +190,12 @@ public class QuerySettingsServiceComponent implements SmartInitializingSingleton
 	 * @param  type   Type whose annotation applies when the method has none.
 	 * @return        The settings, or empty when neither is annotated.
 	 */
-	public Optional<ResolvedQuerySettings> resolve(
+	Optional<ResolvedQuerySettings> resolve(
 			final Method method,
 			final Class<?> type) {
 		return this.resolvedSettings.computeIfAbsent(List.of(method, type), key -> {
 			final QuerySettings methodAnnotation = method.getAnnotation(QuerySettings.class);
-			final QuerySettings typeAnnotation = type.getAnnotation(QuerySettings.class);
+			final QuerySettings typeAnnotation = AnnotationUtils.findAnnotation(type, QuerySettings.class);
 			Optional<ResolvedQuerySettings> settings = Optional.empty();
 			if (methodAnnotation != null) {
 				settings = Optional.of(this.resolve(methodAnnotation, method.toGenericString()));
@@ -356,7 +362,7 @@ public class QuerySettingsServiceComponent implements SmartInitializingSingleton
 	 * @throws Throwable  Whatever the call throws, or {@link IllegalStateException} when no
 	 *                        transaction is active for the datasource.
 	 */
-	public Object execute(
+	Object execute(
 			final ResolvedQuerySettings settings,
 			final QuerySettingsInvocation invocation) throws Throwable {
 		final TransactionTarget target = this.getTransactionTarget(settings.getDatasource());
@@ -387,7 +393,7 @@ public class QuerySettingsServiceComponent implements SmartInitializingSingleton
 	 */
 	private void validateRepository(
 			final Class<?> repositoryInterface) {
-		final QuerySettings typeAnnotation = repositoryInterface.getAnnotation(QuerySettings.class);
+		final QuerySettings typeAnnotation = AnnotationUtils.findAnnotation(repositoryInterface, QuerySettings.class);
 		if (typeAnnotation != null) {
 			this.resolve(typeAnnotation, repositoryInterface.getName());
 		}
@@ -404,11 +410,11 @@ public class QuerySettingsServiceComponent implements SmartInitializingSingleton
 	 */
 	private void checkNotAnnotated(
 			final Class<?> nonRepositoryInterface) {
-		boolean annotated = nonRepositoryInterface.isAnnotationPresent(QuerySettings.class);
+		boolean isAnnotated = nonRepositoryInterface.isAnnotationPresent(QuerySettings.class);
 		for (final Method method : nonRepositoryInterface.getMethods()) {
-			annotated = annotated || method.isAnnotationPresent(QuerySettings.class);
+			isAnnotated = isAnnotated || method.isAnnotationPresent(QuerySettings.class);
 		}
-		if (annotated) {
+		if (isAnnotated) {
 			throw new IllegalStateException("@QuerySettings on interface " + nonRepositoryInterface.getName()
 					+ " is ignored: only Spring Data repository interfaces are supported. Annotate the implementing class or its methods.");
 		}
@@ -443,6 +449,22 @@ public class QuerySettingsServiceComponent implements SmartInitializingSingleton
 	}
 
 	/**
+	 * Validates the annotations of one bean type.
+	 */
+	private void validateBeanType(
+			final Class<?> beanType) {
+		if (beanType.isInterface() && Repository.class.isAssignableFrom(beanType)) {
+			this.validateRepository(beanType);
+		}
+		else if (beanType.isInterface()) {
+			this.checkNotAnnotated(beanType);
+		}
+		else {
+			this.validateClass(ClassUtils.getUserClass(beanType));
+		}
+	}
+
+	/**
 	 * Validates every {@link QuerySettings} annotation on the context's beans: setting names, values,
 	 * datasources, and (for classes) that the aspect was woven.
 	 *
@@ -452,15 +474,15 @@ public class QuerySettingsServiceComponent implements SmartInitializingSingleton
 	public void afterSingletonsInstantiated() {
 		for (final String beanName : this.beanFactory.getBeanDefinitionNames()) {
 			final Class<?> beanType = this.beanFactory.getType(beanName, false);
-			if ((beanType != null) && !Proxy.isProxyClass(beanType)) {
-				if (beanType.isInterface() && Repository.class.isAssignableFrom(beanType)) {
-					this.validateRepository(beanType);
+			if ((beanType != null) && !Proxy.isProxyClass(beanType) && AnnotationUtils.isCandidateClass(beanType, QuerySettings.class)) {
+				try {
+					this.validateBeanType(beanType);
 				}
-				else if (beanType.isInterface()) {
-					this.checkNotAnnotated(beanType);
-				}
-				else {
-					this.validateClass(ClassUtils.getUserClass(beanType));
+				// A class whose methods reference an optional class missing from the classpath cannot be
+				// introspected, and so cannot be advised either: skipped, as Spring's own scanners do.
+				catch (final LinkageError error) {
+					QuerySettingsServiceComponent.LOGGER.debug("Bean type '{}' could not be introspected for @QuerySettings: {}.", beanType.getName(),
+							error.toString());
 				}
 			}
 		}

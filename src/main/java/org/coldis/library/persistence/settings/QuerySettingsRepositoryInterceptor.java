@@ -12,7 +12,7 @@ import org.aopalliance.intercept.MethodInvocation;
  * to the proxy after the repository's transaction interceptor, so a {@code @Transactional} repository
  * method gets the settings inside its own transaction.
  */
-public class QuerySettingsRepositoryInterceptor implements MethodInterceptor {
+class QuerySettingsRepositoryInterceptor implements MethodInterceptor {
 
 	/** Repository interface. */
 	private final Class<?> repositoryInterface;
@@ -24,7 +24,7 @@ public class QuerySettingsRepositoryInterceptor implements MethodInterceptor {
 	 * @param repositoryInterface           Repository interface.
 	 * @param querySettingsServiceComponent Component applying the settings.
 	 */
-	public QuerySettingsRepositoryInterceptor(
+	QuerySettingsRepositoryInterceptor(
 			final Class<?> repositoryInterface,
 			final QuerySettingsServiceComponent querySettingsServiceComponent) {
 		this.repositoryInterface = repositoryInterface;
