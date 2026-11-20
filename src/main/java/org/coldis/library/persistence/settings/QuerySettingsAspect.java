@@ -70,12 +70,18 @@ public class QuerySettingsAspect {
 	 * lifecycle, event and scheduling methods).
 	 */
 	@Pointcut("execution(public !static * *(..)) && @within(org.coldis.library.persistence.settings.QuerySettings)"
+			// Only the callback methods themselves: without "+", a declaring type matches the methods
+			// implementing that interface's methods, not every method of an implementing class.
 			+ " && !execution(String toString()) && !execution(boolean equals(Object)) && !execution(int hashCode())"
-			+ " && !execution(* org.springframework.beans.factory.Aware+.set*(..))"
-			+ " && !execution(void org.springframework.beans.factory.InitializingBean+.afterPropertiesSet())"
-			+ " && !execution(void org.springframework.beans.factory.DisposableBean+.destroy())"
-			+ " && !execution(void org.springframework.beans.factory.SmartInitializingSingleton+.afterSingletonsInstantiated())"
-			+ " && !execution(* org.springframework.context.Lifecycle+.*(..)) && !execution(* org.springframework.context.Phased+.*(..))"
+			+ " && !execution(void *..*Aware.set*(..))"
+			+ " && !execution(void org.springframework.beans.factory.InitializingBean.afterPropertiesSet())"
+			+ " && !execution(void org.springframework.beans.factory.DisposableBean.destroy())"
+			+ " && !execution(void org.springframework.beans.factory.SmartInitializingSingleton.afterSingletonsInstantiated())"
+			+ " && !execution(* org.springframework.beans.factory.FactoryBean.*(..))"
+			+ " && !execution(* org.springframework.context.Lifecycle.*(..)) && !execution(* org.springframework.context.SmartLifecycle.*(..))"
+			+ " && !execution(* org.springframework.context.Phased.*(..))"
+			+ " && !execution(void org.springframework.context.ApplicationListener.onApplicationEvent(..))"
+			+ " && !execution(void org.springframework.boot.ApplicationRunner.run(..)) && !execution(void org.springframework.boot.CommandLineRunner.run(..))"
 			+ " && !@annotation(org.springframework.beans.factory.annotation.Autowired) && !@annotation(org.springframework.beans.factory.annotation.Value)"
 			+ " && !@annotation(jakarta.annotation.Resource)"
 			+ " && !@annotation(jakarta.annotation.PostConstruct) && !@annotation(jakarta.annotation.PreDestroy)"

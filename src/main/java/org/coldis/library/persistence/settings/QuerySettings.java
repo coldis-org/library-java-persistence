@@ -36,7 +36,8 @@ import java.lang.annotation.Target;
  * annotation covers the public instance methods the class declares, except those the framework
  * calls outside transactions: {@code toString}, {@code equals}, {@code hashCode}, container
  * callbacks ({@code Aware} setters, {@code InitializingBean}, {@code DisposableBean},
- * {@code SmartInitializingSingleton}, {@code Lifecycle}), and methods annotated with
+ * {@code SmartInitializingSingleton}, {@code FactoryBean}, {@code Lifecycle}/{@code SmartLifecycle},
+ * {@code ApplicationListener}, {@code ApplicationRunner}/{@code CommandLineRunner}), and methods annotated with
  * {@code @Autowired}, {@code @Value}, {@code @Resource}, {@code @PostConstruct},
  * {@code @PreDestroy}, {@code @EventListener} or {@code @Scheduled}. Annotate other methods
  * individually. On a repository interface, the type annotation may also sit on a parent interface.
@@ -85,7 +86,9 @@ public @interface QuerySettings {
 
 	/**
 	 * @return Datasource the settings apply to: empty for the primary one, or a secondary datasource
-	 *         name ({@code org.coldis.configuration.persistence.datasources.<name>}).
+	 *         name ({@code org.coldis.configuration.persistence.datasources.<name>}). On a repository,
+	 *         empty means the repository's own datasource ({@code @DatasourceUnit}), and naming
+	 *         another one fails the start-up.
 	 */
 	String datasource() default "";
 

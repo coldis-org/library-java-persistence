@@ -18,6 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.sql.DataSource;
 
 import org.apache.commons.lang3.StringUtils;
+import org.coldis.library.persistence.configuration.DatasourceUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.aspectj.lang.Aspects;
@@ -158,12 +159,15 @@ public class QuerySettingsServiceComponent implements SmartInitializingSingleton
 	 * Validates an annotation and resolves its placeholders.
 	 *
 	 * @param  annotation Annotation.
-	 * @param  description Annotated element description (for error messages).
+	 * @param  description          Annotated element description (for error messages).
+	 * @param  repositoryDatasource Datasource of the annotated repository (the default target, and
+	 *                                  the only one allowed), or {@code null} for classes.
 	 * @return            The resolved settings.
 	 */
 	ResolvedQuerySettings resolve(
 			final QuerySettings annotation,
-			final String description) {
+			final String description,
+			final String repositoryDatasource) {
 		final Map<String, String> values = new LinkedHashMap<>();
 		if (StringUtils.isNotBlank(annotation.workMem())) {
 			this.addSetting(values, "work_mem", annotation.workMem(), description);
@@ -177,9 +181,28 @@ public class QuerySettingsServiceComponent implements SmartInitializingSingleton
 		if (values.isEmpty()) {
 			throw new IllegalStateException("@QuerySettings on " + description + " declares no setting.");
 		}
-		final String datasource = this.resolveValue(annotation.datasource());
+		final String declaredDatasource = this.resolveValue(annotation.datasource());
+		if ((repositoryDatasource != null) && !declaredDatasource.isEmpty() && !declaredDatasource.equals(repositoryDatasource)) {
+			throw new IllegalStateException("@QuerySettings on " + description + " targets the " + declaredDatasource + " datasource, but the repository belongs to the "
+					+ QuerySettingsServiceComponent.getDisplayName(repositoryDatasource) + " datasource, where its queries run.");
+		}
+		final String datasource = ((repositoryDatasource != null) && declaredDatasource.isEmpty() ? repositoryDatasource : declaredDatasource);
 		this.getTransactionTarget(datasource);
 		return new ResolvedQuerySettings(datasource, annotation.startTransaction(), values);
+	}
+
+	/**
+	 * Gets the datasource a Spring Data repository belongs to (its {@link DatasourceUnit}, or the
+	 * primary one), or {@code null} when the type is not a repository.
+	 */
+	private static String getRepositoryDatasource(
+			final Class<?> type) {
+		String repositoryDatasource = null;
+		if (type.isInterface() && Repository.class.isAssignableFrom(type)) {
+			final DatasourceUnit unit = AnnotationUtils.findAnnotation(type, DatasourceUnit.class);
+			repositoryDatasource = (unit == null ? "" : unit.value());
+		}
+		return repositoryDatasource;
 	}
 
 	/**
@@ -196,12 +219,13 @@ public class QuerySettingsServiceComponent implements SmartInitializingSingleton
 		return this.resolvedSettings.computeIfAbsent(List.of(method, type), key -> {
 			final QuerySettings methodAnnotation = method.getAnnotation(QuerySettings.class);
 			final QuerySettings typeAnnotation = AnnotationUtils.findAnnotation(type, QuerySettings.class);
+			final String repositoryDatasource = QuerySettingsServiceComponent.getRepositoryDatasource(type);
 			Optional<ResolvedQuerySettings> settings = Optional.empty();
 			if (methodAnnotation != null) {
-				settings = Optional.of(this.resolve(methodAnnotation, method.toGenericString()));
+				settings = Optional.of(this.resolve(methodAnnotation, method.toGenericString(), repositoryDatasource));
 			}
 			else if (typeAnnotation != null) {
-				settings = Optional.of(this.resolve(typeAnnotation, type.getName()));
+				settings = Optional.of(this.resolve(typeAnnotation, type.getName(), repositoryDatasource));
 			}
 			return settings;
 		});
@@ -393,14 +417,15 @@ public class QuerySettingsServiceComponent implements SmartInitializingSingleton
 	 */
 	private void validateRepository(
 			final Class<?> repositoryInterface) {
+		final String repositoryDatasource = QuerySettingsServiceComponent.getRepositoryDatasource(repositoryInterface);
 		final QuerySettings typeAnnotation = AnnotationUtils.findAnnotation(repositoryInterface, QuerySettings.class);
 		if (typeAnnotation != null) {
-			this.resolve(typeAnnotation, repositoryInterface.getName());
+			this.resolve(typeAnnotation, repositoryInterface.getName(), repositoryDatasource);
 		}
 		for (final Method method : repositoryInterface.getMethods()) {
 			final QuerySettings methodAnnotation = method.getAnnotation(QuerySettings.class);
 			if (methodAnnotation != null) {
-				this.resolve(methodAnnotation, method.toGenericString());
+				this.resolve(methodAnnotation, method.toGenericString(), repositoryDatasource);
 			}
 		}
 	}
@@ -430,13 +455,13 @@ public class QuerySettingsServiceComponent implements SmartInitializingSingleton
 			final QuerySettings typeAnnotation = currentClass.getAnnotation(QuerySettings.class);
 			if (typeAnnotation != null) {
 				this.checkWoven(currentClass, currentClass.getName());
-				this.resolve(typeAnnotation, currentClass.getName());
+				this.resolve(typeAnnotation, currentClass.getName(), null);
 			}
 			for (final Method method : currentClass.getDeclaredMethods()) {
 				final QuerySettings methodAnnotation = method.getAnnotation(QuerySettings.class);
 				if (methodAnnotation != null) {
 					this.checkWoven(method, method.toGenericString());
-					this.resolve(methodAnnotation, method.toGenericString());
+					this.resolve(methodAnnotation, method.toGenericString(), null);
 				}
 			}
 			currentClass = currentClass.getSuperclass();

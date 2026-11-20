@@ -87,6 +87,10 @@ public class QuerySettingsTest extends SpringTestHelper {
 	@Autowired
 	private QuerySettingsTypeLevelTestRepository typeLevelRepository;
 
+	/** Repository of the secondary unit. */
+	@Autowired
+	private QuerySettingsSecondaryTestRepository secondaryRepository;
+
 	/** Repository inheriting the type annotation of its parent interface. */
 	@Autowired
 	private QuerySettingsInheritedTestRepository inheritedRepository;
@@ -250,13 +254,14 @@ public class QuerySettingsTest extends SpringTestHelper {
 	 * Settings target the named datasource's transaction, and fail when that datasource has none.
 	 */
 	@Test
-	@DisplayName("settings target the named datasource")
+	@DisplayName("settings target the named datasource, or the repository's own")
 	public void testSecondaryDatasource() {
 		final String sessionWorkMem = this.getSessionWorkMem();
 		final Map<String, String> values = this.secondaryServiceComponent.readSettingsOnSecondary();
 		Assertions.assertEquals("71MB", values.get("secondary"));
 		Assertions.assertEquals(sessionWorkMem, values.get("primary"));
 		QuerySettingsTest.assertFailsWithoutTransaction(() -> this.secondaryServiceComponent.readSettingsOnSecondaryInPrimaryTransaction());
+		Assertions.assertEquals("73MB", this.secondaryRepository.findWorkMem());
 	}
 
 	/**
@@ -326,14 +331,16 @@ public class QuerySettingsTest extends SpringTestHelper {
 		final Map<String, String> values = this.typeLevelServiceComponent.readSettingsAroundOwnCall();
 		Assertions.assertEquals("66MB", values.get("inner"));
 		Assertions.assertEquals("66MB", values.get("outer-after"));
-		Assertions.assertEquals(List.of("setDataSource", "setBeanName", "initialize", "afterPropertiesSet"), this.typeLevelServiceComponent.getCallbacks());
+		Assertions.assertEquals("66MB", this.typeLevelServiceComponent.setupWithTypeSettings().get("work_mem"));
+		Assertions.assertTrue(this.typeLevelServiceComponent.isRunning());
+		Assertions.assertEquals(List.of("setDataSource", "setBeanName", "initialize", "afterPropertiesSet", "start"), this.typeLevelServiceComponent.getCallbacks());
 		Assertions.assertTrue(this.typeLevelServiceComponent.toString().startsWith("QuerySettingsTypeLevelServiceComponent"));
 		Assertions.assertTrue(this.typeLevelServiceComponent.equals(this.typeLevelServiceComponent));
 		Assertions.assertEquals(this.typeLevelServiceComponent.hashCode(), this.typeLevelServiceComponent.hashCode());
 		this.typeLevelServiceComponent.release();
 		this.typeLevelServiceComponent.afterPropertiesSet();
 		this.typeLevelServiceComponent.setBeanName("again");
-		Assertions.assertEquals(List.of("setDataSource", "setBeanName", "initialize", "afterPropertiesSet", "release", "afterPropertiesSet", "setBeanName"),
+		Assertions.assertEquals(List.of("setDataSource", "setBeanName", "initialize", "afterPropertiesSet", "start", "release", "afterPropertiesSet", "setBeanName"),
 				this.typeLevelServiceComponent.getCallbacks());
 	}
 
@@ -376,6 +383,7 @@ public class QuerySettingsTest extends SpringTestHelper {
 		this.assertRejected("declares no setting", QuerySettingsFixtures.NoSetting.class);
 		this.assertRejected("targets the missing datasource", QuerySettingsFixtures.UnknownDatasource.class);
 		this.assertRejected("only Spring Data repository interfaces are supported", QuerySettingsFixtures.AnnotatedInterfaceImplementation.class);
+		this.assertRejected("but the repository belongs to the secondary datasource", QuerySettingsFixtures.MismatchedDatasourceRepository.class);
 		final Class<?> unwovenClass = new ByteBuddy().subclass(Object.class).name("org.coldis.library.test.persistence.settings.UnwovenQuerySettings")
 				.defineMethod("run", void.class, Visibility.PUBLIC).intercept(StubMethod.INSTANCE)
 				.annotateMethod(QuerySettingsFixtures.NoSetting.class.getMethod("run").getAnnotation(QuerySettings.class)).make()

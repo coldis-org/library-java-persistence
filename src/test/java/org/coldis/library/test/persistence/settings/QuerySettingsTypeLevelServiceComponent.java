@@ -12,6 +12,7 @@ import org.coldis.library.persistence.settings.QuerySettings;
 import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.SmartLifecycle;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,13 +26,16 @@ import jakarta.annotation.PreDestroy;
  */
 @Component
 @QuerySettings(workMem = "66MB")
-public class QuerySettingsTypeLevelServiceComponent implements BeanNameAware, InitializingBean {
+public class QuerySettingsTypeLevelServiceComponent implements BeanNameAware, InitializingBean, SmartLifecycle {
 
 	/** Primary datasource. */
 	private DataSource dataSource;
 
 	/** Callbacks that ran, in order. */
 	private final List<String> callbacks = new ArrayList<>();
+
+	/** Whether the lifecycle is running. */
+	private boolean running;
 
 	/**
 	 * Setter injection (outside any transaction).
@@ -76,6 +80,42 @@ public class QuerySettingsTypeLevelServiceComponent implements BeanNameAware, In
 	@PreDestroy
 	public void release() {
 		this.callbacks.add("release");
+	}
+
+	/**
+	 * @see org.springframework.context.Lifecycle#start()
+	 */
+	@Override
+	public void start() {
+		this.running = true;
+		this.callbacks.add("start");
+	}
+
+	/**
+	 * @see org.springframework.context.Lifecycle#stop()
+	 */
+	@Override
+	public void stop() {
+		this.running = false;
+	}
+
+	/**
+	 * @see org.springframework.context.Lifecycle#isRunning()
+	 */
+	@Override
+	public boolean isRunning() {
+		return this.running;
+	}
+
+	/**
+	 * Business method whose name starts like a setter (on a class implementing {@code Aware} and
+	 * {@code Lifecycle} interfaces): still covered by the type-level settings.
+	 *
+	 * @return Values by setting name.
+	 */
+	@Transactional
+	public Map<String, String> setupWithTypeSettings() {
+		return QuerySettingsTestServiceComponent.readSettings(this.dataSource);
 	}
 
 	/**

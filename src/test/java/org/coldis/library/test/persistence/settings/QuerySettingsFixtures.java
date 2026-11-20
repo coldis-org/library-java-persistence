@@ -1,7 +1,10 @@
 package org.coldis.library.test.persistence.settings;
 
+import org.coldis.library.persistence.configuration.DatasourceUnit;
 import org.coldis.library.persistence.settings.QuerySetting;
 import org.coldis.library.persistence.settings.QuerySettings;
+import org.coldis.library.test.persistence.secondary.model.TestSecondaryEntity;
+import org.springframework.data.repository.Repository;
 
 /**
  * Invalid {@link QuerySettings} usages for the start-up check (not beans of the test context).
@@ -57,6 +60,23 @@ public final class QuerySettingsFixtures {
 		)
 		public void run() {
 		}
+
+	}
+
+	/** Secondary-unit repository whose settings name another datasource. */
+	@DatasourceUnit(value = "secondary")
+	public interface MismatchedDatasourceRepository extends Repository<TestSecondaryEntity, Long> {
+
+		/**
+		 * Annotated method.
+		 *
+		 * @return Nothing.
+		 */
+		@QuerySettings(
+				workMem = "1MB",
+				datasource = "tertiary"
+		)
+		String findWorkMem();
 
 	}
 
