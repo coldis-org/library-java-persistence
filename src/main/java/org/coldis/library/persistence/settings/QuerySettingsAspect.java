@@ -34,7 +34,8 @@ public class QuerySettingsAspect {
 
 	/**
 	 * Sets the component applying the settings. A JVM may run several application contexts (a test
-	 * suite does), and the aspect is one instance per JVM: the latest context wins.
+	 * suite does), and the aspect is one instance per JVM: the latest context wins, and a closing
+	 * context clears its own component.
 	 *
 	 * @param querySettingsServiceComponent Component applying the settings.
 	 */
@@ -44,10 +45,33 @@ public class QuerySettingsAspect {
 	}
 
 	/**
-	 * Methods annotated, or declared by an annotated type.
+	 * Clears the component applying the settings, if it is still the given one (its context closed).
+	 *
+	 * @param querySettingsServiceComponent Component of the closing context.
 	 */
-	@Pointcut("execution(* *(..)) && (@annotation(org.coldis.library.persistence.settings.QuerySettings) || @within(org.coldis.library.persistence.settings.QuerySettings))")
+	public void clearQuerySettingsServiceComponent(
+			final QuerySettingsServiceComponent querySettingsServiceComponent) {
+		if (this.querySettingsServiceComponent == querySettingsServiceComponent) {
+			this.querySettingsServiceComponent = null;
+		}
+	}
+
+	/**
+	 * Methods annotated themselves.
+	 */
+	@Pointcut("execution(* *(..)) && @annotation(org.coldis.library.persistence.settings.QuerySettings)")
 	public void annotatedMethod() {
+	}
+
+	/**
+	 * Business methods of an annotated type: public instance methods it declares, except the
+	 * {@code Object} methods and injection and lifecycle callbacks (which run outside transactions).
+	 */
+	@Pointcut("execution(public !static * *(..)) && @within(org.coldis.library.persistence.settings.QuerySettings)"
+			+ " && !execution(String toString()) && !execution(boolean equals(Object)) && !execution(int hashCode())"
+			+ " && !@annotation(org.springframework.beans.factory.annotation.Autowired) && !@annotation(jakarta.annotation.PostConstruct)"
+			+ " && !@annotation(jakarta.annotation.PreDestroy)")
+	public void annotatedTypeMethod() {
 	}
 
 	/**
@@ -58,7 +82,7 @@ public class QuerySettingsAspect {
 	 * @throws Throwable Whatever the method throws, or {@link IllegalStateException} when the
 	 *                       settings cannot be applied.
 	 */
-	@Around("annotatedMethod()")
+	@Around("annotatedMethod() || annotatedTypeMethod()")
 	public Object applySettings(
 			final ProceedingJoinPoint joinPoint) throws Throwable {
 		final QuerySettingsServiceComponent component = this.querySettingsServiceComponent;

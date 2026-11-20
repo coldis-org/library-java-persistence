@@ -32,7 +32,10 @@ import java.lang.annotation.Target;
  * {@code aspectLibraries}); a bean whose annotated methods were not woven fails the application
  * start-up.</li>
  * </ul>
- * A method annotation replaces (does not merge with) the type annotation. Annotations on interfaces
+ * A method annotation replaces (does not merge with) the type annotation. On a class, the type
+ * annotation covers the public instance methods the class declares, except {@code toString},
+ * {@code equals}, {@code hashCode} and {@code @Autowired}, {@code @PostConstruct} and
+ * {@code @PreDestroy} methods; annotate other methods individually. Annotations on interfaces
  * that are not Spring Data repositories are not applied (and fail the start-up).
  *
  * <h2>Semantics</h2>

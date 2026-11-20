@@ -5,6 +5,7 @@ import java.util.Map;
 import javax.sql.DataSource;
 
 import org.coldis.library.persistence.settings.QuerySettings;
+import org.coldis.library.persistence.settings.QuerySettingsRepository;
 import org.coldis.library.persistence.settings.QuerySettingsServiceComponent;
 import org.coldis.library.persistence.settings.QuerySettingsWoven;
 import org.coldis.library.test.SpringTestHelper;
@@ -14,6 +15,7 @@ import org.coldis.library.test.TestHelper;
 import org.coldis.library.test.TestWithContainer;
 import org.coldis.library.test.persistence.TestApplication;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.function.Executable;
@@ -25,6 +27,7 @@ import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.UnexpectedRollbackException;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.testcontainers.containers.GenericContainer;
 
@@ -79,6 +82,10 @@ public class QuerySettingsTest extends SpringTestHelper {
 	@Autowired
 	private QuerySettingsTestRepository repository;
 
+	/** Repository annotated at type level. */
+	@Autowired
+	private QuerySettingsTypeLevelTestRepository typeLevelRepository;
+
 	/** Primary transaction manager. */
 	@Autowired
 	private PlatformTransactionManager transactionManager;
@@ -112,6 +119,7 @@ public class QuerySettingsTest extends SpringTestHelper {
 	 * The settings are in effect while the annotated method runs.
 	 */
 	@Test
+	@DisplayName("settings are in effect while the method runs")
 	public void testSettingsAppliedDuringMethod() {
 		final Map<String, String> values = this.testServiceComponent.readSettingsWithQuerySettings();
 		Assertions.assertEquals("77MB", values.get("work_mem"));
@@ -123,6 +131,7 @@ public class QuerySettingsTest extends SpringTestHelper {
 	 * The next transaction on the same pooled connection sees the session values again.
 	 */
 	@Test
+	@DisplayName("settings do not reach the next transaction on the same connection")
 	public void testSettingsNotLeakedToNextTransaction() {
 		final Map<String, String> before = this.testServiceComponent.readSettingsInPlainTransaction();
 		final Map<String, String> during = this.testServiceComponent.readSettingsWithQuerySettings();
@@ -139,6 +148,7 @@ public class QuerySettingsTest extends SpringTestHelper {
 	 * Nested annotated calls each get their own scope and restore the enclosing one.
 	 */
 	@Test
+	@DisplayName("nested calls each get their own scope")
 	public void testNestedScopes() {
 		final Map<String, String> values = this.testServiceComponent.readSettingsInNestedScopes();
 		Assertions.assertEquals("11MB", values.get("outer-before"));
@@ -150,6 +160,7 @@ public class QuerySettingsTest extends SpringTestHelper {
 	 * A method that throws still restores the previous values in the ongoing transaction.
 	 */
 	@Test
+	@DisplayName("settings are restored in the same transaction after the method throws")
 	public void testRestoredAfterException() {
 		final String sessionWorkMem = this.getSessionWorkMem();
 		final Map<String, String> values = this.testServiceComponent.readSettingsAfterFailure();
@@ -162,6 +173,7 @@ public class QuerySettingsTest extends SpringTestHelper {
 	 * discards them, and the next transaction on the same pooled connection sees the session values.
 	 */
 	@Test
+	@DisplayName("settings do not leak after an SQL error aborts the transaction")
 	public void testNotLeakedAfterSqlError() {
 		final Map<String, String> before = this.testServiceComponent.readSettingsInPlainTransaction();
 		final IllegalStateException failure = Assertions.assertThrows(IllegalStateException.class, () -> this.testServiceComponent.failWithSqlError());
@@ -177,6 +189,7 @@ public class QuerySettingsTest extends SpringTestHelper {
 	 * Without a transaction (none started, or suspended) the call fails instead of applying nothing.
 	 */
 	@Test
+	@DisplayName("calls without a transaction on the datasource fail")
 	public void testFailsWithoutTransaction() {
 		QuerySettingsTest.assertFailsWithoutTransaction(() -> this.testServiceComponent.readSettingsWithoutTransaction());
 		new TransactionTemplate(this.transactionManager).executeWithoutResult(status -> QuerySettingsTest
@@ -187,6 +200,7 @@ public class QuerySettingsTest extends SpringTestHelper {
 	 * {@code startTransaction} opens a read-only transaction to apply the settings in.
 	 */
 	@Test
+	@DisplayName("startTransaction opens a read-only transaction")
 	public void testStartTransaction() {
 		final Map<String, String> values = this.testServiceComponent.readSettingsInStartedTransaction();
 		Assertions.assertEquals("55MB", values.get("work_mem"));
@@ -197,6 +211,7 @@ public class QuerySettingsTest extends SpringTestHelper {
 	 * A type annotation applies to its methods, and a method annotation replaces it.
 	 */
 	@Test
+	@DisplayName("method annotation replaces the type annotation")
 	public void testTypeAndMethodLevel() {
 		Assertions.assertEquals("66MB", this.typeLevelServiceComponent.readSettingsWithTypeSettings().get("work_mem"));
 		Assertions.assertEquals("88MB", this.typeLevelServiceComponent.readSettingsWithMethodSettings().get("work_mem"));
@@ -206,6 +221,7 @@ public class QuerySettingsTest extends SpringTestHelper {
 	 * Values resolve placeholders.
 	 */
 	@Test
+	@DisplayName("values resolve placeholders")
 	public void testPlaceholder() {
 		Assertions.assertEquals("12MB", this.testServiceComponent.readSettingsWithPlaceholder().get("work_mem"));
 	}
@@ -214,6 +230,7 @@ public class QuerySettingsTest extends SpringTestHelper {
 	 * Annotated repository interface methods (JDK proxies) get the settings, scoped to the method.
 	 */
 	@Test
+	@DisplayName("repository interface methods get the settings")
 	public void testRepositoryMethod() {
 		final String sessionWorkMem = this.getSessionWorkMem();
 		new TransactionTemplate(this.transactionManager).executeWithoutResult(status -> {
@@ -228,6 +245,7 @@ public class QuerySettingsTest extends SpringTestHelper {
 	 * Settings target the named datasource's transaction, and fail when that datasource has none.
 	 */
 	@Test
+	@DisplayName("settings target the named datasource")
 	public void testSecondaryDatasource() {
 		final String sessionWorkMem = this.getSessionWorkMem();
 		final Map<String, String> values = this.secondaryServiceComponent.readSettingsOnSecondary();
@@ -241,6 +259,7 @@ public class QuerySettingsTest extends SpringTestHelper {
 	 * prepare threshold.
 	 */
 	@Test
+	@DisplayName("plan_cache_mode is in effect past the prepare threshold")
 	public void testPlanCacheMode() {
 		final Map<String, Long> custom = this.testServiceComponent.countPlansWithCustomPlansForced("query-settings-custom-plan-probe");
 		Assertions.assertTrue(custom.get("custom_plans") > 0, custom::toString);
@@ -248,6 +267,59 @@ public class QuerySettingsTest extends SpringTestHelper {
 		final Map<String, Long> generic = this.testServiceComponent.countPlansWithGenericPlansForced("query-settings-generic-plan-probe");
 		Assertions.assertTrue(generic.get("generic_plans") > 0, generic::toString);
 		Assertions.assertEquals(0L, generic.get("custom_plans"), generic::toString);
+	}
+
+	/**
+	 * {@code startTransaction} joins an active transaction (same connection, not made read-only).
+	 */
+	@Test
+	@DisplayName("startTransaction joins an active transaction")
+	public void testStartTransactionJoinsActiveTransaction() {
+		new TransactionTemplate(this.transactionManager).executeWithoutResult(status -> {
+			final String callerPid = this.testServiceComponent.readSettings().get(QuerySettingsTestServiceComponent.BACKEND_PID);
+			final Map<String, String> values = this.testServiceComponent.readSettingsInStartedTransaction();
+			Assertions.assertEquals("55MB", values.get("work_mem"));
+			Assertions.assertEquals(callerPid, values.get(QuerySettingsTestServiceComponent.BACKEND_PID));
+			Assertions.assertEquals("false", values.get(QuerySettingsTestServiceComponent.READ_ONLY));
+		});
+	}
+
+	/**
+	 * A transaction joined by {@code startTransaction} is marked rollback-only on an unchecked
+	 * exception and left alone on a checked one, as {@code @Transactional} does.
+	 */
+	@Test
+	@DisplayName("startTransaction completes like @Transactional on failure")
+	public void testStartTransactionFailure() {
+		new TransactionTemplate(this.transactionManager).executeWithoutResult(status -> Assertions.assertThrows(Exception.class,
+				() -> this.testServiceComponent.failCheckedInStartedTransaction()));
+		Assertions.assertThrows(UnexpectedRollbackException.class,
+				() -> new TransactionTemplate(this.transactionManager).executeWithoutResult(status -> Assertions
+						.assertThrows(IllegalArgumentException.class, () -> this.testServiceComponent.failUncheckedInStartedTransaction())));
+		Assertions.assertThrows(IllegalArgumentException.class, () -> this.testServiceComponent.failUncheckedInStartedTransaction());
+		Assertions.assertThrows(Exception.class, () -> this.testServiceComponent.failCheckedInStartedTransaction());
+	}
+
+	/**
+	 * A repository annotated at type level gets the settings on its methods.
+	 */
+	@Test
+	@DisplayName("type-level annotation on a repository interface applies to its methods")
+	public void testTypeLevelRepository() {
+		Assertions.assertEquals("96MB", this.typeLevelRepository.findWorkMem());
+	}
+
+	/**
+	 * A class annotated at type level calling its own methods keeps the settings, and its
+	 * initialization callback and toString run outside the settings (no transaction needed).
+	 */
+	@Test
+	@DisplayName("type-level class: own calls keep the settings, callbacks are not covered")
+	public void testTypeLevelOwnCallsAndCallbacks() {
+		final Map<String, String> values = this.typeLevelServiceComponent.readSettingsAroundOwnCall();
+		Assertions.assertEquals("66MB", values.get("inner"));
+		Assertions.assertEquals("66MB", values.get("outer-after"));
+		Assertions.assertEquals("QuerySettingsTypeLevelServiceComponent[initialized=true]", this.typeLevelServiceComponent.toString());
 	}
 
 	/**
@@ -261,7 +333,7 @@ public class QuerySettingsTest extends SpringTestHelper {
 		for (final Class<?> beanClass : beanClasses) {
 			beanFactory.registerBeanDefinition(beanClass.getName(), new RootBeanDefinition(beanClass));
 		}
-		new QuerySettingsServiceComponent(beanFactory).afterSingletonsInstantiated();
+		new QuerySettingsServiceComponent(beanFactory, new QuerySettingsRepository()).afterSingletonsInstantiated();
 	}
 
 	/**
@@ -278,10 +350,12 @@ public class QuerySettingsTest extends SpringTestHelper {
 	 * The start-up check accepts woven classes and repositories and rejects invalid annotations.
 	 */
 	@Test
+	@DisplayName("start-up check rejects invalid or unwoven annotations")
 	public void testStartupCheck() throws Exception {
 		Assertions.assertTrue(QuerySettingsTestServiceComponent.class.getMethod("readSettingsWithQuerySettings").isAnnotationPresent(QuerySettingsWoven.class));
 		Assertions.assertTrue(QuerySettingsTypeLevelServiceComponent.class.isAnnotationPresent(QuerySettingsWoven.class));
-		this.checkBeans(QuerySettingsTestServiceComponent.class, QuerySettingsTypeLevelServiceComponent.class, QuerySettingsTestRepository.class);
+		this.checkBeans(QuerySettingsTestServiceComponent.class, QuerySettingsTypeLevelServiceComponent.class, QuerySettingsTestRepository.class,
+				QuerySettingsTypeLevelTestRepository.class);
 		this.assertRejected("'search_path', which is not an allowed query setting", QuerySettingsFixtures.DisallowedSetting.class);
 		this.assertRejected("'work_mem' more than once", QuerySettingsFixtures.DuplicateSetting.class);
 		this.assertRejected("declares no setting", QuerySettingsFixtures.NoSetting.class);

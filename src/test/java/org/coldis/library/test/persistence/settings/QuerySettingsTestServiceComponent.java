@@ -216,6 +216,30 @@ public class QuerySettingsTestServiceComponent {
 	}
 
 	/**
+	 * Throws an unchecked exception inside a transaction it opens or joins.
+	 */
+	@QuerySettings(
+			workMem = "57MB",
+			startTransaction = true
+	)
+	public void failUncheckedInStartedTransaction() {
+		throw new IllegalArgumentException("Unchecked failure.");
+	}
+
+	/**
+	 * Throws a checked exception inside a transaction it opens or joins.
+	 *
+	 * @throws Exception Always.
+	 */
+	@QuerySettings(
+			workMem = "58MB",
+			startTransaction = true
+	)
+	public void failCheckedInStartedTransaction() throws Exception {
+		throw new Exception("Checked failure.");
+	}
+
+	/**
 	 * Annotated with a placeholder value.
 	 *
 	 * @return Values by setting name.

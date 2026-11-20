@@ -4,8 +4,6 @@ import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -20,9 +18,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.sql.DataSource;
 
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.aspectj.lang.Aspects;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.data.repository.Repository;
@@ -42,22 +40,16 @@ import org.springframework.util.ClassUtils;
  * {@link QuerySettingsRepositoryInterceptor} (repository proxies). On start-up it validates every
  * annotation found on a bean and fails when an annotated class was not woven.
  */
-public class QuerySettingsServiceComponent implements SmartInitializingSingleton {
-
-	/** Logger. */
-	private static final Logger LOGGER = LoggerFactory.getLogger(QuerySettingsServiceComponent.class);
-
-	/** Reads the current values (one row per name). */
-	private static final String READ_SETTINGS = "SELECT setting.name, current_setting(setting.name) FROM unnest(?::text[]) AS setting(name)";
-
-	/** Sets transaction-local values (one row per name). */
-	private static final String WRITE_SETTINGS = "SELECT set_config(setting.name, setting.value, true) FROM unnest(?::text[], ?::text[]) AS setting(name, value)";
+public class QuerySettingsServiceComponent implements SmartInitializingSingleton, DisposableBean {
 
 	/** Primary datasource display name. */
 	private static final String PRIMARY = "primary";
 
 	/** Bean factory. */
 	private final ConfigurableListableBeanFactory beanFactory;
+
+	/** Repository running the statements. */
+	private final QuerySettingsRepository querySettingsRepository;
 
 	/** Resolved settings by annotated method and type (empty when not annotated). */
 	private final Map<List<Object>, Optional<ResolvedQuerySettings>> resolvedSettings = new ConcurrentHashMap<>();
@@ -69,10 +61,14 @@ public class QuerySettingsServiceComponent implements SmartInitializingSingleton
 	private final ThreadLocal<Deque<AppliedScope>> appliedScopes = new ThreadLocal<>();
 
 	/**
-	 * @param beanFactory Bean factory.
+	 * @param beanFactory             Bean factory.
+	 * @param querySettingsRepository Repository running the statements.
 	 */
-	public QuerySettingsServiceComponent(final ConfigurableListableBeanFactory beanFactory) {
+	public QuerySettingsServiceComponent(
+			final ConfigurableListableBeanFactory beanFactory,
+			final QuerySettingsRepository querySettingsRepository) {
 		this.beanFactory = beanFactory;
+		this.querySettingsRepository = querySettingsRepository;
 	}
 
 	/**
@@ -136,18 +132,18 @@ public class QuerySettingsServiceComponent implements SmartInitializingSingleton
 			final Map<String, String> values,
 			final String name,
 			final String value,
-			final String element) {
+			final String description) {
 		final String resolvedName = this.resolveValue(name).toLowerCase(Locale.ROOT);
 		final String resolvedValue = this.resolveValue(value);
 		if (!QuerySettingNames.isAllowed(resolvedName)) {
-			throw new IllegalStateException("@QuerySettings on " + element + " sets '" + resolvedName
+			throw new IllegalStateException("@QuerySettings on " + description + " sets '" + resolvedName
 					+ "', which is not an allowed query setting (see QuerySettingNames).");
 		}
 		if (resolvedValue.isEmpty()) {
-			throw new IllegalStateException("@QuerySettings on " + element + " sets '" + resolvedName + "' to an empty value.");
+			throw new IllegalStateException("@QuerySettings on " + description + " sets '" + resolvedName + "' to an empty value.");
 		}
 		if (values.containsKey(resolvedName)) {
-			throw new IllegalStateException("@QuerySettings on " + element + " sets '" + resolvedName + "' more than once.");
+			throw new IllegalStateException("@QuerySettings on " + description + " sets '" + resolvedName + "' more than once.");
 		}
 		values.put(resolvedName, resolvedValue);
 	}
@@ -156,24 +152,24 @@ public class QuerySettingsServiceComponent implements SmartInitializingSingleton
 	 * Validates an annotation and resolves its placeholders.
 	 *
 	 * @param  annotation Annotation.
-	 * @param  element    Annotated element description (for error messages).
+	 * @param  description Annotated element description (for error messages).
 	 * @return            The resolved settings.
 	 */
 	public ResolvedQuerySettings resolve(
 			final QuerySettings annotation,
-			final String element) {
+			final String description) {
 		final Map<String, String> values = new LinkedHashMap<>();
 		if (StringUtils.isNotBlank(annotation.workMem())) {
-			this.addSetting(values, "work_mem", annotation.workMem(), element);
+			this.addSetting(values, "work_mem", annotation.workMem(), description);
 		}
 		if (annotation.planCacheMode() != PlanCacheMode.UNCHANGED) {
-			this.addSetting(values, "plan_cache_mode", annotation.planCacheMode().getValue(), element);
+			this.addSetting(values, "plan_cache_mode", annotation.planCacheMode().getValue(), description);
 		}
 		for (final QuerySetting setting : annotation.settings()) {
-			this.addSetting(values, setting.name(), setting.value(), element);
+			this.addSetting(values, setting.name(), setting.value(), description);
 		}
 		if (values.isEmpty()) {
-			throw new IllegalStateException("@QuerySettings on " + element + " declares no setting.");
+			throw new IllegalStateException("@QuerySettings on " + description + " declares no setting.");
 		}
 		final String datasource = this.resolveValue(annotation.datasource());
 		this.getTransactionTarget(datasource);
@@ -227,41 +223,6 @@ public class QuerySettingsServiceComponent implements SmartInitializingSingleton
 	}
 
 	/**
-	 * Reads the current values of settings.
-	 */
-	private Map<String, String> readSettings(
-			final Connection connection,
-			final Set<String> names) throws SQLException {
-		final Map<String, String> values = new LinkedHashMap<>();
-		try (PreparedStatement statement = connection.prepareStatement(QuerySettingsServiceComponent.READ_SETTINGS)) {
-			statement.setArray(1, connection.createArrayOf("text", names.toArray(new String[] {})));
-			try (ResultSet resultSet = statement.executeQuery()) {
-				while (resultSet.next()) {
-					values.put(resultSet.getString(1), resultSet.getString(2));
-				}
-			}
-		}
-		return values;
-	}
-
-	/**
-	 * Sets transaction-local values.
-	 */
-	private void writeSettings(
-			final Connection connection,
-			final Map<String, String> values) throws SQLException {
-		try (PreparedStatement statement = connection.prepareStatement(QuerySettingsServiceComponent.WRITE_SETTINGS)) {
-			statement.setArray(1, connection.createArrayOf("text", values.keySet().toArray(new String[] {})));
-			statement.setArray(2, connection.createArrayOf("text", values.values().toArray(new String[] {})));
-			try (ResultSet resultSet = statement.executeQuery()) {
-				while (resultSet.next()) {
-					QuerySettingsServiceComponent.LOGGER.debug("Query setting applied: {}.", resultSet.getString(1));
-				}
-			}
-		}
-	}
-
-	/**
 	 * Leaves a scope, forgetting the thread's stack once empty.
 	 */
 	private void leaveScope(
@@ -283,8 +244,8 @@ public class QuerySettingsServiceComponent implements SmartInitializingSingleton
 		final String datasource = QuerySettingsServiceComponent.getDisplayName(settings.getDatasource());
 		final Map<String, String> previousValues;
 		try {
-			previousValues = this.readSettings(connection, settings.getValues().keySet());
-			this.writeSettings(connection, settings.getValues());
+			previousValues = this.querySettingsRepository.read(connection, settings.getValues().keySet());
+			this.querySettingsRepository.write(connection, settings.getValues());
 		}
 		catch (final SQLException exception) {
 			throw new IllegalStateException("Could not apply query settings " + settings.getValues() + " on the " + datasource + " datasource.", exception);
@@ -304,7 +265,7 @@ public class QuerySettingsServiceComponent implements SmartInitializingSingleton
 			// An SQL error aborts the transaction, so restoring fails too: the rollback that follows
 			// discards the transaction-local values anyway. Keeps the original error.
 			try {
-				this.writeSettings(connection, previousValues);
+				this.querySettingsRepository.write(connection, previousValues);
 			}
 			catch (final SQLException restoreException) {
 				throwable.addSuppressed(restoreException);
@@ -313,7 +274,7 @@ public class QuerySettingsServiceComponent implements SmartInitializingSingleton
 		}
 		this.leaveScope(scopes);
 		try {
-			this.writeSettings(connection, previousValues);
+			this.querySettingsRepository.write(connection, previousValues);
 		}
 		catch (final SQLException exception) {
 			throw new IllegalStateException("Could not restore query settings " + previousValues + " on the " + datasource + " datasource.", exception);
@@ -503,6 +464,17 @@ public class QuerySettingsServiceComponent implements SmartInitializingSingleton
 				}
 			}
 		}
+	}
+
+	/**
+	 * Clears the woven aspect's reference to this component when its context closes, unless a newer
+	 * context already replaced it, so annotated classes fail clearly instead of using a closed context.
+	 *
+	 * @see org.springframework.beans.factory.DisposableBean#destroy()
+	 */
+	@Override
+	public void destroy() {
+		Aspects.aspectOf(QuerySettingsAspect.class).clearQuerySettingsServiceComponent(this);
 	}
 
 	/**

@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * {@link QuerySettings} configuration: the component applying the settings, the repository proxy
+ * {@link QuerySettings} configuration: the component applying the settings and its repository, the repository proxy
  * post-processor, and the hand-over of the component to the woven {@link QuerySettingsAspect}.
  *
  * <p>
@@ -19,15 +19,27 @@ import org.springframework.context.annotation.Configuration;
 public class QuerySettingsAutoConfiguration {
 
 	/**
+	 * Creates the repository running the settings statements.
+	 *
+	 * @return The repository.
+	 */
+	@Bean
+	public QuerySettingsRepository querySettingsRepository() {
+		return new QuerySettingsRepository();
+	}
+
+	/**
 	 * Creates the component applying the settings and hands it to the woven aspect.
 	 *
-	 * @param  beanFactory Bean factory.
-	 * @return             The component.
+	 * @param  beanFactory             Bean factory.
+	 * @param  querySettingsRepository Repository running the statements.
+	 * @return                         The component.
 	 */
 	@Bean
 	public QuerySettingsServiceComponent querySettingsServiceComponent(
-			final ConfigurableListableBeanFactory beanFactory) {
-		final QuerySettingsServiceComponent component = new QuerySettingsServiceComponent(beanFactory);
+			final ConfigurableListableBeanFactory beanFactory,
+			final QuerySettingsRepository querySettingsRepository) {
+		final QuerySettingsServiceComponent component = new QuerySettingsServiceComponent(beanFactory, querySettingsRepository);
 		Aspects.aspectOf(QuerySettingsAspect.class).setQuerySettingsServiceComponent(component);
 		return component;
 	}
