@@ -22,6 +22,9 @@ public class SecondaryDatasourceProperties {
 	/** JDBC driver class name (optional; inferred from the url when absent). */
 	private String driverClassName;
 
+	/** Lazy connection acquisition (optional; follows the global flag when unset). */
+	private LazyConnectionProperties lazyConnection = new LazyConnectionProperties();
+
 	public String getUrl() {
 		return this.url;
 	}
@@ -56,6 +59,15 @@ public class SecondaryDatasourceProperties {
 	public void setDriverClassName(
 			final String driverClassName) {
 		this.driverClassName = driverClassName;
+	}
+
+	public LazyConnectionProperties getLazyConnection() {
+		return this.lazyConnection;
+	}
+
+	public void setLazyConnection(
+			final LazyConnectionProperties lazyConnection) {
+		this.lazyConnection = lazyConnection;
 	}
 
 }
