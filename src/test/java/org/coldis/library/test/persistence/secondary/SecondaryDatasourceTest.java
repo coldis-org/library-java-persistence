@@ -20,6 +20,7 @@ import org.coldis.library.test.persistence.tertiary.TestTertiaryEntityRepository
 import org.coldis.library.test.persistence.tertiary.TestTertiaryEntityService;
 import org.coldis.library.test.persistence.tertiary.model.TestTertiaryEntity;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,10 +59,10 @@ import jakarta.persistence.PersistenceContext;
 				"org.coldis.configuration.persistence.datasources.secondary.url=jdbc:postgresql://localhost:${POSTGRES_CONTAINER_SECONDARY_5432}/test",
 				"org.coldis.configuration.persistence.datasources.secondary.username=test",
 				"org.coldis.configuration.persistence.datasources.secondary.password=test",
+				"org.coldis.configuration.persistence.datasources.tertiary.lazy-connection.enabled=false",
 				"org.coldis.configuration.persistence.datasources.tertiary.url=jdbc:postgresql://localhost:${POSTGRES_CONTAINER_TERTIARY_5432}/test",
 				"org.coldis.configuration.persistence.datasources.tertiary.username=test",
-				"org.coldis.configuration.persistence.datasources.tertiary.password=test",
-				"org.coldis.configuration.persistence.datasources.tertiary.lazy-connection.enabled=false" },
+				"org.coldis.configuration.persistence.datasources.tertiary.password=test" },
 		classes = TestApplication.class)
 @ExtendWith(StopTestWithContainerExtension.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
@@ -208,6 +209,7 @@ public class SecondaryDatasourceTest extends SpringTestHelper {
 	 * the tertiary unit, opted out, keeps its factory on the pool and takes the connection at begin.
 	 */
 	@Test
+	@DisplayName("secondary units are lazy unless opted out per datasource")
 	public void testLazyConnectionPerDatasource() {
 		Assertions.assertInstanceOf(LazyConnectionDataSource.class, ((EntityManagerFactoryInfo) this.entityManagerFactory).getDataSource());
 		Assertions.assertInstanceOf(LazyConnectionDataSource.class, ((EntityManagerFactoryInfo) this.secondaryEntityManagerFactory).getDataSource());
@@ -223,6 +225,7 @@ public class SecondaryDatasourceTest extends SpringTestHelper {
 	 * {@link UnexpectedRollbackException}, and nothing is written.
 	 */
 	@Test
+	@DisplayName("a lazy secondary unit keeps its transaction semantics")
 	public void testSecondaryLazyConnectionKeepsTransactionSemantics() {
 		final int[] activeConnections = this.secondaryTransactionWithStatement();
 		Assertions.assertEquals(0, activeConnections[0]);

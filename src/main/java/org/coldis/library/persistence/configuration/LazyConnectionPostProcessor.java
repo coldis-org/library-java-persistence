@@ -1,6 +1,7 @@
 package org.coldis.library.persistence.configuration;
 
 import java.util.Map;
+import java.util.Objects;
 
 import javax.sql.DataSource;
 
@@ -41,9 +42,6 @@ public class LazyConnectionPostProcessor implements BeanPostProcessor, PriorityO
 
 	/** Global flag (default true). */
 	public static final String ENABLED_PROPERTY = "org.coldis.configuration.persistence.lazy-connection.enabled";
-
-	/** Suffix of a secondary unit's entity manager factory bean name. */
-	private static final String ENTITY_MANAGER_FACTORY_SUFFIX = "EntityManagerFactory";
 
 	/** Environment. */
 	private Environment environment;
@@ -101,17 +99,13 @@ public class LazyConnectionPostProcessor implements BeanPostProcessor, PriorityO
 	 */
 	private boolean isEnabled(
 			final String beanName) {
-		Boolean enabled = this.environment.getProperty(LazyConnectionPostProcessor.ENABLED_PROPERTY, Boolean.class, Boolean.TRUE);
+		final Boolean globalEnabled = this.environment.getProperty(LazyConnectionPostProcessor.ENABLED_PROPERTY, Boolean.class, Boolean.TRUE);
 		final Map<String, SecondaryDatasourceProperties> datasources = Binder.get(this.environment)
 				.bind(SecondaryDatasourcesRegistrar.DATASOURCES_PROPERTY_PREFIX, Bindable.mapOf(String.class, SecondaryDatasourceProperties.class))
 				.orElseGet(Map::of);
-		for (final Map.Entry<String, SecondaryDatasourceProperties> datasource : datasources.entrySet()) {
-			final Boolean unitEnabled = datasource.getValue().getLazyConnection().getEnabled();
-			if ((datasource.getKey() + LazyConnectionPostProcessor.ENTITY_MANAGER_FACTORY_SUFFIX).equals(beanName) && (unitEnabled != null)) {
-				enabled = unitEnabled;
-			}
-		}
-		return enabled;
+		return datasources.entrySet().stream()
+				.filter(datasource -> SecondaryDatasourcesRegistrar.entityManagerFactoryBeanName(datasource.getKey()).equals(beanName))
+				.map(datasource -> datasource.getValue().getLazyConnection().getEnabled()).filter(Objects::nonNull).findFirst().orElse(globalEnabled);
 	}
 
 	/**

@@ -6,6 +6,7 @@ import org.coldis.library.persistence.configuration.LazyConnectionDataSource;
 import org.coldis.library.persistence.configuration.LazyConnectionPostProcessor;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
@@ -67,6 +68,7 @@ public class LazyConnectionPostProcessorTest {
 	 * Enabled by default, for the primary and for secondary units, and through to the pool.
 	 */
 	@Test
+	@DisplayName("enabled by default for the primary and secondary units")
 	public void testEnabledByDefault() {
 		final MockEnvironment environment = new MockEnvironment().withProperty("org.coldis.configuration.persistence.datasources.secondary.url",
 				"jdbc:postgresql://localhost/test");
@@ -80,6 +82,7 @@ public class LazyConnectionPostProcessorTest {
 	 * The global flag turns it off everywhere, and a secondary unit's own flag wins over it either way.
 	 */
 	@Test
+	@DisplayName("the global flag turns it off and a unit flag overrides it either way")
 	public void testGlobalAndPerDatasourceFlags() {
 		final MockEnvironment globalOff = new MockEnvironment().withProperty(LazyConnectionPostProcessor.ENABLED_PROPERTY, "false")
 				.withProperty("org.coldis.configuration.persistence.datasources.secondary.url", "jdbc:postgresql://localhost/test")
@@ -96,9 +99,29 @@ public class LazyConnectionPostProcessorTest {
 	}
 
 	/**
+	 * A factory already over a lazy proxy keeps it, and a factory without a data source is left alone.
+	 */
+	@Test
+	@DisplayName("an already lazy or missing data source is left as it is")
+	public void testNoDoubleWrapNorMissingDataSource() {
+		final LazyConnectionPostProcessor postProcessor = new LazyConnectionPostProcessor();
+		postProcessor.setEnvironment(new MockEnvironment());
+		postProcessor.setBeanFactory(new DefaultListableBeanFactory());
+		final LazyConnectionDataSource lazyDataSource = new LazyConnectionDataSource(this.pool);
+		final LocalContainerEntityManagerFactoryBean wrappedFactory = new LocalContainerEntityManagerFactoryBean();
+		wrappedFactory.setDataSource(lazyDataSource);
+		postProcessor.postProcessBeforeInitialization(wrappedFactory, "entityManagerFactory");
+		Assertions.assertSame(lazyDataSource, wrappedFactory.getDataSource());
+		final LocalContainerEntityManagerFactoryBean factoryWithoutDataSource = new LocalContainerEntityManagerFactoryBean();
+		postProcessor.postProcessBeforeInitialization(factoryWithoutDataSource, "entityManagerFactory");
+		Assertions.assertNull(factoryWithoutDataSource.getDataSource());
+	}
+
+	/**
 	 * Off when a JTA transaction manager is defined, where the factory's data source is the JTA one.
 	 */
 	@Test
+	@DisplayName("off under JTA")
 	public void testOffUnderJta() {
 		final DefaultListableBeanFactory beanFactory = new DefaultListableBeanFactory();
 		beanFactory.registerBeanDefinition("transactionManager", new RootBeanDefinition(JtaTransactionManager.class));

@@ -16,6 +16,7 @@ import org.coldis.library.test.persistence.model.TestEntity;
 import org.coldis.library.test.persistence.model.TestEntityRepository;
 import org.hibernate.Session;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -126,6 +127,19 @@ public class LazyConnectionTest extends SpringTestHelper {
 	public int transactionWithoutStatement() {
 		Assertions.assertTrue(TransactionSynchronizationManager.isActualTransactionActive());
 		return this.getActiveConnections();
+	}
+
+	/**
+	 * Reads a gauge inside a transaction that runs no statement.
+	 *
+	 * @param  gauge Gauge.
+	 * @return       The gauge value inside the transaction.
+	 */
+	@Transactional
+	public double gaugeInTransactionWithoutStatement(
+			final Gauge gauge) {
+		Assertions.assertTrue(TransactionSynchronizationManager.isActualTransactionActive());
+		return gauge.value();
 	}
 
 	/**
@@ -247,9 +261,11 @@ public class LazyConnectionTest extends SpringTestHelper {
 
 	/**
 	 * The entity manager factory sees the lazy proxy, while the data source bean stays the pool: the
-	 * pool unwraps from the proxy (as Boot's pool metrics unwrap it) and reports to Micrometer.
+	 * pool unwraps from the proxy (as Boot's pool metrics unwrap it) and its Micrometer gauge reads no
+	 * active connection inside a transaction that runs no statement.
 	 */
 	@Test
+	@DisplayName("the data source bean stays the pool and its metrics see no connection in a transaction without SQL")
 	public void testPoolStaysTheDataSourceBean() {
 		final DataSource factoryDataSource = ((EntityManagerFactoryInfo) this.entityManagerFactory).getDataSource();
 		Assertions.assertInstanceOf(LazyConnectionDataSource.class, factoryDataSource);
@@ -260,14 +276,14 @@ public class LazyConnectionTest extends SpringTestHelper {
 		this.getPool().setMetricRegistry(registry);
 		final Gauge activeGauge = registry.find("hikaricp.connections.active").tag("pool", this.getPool().getPoolName()).gauge();
 		Assertions.assertNotNull(activeGauge);
-		Assertions.assertEquals(0, this.transactionWithoutStatement());
-		Assertions.assertEquals(0D, activeGauge.value());
+		Assertions.assertEquals(0D, this.gaugeInTransactionWithoutStatement(activeGauge));
 	}
 
 	/**
 	 * A transaction that runs no statement takes no pooled connection.
 	 */
 	@Test
+	@DisplayName("a transaction that runs no statement takes no pooled connection")
 	public void testNoConnectionWithoutStatement() {
 		Assertions.assertEquals(0, this.getActiveConnections());
 		Assertions.assertEquals(0, this.transactionWithoutStatement());
@@ -279,6 +295,7 @@ public class LazyConnectionTest extends SpringTestHelper {
 	 * rollback; the rolled-back write is not persisted.
 	 */
 	@Test
+	@DisplayName("the connection is taken at the first statement and released at commit and rollback")
 	public void testConnectionTakenAtFirstStatementAndReleasedAtEnd() {
 		final int[] activeConnections = this.transactionWithStatement();
 		Assertions.assertEquals(0, activeConnections[0]);
@@ -295,6 +312,7 @@ public class LazyConnectionTest extends SpringTestHelper {
 	 * {@link UnexpectedRollbackException}, with or without statements, and nothing is written.
 	 */
 	@Test
+	@DisplayName("a swallowed participant failure still fails the outer commit with UnexpectedRollbackException")
 	public void testSwallowedParticipantFailureRollsBackOuterTransaction() {
 		final long countBefore = this.countEntities();
 		Assertions.assertThrows(UnexpectedRollbackException.class, () -> this.outerSwallowingParticipantFailure(false));
@@ -309,6 +327,7 @@ public class LazyConnectionTest extends SpringTestHelper {
 	 * connection goes back to the pool with the defaults restored.
 	 */
 	@Test
+	@DisplayName("read-only and isolation stay lazy and are applied to the fetched connection")
 	public void testReadOnlyAndIsolationAppliedToLazyConnection() {
 		final Object[] readOnly = this.readOnlyTransaction();
 		Assertions.assertEquals(0, readOnly[0]);
@@ -348,6 +367,7 @@ public class LazyConnectionTest extends SpringTestHelper {
 	 * @throws Exception If the test fails.
 	 */
 	@Test
+	@DisplayName("writes outside a transaction keep auto-committing")
 	public void testNonTransactionalWriteAutoCommits() throws Exception {
 		Assertions.assertFalse(TransactionSynchronizationManager.isActualTransactionActive());
 		final JdbcTemplate jdbcTemplate = new JdbcTemplate(this.dataSource);
@@ -380,6 +400,7 @@ public class LazyConnectionTest extends SpringTestHelper {
 	 * with the transaction.
 	 */
 	@Test
+	@DisplayName("JDBC on the pool bean still joins the JPA transaction")
 	public void testJdbcOnPoolJoinsJpaTransaction() {
 		final JdbcTemplate jdbcTemplate = new JdbcTemplate(this.dataSource);
 		jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS lazy_connection_probe (id BIGINT)");
