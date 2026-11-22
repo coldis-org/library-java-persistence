@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 
 import javax.sql.DataSource;
 
+import org.coldis.library.persistence.configuration.LazyConnectionDataSource;
 import org.coldis.library.test.SpringTestHelper;
 import org.coldis.library.test.StartTestWithContainerExtension;
 import org.coldis.library.test.StopTestWithContainerExtension;
@@ -19,14 +20,25 @@ import org.coldis.library.test.persistence.tertiary.TestTertiaryEntityRepository
 import org.coldis.library.test.persistence.tertiary.TestTertiaryEntityService;
 import org.coldis.library.test.persistence.tertiary.model.TestTertiaryEntity;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
+import org.springframework.orm.jpa.EntityManagerFactoryInfo;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.transaction.UnexpectedRollbackException;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.containers.GenericContainer;
+
+import com.zaxxer.hikari.HikariDataSource;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.PersistenceContext;
 
 /**
  * Multi-datasource integration test against <strong>three</strong> real PostgreSQL instances: the
@@ -34,7 +46,8 @@ import org.testcontainers.containers.GenericContainer;
  * proving N secondaries. Unit membership is annotation-driven ({@code @DatasourceUnit} on the
  * entities and repositories; the properties carry only connection settings). It asserts routing and
  * isolation (a unit's entities exist ONLY in that unit's database) and that the primary keeps working
- * alongside them.
+ * alongside them. The tertiary unit opts out of lazy connection acquisition, so it also proves the
+ * per-datasource flag.
  */
 @TestWithContainer
 @ExtendWith(StartTestWithContainerExtension.class)
@@ -46,6 +59,7 @@ import org.testcontainers.containers.GenericContainer;
 				"org.coldis.configuration.persistence.datasources.secondary.url=jdbc:postgresql://localhost:${POSTGRES_CONTAINER_SECONDARY_5432}/test",
 				"org.coldis.configuration.persistence.datasources.secondary.username=test",
 				"org.coldis.configuration.persistence.datasources.secondary.password=test",
+				"org.coldis.configuration.persistence.datasources.tertiary.lazy-connection.enabled=false",
 				"org.coldis.configuration.persistence.datasources.tertiary.url=jdbc:postgresql://localhost:${POSTGRES_CONTAINER_TERTIARY_5432}/test",
 				"org.coldis.configuration.persistence.datasources.tertiary.username=test",
 				"org.coldis.configuration.persistence.datasources.tertiary.password=test" },
@@ -99,6 +113,130 @@ public class SecondaryDatasourceTest extends SpringTestHelper {
 	@Autowired
 	@Qualifier(value = "tertiaryDataSource")
 	private DataSource tertiaryDataSource;
+
+	/** Primary entity manager factory (the explicit primary). */
+	@Autowired
+	private EntityManagerFactory entityManagerFactory;
+
+	/** Secondary entity manager factory. */
+	@Autowired
+	@Qualifier(value = "secondaryEntityManagerFactory")
+	private EntityManagerFactory secondaryEntityManagerFactory;
+
+	/** Tertiary entity manager factory. */
+	@Autowired
+	@Qualifier(value = "tertiaryEntityManagerFactory")
+	private EntityManagerFactory tertiaryEntityManagerFactory;
+
+	/** Secondary entity manager. */
+	@PersistenceContext(unitName = "secondary")
+	private EntityManager secondaryEntityManager;
+
+	/**
+	 * Gets the connections a pool has handed out.
+	 *
+	 * @param  pool Pool data source.
+	 * @return      The active connections.
+	 */
+	private int getActiveConnections(
+			final DataSource pool) {
+		return ((HikariDataSource) pool).getHikariPoolMXBean().getActiveConnections();
+	}
+
+	/**
+	 * Secondary transaction that runs no statement, then one.
+	 *
+	 * @return Secondary active connections before and after the statement.
+	 */
+	@Transactional(transactionManager = "secondaryTransactionManager")
+	public int[] secondaryTransactionWithStatement() {
+		final int before = this.getActiveConnections(this.secondaryDataSource);
+		this.secondaryEntityManager.createNativeQuery("SELECT 1").getSingleResult();
+		final int after = this.getActiveConnections(this.secondaryDataSource);
+		return new int[] { before, after };
+	}
+
+	/**
+	 * Secondary participant that optionally writes and then fails.
+	 *
+	 * @param write Whether to write before failing.
+	 */
+	@Transactional(
+			transactionManager = "secondaryTransactionManager",
+			propagation = Propagation.REQUIRED
+	)
+	public void secondaryFailingParticipant(
+			final boolean write) {
+		if (write) {
+			final TestSecondaryEntity entity = new TestSecondaryEntity();
+			entity.setName("rolled-back");
+			this.testSecondaryEntityRepository.saveAndFlush(entity);
+		}
+		throw new IllegalStateException("Inner participant fails.");
+	}
+
+	/**
+	 * Secondary outer transaction that calls a failing participant and swallows its failure.
+	 *
+	 * @param write Whether the inner participant writes.
+	 */
+	@Transactional(
+			transactionManager = "secondaryTransactionManager",
+			propagation = Propagation.REQUIRED
+	)
+	public void secondaryOuterSwallowingParticipantFailure(
+			final boolean write) {
+		try {
+			this.secondaryFailingParticipant(write);
+		}
+		catch (final IllegalStateException exception) {
+			Assertions.assertEquals("Inner participant fails.", exception.getMessage());
+		}
+	}
+
+	/**
+	 * Tertiary transaction that runs no statement.
+	 *
+	 * @return Tertiary active connections inside the transaction.
+	 */
+	@Transactional(transactionManager = "tertiaryTransactionManager")
+	public int tertiaryTransactionWithoutStatement() {
+		return this.getActiveConnections(this.tertiaryDataSource);
+	}
+
+	/**
+	 * The explicit primary and the secondary unit take connections lazily, through the pool beans;
+	 * the tertiary unit, opted out, keeps its factory on the pool and takes the connection at begin.
+	 */
+	@Test
+	@DisplayName("secondary units are lazy unless opted out per datasource")
+	public void testLazyConnectionPerDatasource() {
+		Assertions.assertInstanceOf(LazyConnectionDataSource.class, ((EntityManagerFactoryInfo) this.entityManagerFactory).getDataSource());
+		Assertions.assertInstanceOf(LazyConnectionDataSource.class, ((EntityManagerFactoryInfo) this.secondaryEntityManagerFactory).getDataSource());
+		Assertions.assertSame(this.tertiaryDataSource, ((EntityManagerFactoryInfo) this.tertiaryEntityManagerFactory).getDataSource());
+		Assertions.assertInstanceOf(HikariDataSource.class, this.secondaryDataSource);
+		Assertions.assertEquals(1, this.tertiaryTransactionWithoutStatement());
+		Assertions.assertEquals(0, this.getActiveConnections(this.tertiaryDataSource));
+	}
+
+	/**
+	 * A secondary transaction takes its connection at the first statement and gives it back at commit;
+	 * a swallowed participant failure still makes the outer commit throw
+	 * {@link UnexpectedRollbackException}, and nothing is written.
+	 */
+	@Test
+	@DisplayName("a lazy secondary unit keeps its transaction semantics")
+	public void testSecondaryLazyConnectionKeepsTransactionSemantics() {
+		final int[] activeConnections = this.secondaryTransactionWithStatement();
+		Assertions.assertEquals(0, activeConnections[0]);
+		Assertions.assertEquals(1, activeConnections[1]);
+		Assertions.assertEquals(0, this.getActiveConnections(this.secondaryDataSource));
+		final long countBefore = this.testSecondaryEntityRepository.count();
+		Assertions.assertThrows(UnexpectedRollbackException.class, () -> this.secondaryOuterSwallowingParticipantFailure(false));
+		Assertions.assertThrows(UnexpectedRollbackException.class, () -> this.secondaryOuterSwallowingParticipantFailure(true));
+		Assertions.assertEquals(0, this.getActiveConnections(this.secondaryDataSource));
+		Assertions.assertEquals(countBefore, this.testSecondaryEntityRepository.count());
+	}
 
 	/**
 	 * The three datasources are genuinely distinct beans pointing at different databases.
