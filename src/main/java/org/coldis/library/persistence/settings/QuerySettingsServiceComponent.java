@@ -19,6 +19,7 @@ import javax.sql.DataSource;
 
 import org.apache.commons.lang3.StringUtils;
 import org.coldis.library.persistence.configuration.DatasourceUnit;
+import org.coldis.library.persistence.configuration.SecondaryDatasourcesRegistrar;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.aspectj.lang.Aspects;
@@ -94,7 +95,7 @@ public class QuerySettingsServiceComponent implements SmartInitializingSingleton
 		final PlatformTransactionManager transactionManager;
 		try {
 			transactionManager = (datasource.isEmpty() ? this.beanFactory.getBean(PlatformTransactionManager.class)
-					: this.beanFactory.getBean(datasource + "TransactionManager", PlatformTransactionManager.class));
+					: this.beanFactory.getBean(SecondaryDatasourcesRegistrar.transactionManagerBeanName(datasource), PlatformTransactionManager.class));
 		}
 		catch (final BeansException exception) {
 			throw new IllegalStateException("@QuerySettings targets the " + QuerySettingsServiceComponent.getDisplayName(datasource)

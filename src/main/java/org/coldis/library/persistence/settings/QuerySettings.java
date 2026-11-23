@@ -55,9 +55,11 @@ import java.lang.annotation.Target;
  * <li>No transaction active for the datasource (no {@code @Transactional}, {@code NOT_SUPPORTED},
  * a transaction on another datasource): the call fails with an {@link IllegalStateException}
  * instead of silently applying nothing, unless {@link #startTransaction()} is set.</li>
- * <li>Setting names are checked against {@link QuerySettingNames}; an unknown name, an unknown
- * datasource or an unwoven annotated bean fails the start-up (or the first call, for types that are
- * not beans).</li>
+ * <li>Setting names are checked against {@link QuerySettingNames}; a name outside it, an empty
+ * value, an unknown datasource or an unwoven annotated bean fails the start-up (or the first call,
+ * for types that are not beans). The server checks the rest at the first call: an allowed name it
+ * does not know (a misspelled {@code enable_*} switch, a setting newer than its version) or a value
+ * it rejects fails that call with PostgreSQL's error, which aborts the surrounding transaction.</li>
  * </ul>
  *
  * <h2>Lazy connection acquisition</h2>

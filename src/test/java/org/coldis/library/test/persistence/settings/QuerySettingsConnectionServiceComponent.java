@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import javax.sql.DataSource;
 
@@ -28,12 +29,13 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
 /**
- * Reports, around {@link QuerySettings} calls on the primary and secondary datasources, when the
- * transaction takes its pooled connection and what the JPA queries of the transaction see (only when
- * the secondary datasource is configured).
+ * Reports, around {@link QuerySettings} calls on the primary, secondary and tertiary datasources,
+ * when the transaction takes its pooled connection and what the JPA queries of the transaction see
+ * (only when the secondary and tertiary datasources are configured).
  */
 @Component
-@ConditionalOnProperty(name = "org.coldis.configuration.persistence.datasources.secondary.url")
+@ConditionalOnProperty(name = { "org.coldis.configuration.persistence.datasources.secondary.url",
+		"org.coldis.configuration.persistence.datasources.tertiary.url" })
 public class QuerySettingsConnectionServiceComponent {
 
 	/** Key of the pool's active connections before the annotated call. */
@@ -69,6 +71,11 @@ public class QuerySettingsConnectionServiceComponent {
 	@Qualifier(value = "secondaryDataSource")
 	private DataSource secondaryDataSource;
 
+	/** Tertiary pool. */
+	@Autowired
+	@Qualifier(value = "tertiaryDataSource")
+	private DataSource tertiaryDataSource;
+
 	/** Primary entity manager. */
 	@PersistenceContext
 	private EntityManager entityManager;
@@ -76,6 +83,10 @@ public class QuerySettingsConnectionServiceComponent {
 	/** Secondary entity manager. */
 	@PersistenceContext(unitName = "secondary")
 	private EntityManager secondaryEntityManager;
+
+	/** Tertiary entity manager. */
+	@PersistenceContext(unitName = "tertiary")
+	private EntityManager tertiaryEntityManager;
 
 	/**
 	 * Gets the connections a pool has handed out.
@@ -111,6 +122,27 @@ public class QuerySettingsConnectionServiceComponent {
 		values.put(QuerySettingsConnectionServiceComponent.BACKEND_PID, (String) row[4]);
 		values.put(QuerySettingsConnectionServiceComponent.ACTIVE_INSIDE,
 				Integer.toString(QuerySettingsConnectionServiceComponent.getActiveConnections(pool)));
+		return values;
+	}
+
+	/**
+	 * Records a pool's active connections before and after an optional annotated call made inside the
+	 * caller's transaction.
+	 *
+	 * @param  pool          Pool of the transaction's unit.
+	 * @param  annotatedCall Annotated call, or {@code null} for none.
+	 * @return               The call's values, with the active connections before and after.
+	 */
+	private static Map<String, String> recordAroundCall(
+			final DataSource pool,
+			final Supplier<Map<String, String>> annotatedCall) {
+		final Map<String, String> values = new LinkedHashMap<>();
+		values.put(QuerySettingsConnectionServiceComponent.ACTIVE_BEFORE,
+				Integer.toString(QuerySettingsConnectionServiceComponent.getActiveConnections(pool)));
+		if (annotatedCall != null) {
+			values.putAll(annotatedCall.get());
+		}
+		values.put(QuerySettingsConnectionServiceComponent.ACTIVE_AFTER, Integer.toString(QuerySettingsConnectionServiceComponent.getActiveConnections(pool)));
 		return values;
 	}
 
@@ -206,15 +238,7 @@ public class QuerySettingsConnectionServiceComponent {
 	@Transactional
 	public Map<String, String> primaryTransaction(
 			final boolean callAnnotatedMethod) {
-		final Map<String, String> values = new LinkedHashMap<>();
-		values.put(QuerySettingsConnectionServiceComponent.ACTIVE_BEFORE,
-				Integer.toString(QuerySettingsConnectionServiceComponent.getActiveConnections(this.dataSource)));
-		if (callAnnotatedMethod) {
-			values.putAll(this.readPrimarySettings());
-		}
-		values.put(QuerySettingsConnectionServiceComponent.ACTIVE_AFTER,
-				Integer.toString(QuerySettingsConnectionServiceComponent.getActiveConnections(this.dataSource)));
-		return values;
+		return QuerySettingsConnectionServiceComponent.recordAroundCall(this.dataSource, (callAnnotatedMethod ? this::readPrimarySettings : null));
 	}
 
 	/**
@@ -227,13 +251,7 @@ public class QuerySettingsConnectionServiceComponent {
 			isolation = Isolation.SERIALIZABLE
 	)
 	public Map<String, String> readOnlySerializableTransaction() {
-		final Map<String, String> values = new LinkedHashMap<>();
-		values.put(QuerySettingsConnectionServiceComponent.ACTIVE_BEFORE,
-				Integer.toString(QuerySettingsConnectionServiceComponent.getActiveConnections(this.dataSource)));
-		values.putAll(this.readPrimarySettings());
-		values.put(QuerySettingsConnectionServiceComponent.ACTIVE_AFTER,
-				Integer.toString(QuerySettingsConnectionServiceComponent.getActiveConnections(this.dataSource)));
-		return values;
+		return QuerySettingsConnectionServiceComponent.recordAroundCall(this.dataSource, this::readPrimarySettings);
 	}
 
 	/**
@@ -286,15 +304,61 @@ public class QuerySettingsConnectionServiceComponent {
 	@Transactional(transactionManager = "secondaryTransactionManager")
 	public Map<String, String> secondaryTransaction(
 			final boolean callAnnotatedMethod) {
-		final Map<String, String> values = new LinkedHashMap<>();
-		values.put(QuerySettingsConnectionServiceComponent.ACTIVE_BEFORE,
-				Integer.toString(QuerySettingsConnectionServiceComponent.getActiveConnections(this.secondaryDataSource)));
-		if (callAnnotatedMethod) {
-			values.putAll(this.readSecondarySettings());
-		}
-		values.put(QuerySettingsConnectionServiceComponent.ACTIVE_AFTER,
-				Integer.toString(QuerySettingsConnectionServiceComponent.getActiveConnections(this.secondaryDataSource)));
-		return values;
+		return QuerySettingsConnectionServiceComponent.recordAroundCall(this.secondaryDataSource, (callAnnotatedMethod ? this::readSecondarySettings : null));
+	}
+
+	/**
+	 * Annotated, joining the caller's tertiary transaction: reads what a JPA query sees.
+	 *
+	 * @return Values by key.
+	 */
+	@QuerySettings(
+			workMem = "75MB",
+			planCacheMode = PlanCacheMode.FORCE_CUSTOM_PLAN,
+			datasource = "tertiary"
+	)
+	public Map<String, String> readTertiarySettings() {
+		return QuerySettingsConnectionServiceComponent.readTransactionSettings(this.tertiaryEntityManager, this.tertiaryDataSource);
+	}
+
+	/**
+	 * Tertiary transaction that does other work first and then, optionally, calls the annotated method.
+	 *
+	 * @param  callAnnotatedMethod Whether to call the annotated method.
+	 * @return                     Values by key, with the active connections before, inside and after.
+	 */
+	@Transactional(transactionManager = "tertiaryTransactionManager")
+	public Map<String, String> tertiaryTransaction(
+			final boolean callAnnotatedMethod) {
+		return QuerySettingsConnectionServiceComponent.recordAroundCall(this.tertiaryDataSource, (callAnnotatedMethod ? this::readTertiarySettings : null));
+	}
+
+	/**
+	 * Read-only, serializable tertiary transaction calling the annotated method.
+	 *
+	 * @return Values by key, with the active connections before, inside and after.
+	 */
+	@Transactional(
+			transactionManager = "tertiaryTransactionManager",
+			readOnly = true,
+			isolation = Isolation.SERIALIZABLE
+	)
+	public Map<String, String> tertiaryReadOnlySerializableTransaction() {
+		return QuerySettingsConnectionServiceComponent.recordAroundCall(this.tertiaryDataSource, this::readTertiarySettings);
+	}
+
+	/**
+	 * Annotated, opening its own read-only tertiary transaction.
+	 *
+	 * @return Values by key.
+	 */
+	@QuerySettings(
+			workMem = "76MB",
+			datasource = "tertiary",
+			startTransaction = true
+	)
+	public Map<String, String> readTertiarySettingsInStartedTransaction() {
+		return QuerySettingsConnectionServiceComponent.readTransactionSettings(this.tertiaryEntityManager, this.tertiaryDataSource);
 	}
 
 }

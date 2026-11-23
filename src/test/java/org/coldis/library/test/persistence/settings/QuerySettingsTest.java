@@ -42,8 +42,11 @@ import net.bytebuddy.description.modifier.Visibility;
 import net.bytebuddy.implementation.StubMethod;
 
 /**
- * Tests {@link QuerySettings} against real PostgreSQL databases (primary and secondary units), with
- * lazy connection acquisition (the default) on both units.
+ * Tests {@link QuerySettings} against real PostgreSQL databases: the primary and secondary units take
+ * connections lazily (the default), and the tertiary unit opts out
+ * ({@code org.coldis.configuration.persistence.datasources.<name>.lazy-connection.enabled=false}, the
+ * per-unit form of {@code org.coldis.configuration.persistence.lazy-connection.enabled}), so its
+ * transactions hold their connection from begin, as without lazy acquisition.
  */
 @TestWithContainer
 @ExtendWith(StartTestWithContainerExtension.class)
@@ -55,6 +58,7 @@ import net.bytebuddy.implementation.StubMethod;
 				"org.coldis.configuration.persistence.datasources.secondary.url=jdbc:postgresql://localhost:${POSTGRES_CONTAINER_SECONDARY_5432}/test",
 				"org.coldis.configuration.persistence.datasources.secondary.username=test",
 				"org.coldis.configuration.persistence.datasources.secondary.password=test",
+				"org.coldis.configuration.persistence.datasources.tertiary.lazy-connection.enabled=false",
 				"org.coldis.configuration.persistence.datasources.tertiary.url=jdbc:postgresql://localhost:${POSTGRES_CONTAINER_SECONDARY_5432}/test",
 				"org.coldis.configuration.persistence.datasources.tertiary.username=test",
 				"org.coldis.configuration.persistence.datasources.tertiary.password=test" },
@@ -114,6 +118,11 @@ public class QuerySettingsTest extends SpringTestHelper {
 	@Qualifier(value = "secondaryDataSource")
 	private DataSource secondaryDataSource;
 
+	/** Tertiary datasource. */
+	@Autowired
+	@Qualifier(value = "tertiaryDataSource")
+	private DataSource tertiaryDataSource;
+
 	/** Primary entity manager factory. */
 	@Autowired
 	private EntityManagerFactory entityManagerFactory;
@@ -122,6 +131,11 @@ public class QuerySettingsTest extends SpringTestHelper {
 	@Autowired
 	@Qualifier(value = "secondaryEntityManagerFactory")
 	private EntityManagerFactory secondaryEntityManagerFactory;
+
+	/** Tertiary entity manager factory. */
+	@Autowired
+	@Qualifier(value = "tertiaryEntityManagerFactory")
+	private EntityManagerFactory tertiaryEntityManagerFactory;
 
 	/** Connection lifecycle probes. */
 	@Autowired
@@ -417,13 +431,14 @@ public class QuerySettingsTest extends SpringTestHelper {
 
 
 	/**
-	 * Both units' entity manager factories take connections lazily.
+	 * The primary and secondary factories use the lazy proxy; the opted-out tertiary one uses its pool.
 	 */
 	@Test
-	@DisplayName("both units take connections lazily in this context")
-	public void testUnitsAreLazy() {
+	@DisplayName("the primary and secondary units take connections lazily, the tertiary one at begin")
+	public void testUnitsAreLazyOrEager() {
 		Assertions.assertInstanceOf(LazyConnectionDataSource.class, ((EntityManagerFactoryInfo) this.entityManagerFactory).getDataSource());
 		Assertions.assertInstanceOf(LazyConnectionDataSource.class, ((EntityManagerFactoryInfo) this.secondaryEntityManagerFactory).getDataSource());
+		Assertions.assertSame(this.tertiaryDataSource, ((EntityManagerFactoryInfo) this.tertiaryEntityManagerFactory).getDataSource());
 	}
 
 	/**
@@ -533,6 +548,60 @@ public class QuerySettingsTest extends SpringTestHelper {
 		Assertions.assertEquals(0, QuerySettingsConnectionServiceComponent.getActiveConnections(this.dataSource));
 		Assertions.assertEquals("73MB", this.secondaryRepository.findWorkMem());
 		Assertions.assertEquals(0, QuerySettingsConnectionServiceComponent.getActiveConnections(this.secondaryDataSource));
+	}
+
+	/**
+	 * Without lazy acquisition the transaction holds its connection from begin; the settings reach the
+	 * JPA query on it, and the next borrower of the connection sees the session values.
+	 */
+	@Test
+	@DisplayName("eager unit: the settings apply on the transaction's connection, and nothing leaks")
+	public void testEagerConnection() {
+		final String sessionWorkMem = QuerySettingsConnectionServiceComponent.getPoolWorkMem(this.tertiaryDataSource);
+		Assertions.assertNotEquals("75MB", sessionWorkMem);
+		final Map<String, String> withoutCall = this.connectionServiceComponent.tertiaryTransaction(false);
+		Assertions.assertEquals("1", withoutCall.get(QuerySettingsConnectionServiceComponent.ACTIVE_BEFORE));
+		final Map<String, String> withCall = this.connectionServiceComponent.tertiaryTransaction(true);
+		Assertions.assertEquals("1", withCall.get(QuerySettingsConnectionServiceComponent.ACTIVE_BEFORE));
+		Assertions.assertEquals("1", withCall.get(QuerySettingsConnectionServiceComponent.ACTIVE_INSIDE));
+		Assertions.assertEquals("1", withCall.get(QuerySettingsConnectionServiceComponent.ACTIVE_AFTER));
+		Assertions.assertEquals("75MB", withCall.get(QuerySettingsConnectionServiceComponent.WORK_MEM));
+		Assertions.assertEquals("force_custom_plan", withCall.get(QuerySettingsConnectionServiceComponent.PLAN_CACHE_MODE));
+		Assertions.assertEquals(0, QuerySettingsConnectionServiceComponent.getActiveConnections(this.tertiaryDataSource));
+		QuerySettingsConnectionServiceComponent.assertNextBorrowersSeeDefaults(this.tertiaryDataSource,
+				withCall.get(QuerySettingsConnectionServiceComponent.BACKEND_PID), sessionWorkMem);
+	}
+
+	/**
+	 * Without lazy acquisition read-only and isolation apply together with the settings, and do not
+	 * reach the next transaction.
+	 */
+	@Test
+	@DisplayName("eager unit: read-only and isolation apply together with the settings")
+	public void testEagerReadOnlyAndIsolation() {
+		final Map<String, String> serializable = this.connectionServiceComponent.tertiaryReadOnlySerializableTransaction();
+		Assertions.assertEquals("1", serializable.get(QuerySettingsConnectionServiceComponent.ACTIVE_BEFORE));
+		Assertions.assertEquals("75MB", serializable.get(QuerySettingsConnectionServiceComponent.WORK_MEM));
+		Assertions.assertEquals("on", serializable.get(QuerySettingsConnectionServiceComponent.READ_ONLY));
+		Assertions.assertEquals("serializable", serializable.get(QuerySettingsConnectionServiceComponent.ISOLATION));
+		final Map<String, String> next = this.connectionServiceComponent.tertiaryTransaction(true);
+		Assertions.assertEquals("off", next.get(QuerySettingsConnectionServiceComponent.READ_ONLY));
+		Assertions.assertEquals("read committed", next.get(QuerySettingsConnectionServiceComponent.ISOLATION));
+		Assertions.assertEquals(0, QuerySettingsConnectionServiceComponent.getActiveConnections(this.tertiaryDataSource));
+	}
+
+	/**
+	 * Without lazy acquisition the call is rejected outside a transaction, or wrapped in its own
+	 * read-only transaction with startTransaction.
+	 */
+	@Test
+	@DisplayName("eager unit: outside a transaction the call is rejected, or wrapped with startTransaction")
+	public void testEagerWithoutTransaction() {
+		QuerySettingsTest.assertFailsWithoutTransaction(() -> this.connectionServiceComponent.readTertiarySettings());
+		final Map<String, String> started = this.connectionServiceComponent.readTertiarySettingsInStartedTransaction();
+		Assertions.assertEquals("76MB", started.get(QuerySettingsConnectionServiceComponent.WORK_MEM));
+		Assertions.assertEquals("on", started.get(QuerySettingsConnectionServiceComponent.READ_ONLY));
+		Assertions.assertEquals(0, QuerySettingsConnectionServiceComponent.getActiveConnections(this.tertiaryDataSource));
 	}
 
 }
