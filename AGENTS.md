@@ -76,21 +76,21 @@ Git:
 
 ## Workspace
 
-This repository expects `supersim-infrastructure-code-reviewer` checked out next to it
-(`../supersim-infrastructure-code-reviewer`; clone it there from the internal Git host if it's
-missing). The review gates and the local review both live in it.
+This repository expects the internal code-reviewer repository checked out next to it (referred
+to below as `<code-reviewer>`; clone it there from the internal Git host if it's missing). The
+review gates and the local review both live in it.
 
 ## Review
 
 The gates are those of `src/agents/review/review.toml`, read from master, so a branch can't
 weaken its own review: `security`, `service-business`, `service-architecture`, `service-coding`,
 `service-test`, all mandatory (no `infrastructure`: a library has no deployment module). What
-each gate stops: `../supersim-infrastructure-code-reviewer/local-review/GATES.md`. The service gates were
+each gate stops: `<code-reviewer>/local-review/GATES.md`. The service gates were
 written for application services: rules about client/common/test subprojects, generated clients,
 integration services, service tiers or migrations apply here only where this library has that
 concept. The PR description is what the gates read as intent: name every default, limit or
 behaviour you change there.
 
 Before pushing, run the local review: follow
-`../supersim-infrastructure-code-reviewer/local-review/REVIEW.md`. It ends with
+`<code-reviewer>/local-review/REVIEW.md`. It ends with
 `local-check attest`. Push only when the developer asks.
