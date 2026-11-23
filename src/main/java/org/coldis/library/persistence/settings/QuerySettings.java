@@ -60,6 +60,17 @@ import java.lang.annotation.Target;
  * not beans).</li>
  * </ul>
  *
+ * <h2>Lazy connection acquisition</h2>
+ * With lazy acquisition (the default, see
+ * {@link org.coldis.library.persistence.configuration.LazyConnectionPostProcessor}) the transaction's
+ * connection is the lazy handle Hibernate holds, so the settings run on the same pooled connection,
+ * in the same transaction, as the method's statements, with the transaction's read-only flag and
+ * isolation already applied to it. Reading and applying the settings are statements, so the
+ * annotated call takes the pooled connection when it starts (not when the transaction begins, and not
+ * at all in transactions that never make the call). Outside a transaction the call is rejected before
+ * any connection is taken, unless {@link #startTransaction()} wraps it. With lazy acquisition turned
+ * off, the transaction holds the connection from its begin, as before.
+ *
  * <h2>Limits</h2>
  * Only statements executed while the method runs see the settings: JPA writes flushed at commit,
  * lazy loading and result streams consumed after the method returns run with the session values.

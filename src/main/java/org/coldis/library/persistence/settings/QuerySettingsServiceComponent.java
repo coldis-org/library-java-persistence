@@ -233,7 +233,9 @@ public class QuerySettingsServiceComponent implements SmartInitializingSingleton
 
 	/**
 	 * Gets the connection of the transaction active for the target datasource, failing when there is
-	 * none (the settings would otherwise apply to nothing).
+	 * none (the settings would otherwise apply to nothing). With lazy connection acquisition it is the
+	 * transaction's lazy handle, which answers the auto-commit check itself: the pooled connection is
+	 * taken by the first statement run on it.
 	 */
 	private Connection getTransactionConnection(
 			final TransactionTarget target,

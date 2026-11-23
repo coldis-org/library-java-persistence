@@ -5,6 +5,7 @@ import java.util.Map;
 
 import javax.sql.DataSource;
 
+import org.coldis.library.persistence.configuration.LazyConnectionDataSource;
 import org.coldis.library.persistence.settings.QuerySettings;
 import org.coldis.library.persistence.settings.QuerySettingsRepository;
 import org.coldis.library.persistence.settings.QuerySettingsServiceComponent;
@@ -21,23 +22,28 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.function.Executable;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.orm.jpa.EntityManagerFactoryInfo;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.UnexpectedRollbackException;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.testcontainers.containers.GenericContainer;
 
+import jakarta.persistence.EntityManagerFactory;
+
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.description.modifier.Visibility;
 import net.bytebuddy.implementation.StubMethod;
 
 /**
- * Tests {@link QuerySettings} against real PostgreSQL databases (primary and secondary units).
+ * Tests {@link QuerySettings} against real PostgreSQL databases (primary and secondary units), with
+ * lazy connection acquisition (the default) on both units.
  */
 @TestWithContainer
 @ExtendWith(StartTestWithContainerExtension.class)
@@ -102,6 +108,24 @@ public class QuerySettingsTest extends SpringTestHelper {
 	/** Primary datasource. */
 	@Autowired
 	private DataSource dataSource;
+
+	/** Secondary datasource. */
+	@Autowired
+	@Qualifier(value = "secondaryDataSource")
+	private DataSource secondaryDataSource;
+
+	/** Primary entity manager factory. */
+	@Autowired
+	private EntityManagerFactory entityManagerFactory;
+
+	/** Secondary entity manager factory. */
+	@Autowired
+	@Qualifier(value = "secondaryEntityManagerFactory")
+	private EntityManagerFactory secondaryEntityManagerFactory;
+
+	/** Connection lifecycle probes. */
+	@Autowired
+	private QuerySettingsConnectionServiceComponent connectionServiceComponent;
 
 	/**
 	 * Asserts a call fails because no transaction is active for its datasource (possibly translated by
@@ -389,6 +413,126 @@ public class QuerySettingsTest extends SpringTestHelper {
 				.annotateMethod(QuerySettingsFixtures.NoSetting.class.getMethod("run").getAnnotation(QuerySettings.class)).make()
 				.load(this.getClass().getClassLoader()).getLoaded();
 		this.assertRejected("is not woven", unwovenClass);
+	}
+
+
+	/**
+	 * Both units' entity manager factories take connections lazily.
+	 */
+	@Test
+	@DisplayName("both units take connections lazily in this context")
+	public void testUnitsAreLazy() {
+		Assertions.assertInstanceOf(LazyConnectionDataSource.class, ((EntityManagerFactoryInfo) this.entityManagerFactory).getDataSource());
+		Assertions.assertInstanceOf(LazyConnectionDataSource.class, ((EntityManagerFactoryInfo) this.secondaryEntityManagerFactory).getDataSource());
+	}
+
+	/**
+	 * A transaction takes no connection at begin for a later annotated call: the call takes it, its
+	 * settings reach the JPA query on that connection, and the next borrower of the connection sees the
+	 * session values. A transaction that never makes the call takes no connection.
+	 */
+	@Test
+	@DisplayName("lazy primary unit: the annotated call takes the connection, and nothing leaks")
+	public void testLazyPrimaryConnection() {
+		final String sessionWorkMem = QuerySettingsConnectionServiceComponent.getPoolWorkMem(this.dataSource);
+		Assertions.assertNotEquals("61MB", sessionWorkMem);
+		final Map<String, String> withoutCall = this.connectionServiceComponent.primaryTransaction(false);
+		Assertions.assertEquals("0", withoutCall.get(QuerySettingsConnectionServiceComponent.ACTIVE_BEFORE));
+		Assertions.assertEquals("0", withoutCall.get(QuerySettingsConnectionServiceComponent.ACTIVE_AFTER));
+		final Map<String, String> withCall = this.connectionServiceComponent.primaryTransaction(true);
+		Assertions.assertEquals("0", withCall.get(QuerySettingsConnectionServiceComponent.ACTIVE_BEFORE));
+		Assertions.assertEquals("1", withCall.get(QuerySettingsConnectionServiceComponent.ACTIVE_INSIDE));
+		Assertions.assertEquals("1", withCall.get(QuerySettingsConnectionServiceComponent.ACTIVE_AFTER));
+		Assertions.assertEquals("61MB", withCall.get(QuerySettingsConnectionServiceComponent.WORK_MEM));
+		Assertions.assertEquals("force_custom_plan", withCall.get(QuerySettingsConnectionServiceComponent.PLAN_CACHE_MODE));
+		Assertions.assertEquals("off", withCall.get(QuerySettingsConnectionServiceComponent.READ_ONLY));
+		Assertions.assertEquals("read committed", withCall.get(QuerySettingsConnectionServiceComponent.ISOLATION));
+		Assertions.assertEquals(0, QuerySettingsConnectionServiceComponent.getActiveConnections(this.dataSource));
+		QuerySettingsConnectionServiceComponent.assertNextBorrowersSeeDefaults(this.dataSource, withCall.get(QuerySettingsConnectionServiceComponent.BACKEND_PID), sessionWorkMem);
+	}
+
+	/**
+	 * The same on the secondary unit.
+	 */
+	@Test
+	@DisplayName("lazy secondary unit: the annotated call takes the connection, and nothing leaks")
+	public void testLazySecondaryConnection() {
+		final String sessionWorkMem = QuerySettingsConnectionServiceComponent.getPoolWorkMem(this.secondaryDataSource);
+		Assertions.assertNotEquals("74MB", sessionWorkMem);
+		final Map<String, String> withoutCall = this.connectionServiceComponent.secondaryTransaction(false);
+		Assertions.assertEquals("0", withoutCall.get(QuerySettingsConnectionServiceComponent.ACTIVE_BEFORE));
+		Assertions.assertEquals("0", withoutCall.get(QuerySettingsConnectionServiceComponent.ACTIVE_AFTER));
+		final Map<String, String> withCall = this.connectionServiceComponent.secondaryTransaction(true);
+		Assertions.assertEquals("0", withCall.get(QuerySettingsConnectionServiceComponent.ACTIVE_BEFORE));
+		Assertions.assertEquals("1", withCall.get(QuerySettingsConnectionServiceComponent.ACTIVE_INSIDE));
+		Assertions.assertEquals("1", withCall.get(QuerySettingsConnectionServiceComponent.ACTIVE_AFTER));
+		Assertions.assertEquals("74MB", withCall.get(QuerySettingsConnectionServiceComponent.WORK_MEM));
+		Assertions.assertEquals(0, QuerySettingsConnectionServiceComponent.getActiveConnections(this.secondaryDataSource));
+		QuerySettingsConnectionServiceComponent.assertNextBorrowersSeeDefaults(this.secondaryDataSource, withCall.get(QuerySettingsConnectionServiceComponent.BACKEND_PID),
+				sessionWorkMem);
+	}
+
+	/**
+	 * Read-only and isolation, recorded on the lazy connection, are applied together with the settings,
+	 * whether the transaction is the caller's or the annotated method's own, and do not reach the next
+	 * transaction.
+	 */
+	@Test
+	@DisplayName("lazy unit: read-only and isolation apply together with the settings")
+	public void testLazyReadOnlyAndIsolation() {
+		final Map<String, String> serializable = this.connectionServiceComponent.readOnlySerializableTransaction();
+		Assertions.assertEquals("0", serializable.get(QuerySettingsConnectionServiceComponent.ACTIVE_BEFORE));
+		Assertions.assertEquals("1", serializable.get(QuerySettingsConnectionServiceComponent.ACTIVE_INSIDE));
+		Assertions.assertEquals("61MB", serializable.get(QuerySettingsConnectionServiceComponent.WORK_MEM));
+		Assertions.assertEquals("on", serializable.get(QuerySettingsConnectionServiceComponent.READ_ONLY));
+		Assertions.assertEquals("serializable", serializable.get(QuerySettingsConnectionServiceComponent.ISOLATION));
+		final Map<String, String> repeatableRead = this.connectionServiceComponent.readOnlyRepeatableReadAnnotatedTransaction();
+		Assertions.assertEquals("1", repeatableRead.get(QuerySettingsConnectionServiceComponent.ACTIVE_INSIDE));
+		Assertions.assertEquals("62MB", repeatableRead.get(QuerySettingsConnectionServiceComponent.WORK_MEM));
+		Assertions.assertEquals("on", repeatableRead.get(QuerySettingsConnectionServiceComponent.READ_ONLY));
+		Assertions.assertEquals("repeatable read", repeatableRead.get(QuerySettingsConnectionServiceComponent.ISOLATION));
+		Assertions.assertEquals(0, QuerySettingsConnectionServiceComponent.getActiveConnections(this.dataSource));
+		final Map<String, String> next = this.connectionServiceComponent.primaryTransaction(true);
+		Assertions.assertEquals(repeatableRead.get(QuerySettingsConnectionServiceComponent.BACKEND_PID), next.get(QuerySettingsConnectionServiceComponent.BACKEND_PID),
+				"The pool should hand the same connection back to the same thread.");
+		Assertions.assertEquals("off", next.get(QuerySettingsConnectionServiceComponent.READ_ONLY));
+		Assertions.assertEquals("read committed", next.get(QuerySettingsConnectionServiceComponent.ISOLATION));
+	}
+
+	/**
+	 * Outside a transaction the call is rejected before any connection is taken; with
+	 * startTransaction it runs in its own read-only transaction, which gives the connection back with
+	 * the session values.
+	 */
+	@Test
+	@DisplayName("lazy unit: outside a transaction the call is rejected, or wrapped with startTransaction")
+	public void testLazyWithoutTransaction() {
+		final String sessionWorkMem = QuerySettingsConnectionServiceComponent.getPoolWorkMem(this.dataSource);
+		QuerySettingsTest.assertFailsWithoutTransaction(() -> this.connectionServiceComponent.readPrimarySettings());
+		Assertions.assertEquals(0, QuerySettingsConnectionServiceComponent.getActiveConnections(this.dataSource));
+		final Map<String, String> started = this.connectionServiceComponent.readPrimarySettingsInStartedTransaction();
+		Assertions.assertEquals("1", started.get(QuerySettingsConnectionServiceComponent.ACTIVE_INSIDE));
+		Assertions.assertEquals("63MB", started.get(QuerySettingsConnectionServiceComponent.WORK_MEM));
+		Assertions.assertEquals("on", started.get(QuerySettingsConnectionServiceComponent.READ_ONLY));
+		Assertions.assertEquals(0, QuerySettingsConnectionServiceComponent.getActiveConnections(this.dataSource));
+		QuerySettingsConnectionServiceComponent.assertNextBorrowersSeeDefaults(this.dataSource, started.get(QuerySettingsConnectionServiceComponent.BACKEND_PID), sessionWorkMem);
+	}
+
+	/**
+	 * A repository advice takes the connection at the repository call, not at the caller's
+	 * transaction begin.
+	 */
+	@Test
+	@DisplayName("lazy unit: an annotated repository call takes the connection at the call")
+	public void testLazyRepositoryConnection() {
+		new TransactionTemplate(this.transactionManager).executeWithoutResult(status -> {
+			Assertions.assertEquals(0, QuerySettingsConnectionServiceComponent.getActiveConnections(this.dataSource));
+			Assertions.assertEquals("99MB,force_custom_plan", this.repository.findWorkMemAndPlanCacheMode());
+			Assertions.assertEquals(1, QuerySettingsConnectionServiceComponent.getActiveConnections(this.dataSource));
+		});
+		Assertions.assertEquals(0, QuerySettingsConnectionServiceComponent.getActiveConnections(this.dataSource));
+		Assertions.assertEquals("73MB", this.secondaryRepository.findWorkMem());
+		Assertions.assertEquals(0, QuerySettingsConnectionServiceComponent.getActiveConnections(this.secondaryDataSource));
 	}
 
 }
