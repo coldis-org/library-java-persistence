@@ -86,6 +86,17 @@ public class SecondaryDatasourcesRegistrar implements ImportBeanDefinitionRegist
 		return name + "EntityManagerFactory";
 	}
 
+	/**
+	 * Name of a secondary unit's transaction manager bean.
+	 *
+	 * @param  name Datasource name.
+	 * @return      The transaction manager bean name.
+	 */
+	public static String transactionManagerBeanName(
+			final String name) {
+		return name + "TransactionManager";
+	}
+
 	/** Resource loader. */
 	private ResourceLoader resourceLoader;
 
@@ -261,7 +272,7 @@ public class SecondaryDatasourcesRegistrar implements ImportBeanDefinitionRegist
 		final ConstructorArgumentValues arguments = new ConstructorArgumentValues();
 		arguments.addIndexedArgumentValue(0, new RuntimeBeanReference(SecondaryDatasourcesRegistrar.entityManagerFactoryBeanName(name)));
 		definition.setConstructorArgumentValues(arguments);
-		registry.registerBeanDefinition(name + "TransactionManager", definition);
+		registry.registerBeanDefinition(SecondaryDatasourcesRegistrar.transactionManagerBeanName(name), definition);
 	}
 
 	/**
@@ -275,7 +286,7 @@ public class SecondaryDatasourcesRegistrar implements ImportBeanDefinitionRegist
 			final List<String> basePackages) {
 		final AnnotationMetadata metadata = AnnotationMetadata.introspect(RepositoryConfigurationTemplate.class);
 		final AnnotationRepositoryConfigurationSource configurationSource = new NamedRepositoryConfigurationSource(metadata, this.resourceLoader,
-				this.environment, registry, basePackages, name, SecondaryDatasourcesRegistrar.entityManagerFactoryBeanName(name), name + "TransactionManager");
+				this.environment, registry, basePackages, name, SecondaryDatasourcesRegistrar.entityManagerFactoryBeanName(name), SecondaryDatasourcesRegistrar.transactionManagerBeanName(name));
 		final RepositoryConfigurationDelegate delegate = new RepositoryConfigurationDelegate(configurationSource, this.resourceLoader, this.environment);
 		delegate.registerRepositoriesIn(registry, new JpaRepositoryConfigExtension());
 	}
