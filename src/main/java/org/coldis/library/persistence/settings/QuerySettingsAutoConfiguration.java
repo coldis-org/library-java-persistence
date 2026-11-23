@@ -3,6 +3,7 @@ package org.coldis.library.persistence.settings;
 import org.aspectj.lang.Aspects;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -14,8 +15,20 @@ import org.springframework.context.annotation.Configuration;
  * The aspect instance is deliberately not a bean: an {@code @Aspect} bean would also be applied as a
  * Spring AOP proxy advisor in a context with auto-proxying, outside the transaction.
  * </p>
+ *
+ * <p>
+ * Picked up by the same component scan of {@code org.coldis} that picks up
+ * {@link org.coldis.library.persistence.configuration.PersistenceAutoConfiguration}, under the same
+ * {@code org.coldis.configuration.persistence-enabled} condition. It is not imported by it, so this
+ * package depends on the configuration package and not the reverse.
+ * </p>
  */
 @Configuration
+@ConditionalOnProperty(
+		name = "org.coldis.configuration.persistence-enabled",
+		havingValue = "true",
+		matchIfMissing = true
+)
 public class QuerySettingsAutoConfiguration {
 
 	/**

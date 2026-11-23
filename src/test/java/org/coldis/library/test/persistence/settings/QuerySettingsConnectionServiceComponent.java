@@ -161,6 +161,7 @@ public class QuerySettingsConnectionServiceComponent {
 		final Map<String, String> workMemByBackendPid = new LinkedHashMap<>();
 		final List<Connection> borrowedConnections = new ArrayList<>();
 		final int maximumPoolSize = ((HikariDataSource) pool).getMaximumPoolSize();
+		final IllegalStateException failure = new IllegalStateException("Could not read the settings of the pooled connections.");
 		try {
 			while (!workMemByBackendPid.containsKey(backendPid) && (borrowedConnections.size() < maximumPoolSize)) {
 				final Connection connection = pool.getConnection();
@@ -173,17 +174,19 @@ public class QuerySettingsConnectionServiceComponent {
 			}
 		}
 		catch (final SQLException exception) {
-			throw new IllegalStateException(exception);
+			failure.addSuppressed(exception);
 		}
-		finally {
-			for (final Connection borrowedConnection : borrowedConnections) {
-				try {
-					borrowedConnection.close();
-				}
-				catch (final SQLException exception) {
-					throw new IllegalStateException(exception);
-				}
+		// Every borrowed connection goes back to the pool, even when reading or closing another fails.
+		for (final Connection borrowedConnection : borrowedConnections) {
+			try {
+				borrowedConnection.close();
 			}
+			catch (final SQLException exception) {
+				failure.addSuppressed(exception);
+			}
+		}
+		if (failure.getSuppressed().length > 0) {
+			throw failure;
 		}
 		return workMemByBackendPid;
 	}

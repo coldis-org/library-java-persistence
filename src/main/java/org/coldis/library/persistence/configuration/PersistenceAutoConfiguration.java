@@ -1,6 +1,5 @@
 package org.coldis.library.persistence.configuration;
 
-import org.coldis.library.persistence.settings.QuerySettingsAutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
@@ -21,7 +20,7 @@ import org.springframework.context.annotation.PropertySource;
 )
 @PropertySource(value = { PersistenceAutoConfiguration.PERSISTENCE_PROPERTIES })
 @Import(value = { AopTransactionManagementAutoConfiguration.class, ProxyTransactionManagementAutoConfiguration.class, JpaAutoConfiguration.class,
-		PrimaryJpaConfiguration.class, SecondaryDatasourcesRegistrar.class, QuerySettingsAutoConfiguration.class })
+		PrimaryJpaConfiguration.class, SecondaryDatasourcesRegistrar.class })
 @AutoConfigureBefore(value = { JpaBaseConfiguration.class, HibernateJpaAutoConfiguration.class })
 public class PersistenceAutoConfiguration {
 

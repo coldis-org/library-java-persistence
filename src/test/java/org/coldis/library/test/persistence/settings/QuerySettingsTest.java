@@ -47,6 +47,12 @@ import net.bytebuddy.implementation.StubMethod;
  * ({@code org.coldis.configuration.persistence.datasources.<name>.lazy-connection.enabled=false}, the
  * per-unit form of {@code org.coldis.configuration.persistence.lazy-connection.enabled}), so its
  * transactions hold their connection from begin, as without lazy acquisition.
+ *
+ * <p>
+ * The context is closed after the class, as in every test class here: each class starts and stops
+ * its own containers, and the woven aspect supports one live context per JVM. The tertiary unit
+ * shares the secondary container (its own pool) to save a container.
+ * </p>
  */
 @TestWithContainer
 @ExtendWith(StartTestWithContainerExtension.class)
