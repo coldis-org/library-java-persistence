@@ -69,6 +69,16 @@ public class SecondaryDatasourcesRegistrar implements ImportBeanDefinitionRegist
 	/** Prefix of the secondary datasources map. */
 	public static final String DATASOURCES_PROPERTY_PREFIX = "org.coldis.configuration.persistence.datasources";
 
+	/**
+	 * PostgreSQL startup options a pool's connections get unless its own
+	 * {@code hikari.data-source-properties.options} are set (by default, JIT off: see
+	 * {@code persistence.properties}).
+	 */
+	public static final String CONNECTION_OPTIONS_PROPERTY = "org.coldis.configuration.persistence.connection-options";
+
+	/** Driver property carrying a PostgreSQL connection's startup options. */
+	public static final String OPTIONS_DATA_SOURCE_PROPERTY = "options";
+
 	/** Base package property (the same one driving the primary entity/repository scan). */
 	public static final String BASE_PACKAGE_PROPERTY = "org.coldis.configuration.persistence.jpa.base-package";
 
@@ -220,6 +230,11 @@ public class SecondaryDatasourcesRegistrar implements ImportBeanDefinitionRegist
 		}
 		final HikariDataSource dataSource = builder.build();
 		Binder.get(this.environment).bind(prefix + ".hikari", Bindable.ofInstance(dataSource));
+		final String connectionOptions = this.environment.getProperty(SecondaryDatasourcesRegistrar.CONNECTION_OPTIONS_PROPERTY);
+		if (StringUtils.startsWith(properties.getUrl(), "jdbc:postgresql:") && StringUtils.isNotBlank(connectionOptions)
+				&& !dataSource.getDataSourceProperties().containsKey(SecondaryDatasourcesRegistrar.OPTIONS_DATA_SOURCE_PROPERTY)) {
+			dataSource.addDataSourceProperty(SecondaryDatasourcesRegistrar.OPTIONS_DATA_SOURCE_PROPERTY, connectionOptions);
+		}
 		return dataSource;
 	}
 

@@ -27,6 +27,7 @@ import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.orm.jpa.EntityManagerFactoryInfo;
 import org.springframework.test.annotation.DirtiesContext;
@@ -292,6 +293,17 @@ public class QuerySettingsTest extends SpringTestHelper {
 		});
 		Assertions.assertEquals("97MB", this.repository.findWorkMemInOwnTransaction());
 		QuerySettingsTest.assertFailsWithoutTransaction(() -> this.repository.findWorkMemAndPlanCacheMode());
+	}
+
+	/**
+	 * Every pool, primary and secondary, starts its connections with JIT off.
+	 */
+	@Test
+	@DisplayName("every pool starts its connections with JIT off")
+	public void testJitOffByDefault() {
+		for (final DataSource pool : List.of(this.dataSource, this.secondaryDataSource, this.tertiaryDataSource)) {
+			Assertions.assertEquals("off", new JdbcTemplate(pool).queryForObject("SELECT current_setting('jit')", String.class));
+		}
 	}
 
 	/**
