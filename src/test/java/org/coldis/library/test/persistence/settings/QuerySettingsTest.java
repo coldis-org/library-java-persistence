@@ -68,7 +68,8 @@ import net.bytebuddy.implementation.StubMethod;
 				"org.coldis.configuration.persistence.datasources.tertiary.lazy-connection.enabled=false",
 				"org.coldis.configuration.persistence.datasources.tertiary.url=jdbc:postgresql://localhost:${POSTGRES_CONTAINER_SECONDARY_5432}/test",
 				"org.coldis.configuration.persistence.datasources.tertiary.username=test",
-				"org.coldis.configuration.persistence.datasources.tertiary.password=test" },
+				"org.coldis.configuration.persistence.datasources.tertiary.password=test",
+				"org.coldis.configuration.persistence.datasources.tertiary.hikari.data-source-properties.options=-c jit=on" },
 		classes = TestApplication.class
 )
 @ExtendWith(StopTestWithContainerExtension.class)
@@ -296,14 +297,18 @@ public class QuerySettingsTest extends SpringTestHelper {
 	}
 
 	/**
-	 * Every pool, primary and secondary, starts its connections with JIT off.
+	 * Every pool starts its connections with JIT off (the test server runs with it on), except a pool
+	 * that sets its own startup options, which keeps them.
 	 */
 	@Test
-	@DisplayName("every pool starts its connections with JIT off")
+	@DisplayName("pools start their connections with JIT off unless they set their own options")
 	public void testJitOffByDefault() {
-		for (final DataSource pool : List.of(this.dataSource, this.secondaryDataSource, this.tertiaryDataSource)) {
-			Assertions.assertEquals("off", new JdbcTemplate(pool).queryForObject("SELECT current_setting('jit')", String.class));
-		}
+		Assertions.assertAll(
+				() -> Assertions.assertEquals("off", new JdbcTemplate(this.dataSource).queryForObject("SELECT current_setting('jit')", String.class), "primary"),
+				() -> Assertions.assertEquals("off", new JdbcTemplate(this.secondaryDataSource).queryForObject("SELECT current_setting('jit')", String.class),
+						"secondary"),
+				() -> Assertions.assertEquals("on", new JdbcTemplate(this.tertiaryDataSource).queryForObject("SELECT current_setting('jit')", String.class),
+						"tertiary, with its own options"));
 	}
 
 	/**
